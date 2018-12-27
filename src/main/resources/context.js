@@ -1,18 +1,11 @@
 importPackage(Packages.il.ac.bgu.cs.bp.bpjs.context.events);
 importPackage(Packages.il.ac.bgu.cs.bp.bpjs.context);
 
-var subscription_id = 0;
-
-function subscribe(ctxName, func) {
-	var id = "SID_" + (subscription_id++);
-	return subscribe(id, ctxName, func);
-}
-
 function subscribe(id, ctxName, func) {
 	bp.registerBThread(id + "ListenerBT", function() {
 		while (true) {
 			ctx = bp.sync({ waitFor:AnyNewContextEvent(ctxName), interrupt:UnsubscribeEvent(id) }).ctx;
-			bp.registerBThread("an handler for a new context of type " + id, function() {
+			bp.registerBThread("handler for a new context of type " + id, function() {
 				func(ctx);
 			});
 		}
@@ -29,7 +22,7 @@ bp.registerBThread("ContextReporterBT", function() {
 			bp.sync({ request: event });
 		}
 		
-		
+		// Wait for next update
 		bp.sync({ waitFor:AnyUpdateContextDBEvent() });
 	}
 });

@@ -6,7 +6,7 @@ import javax.persistence.MappedSuperclass;
 @MappedSuperclass
 public class BasicEntity {
     @Id
-    private String id = null;
+	protected String id = null;
 
     public BasicEntity() { }
     public BasicEntity(String id) {

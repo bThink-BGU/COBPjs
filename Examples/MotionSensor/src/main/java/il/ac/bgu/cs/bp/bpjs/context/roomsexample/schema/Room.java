@@ -6,8 +6,8 @@ import javax.persistence.Entity;
 @Entity
 public class Room extends BasicEntity {
 	@Column
-	private boolean hasPerson=false;
-	
+	private boolean hasPerson = false;
+
 	@Column
 	private String motionSensor;
 
@@ -28,7 +28,6 @@ public class Room extends BasicEntity {
 		this.hasPerson = hasPerson;
 	}
 
-	
 	public String getMotionSensor() {
 		return motionSensor;
 	}
@@ -36,6 +35,31 @@ public class Room extends BasicEntity {
 	@Override
 	public String toString() {
 		return "Room [" + getId() + "]";
+	}
+
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + ((id == null) ? 0 : id.hashCode());
+		return result;
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		Room other = (Room) obj;
+		if (id == null) {
+			if (other.id != null)
+				return false;
+		} else if (!id.equals(other.id))
+			return false;
+		return true;
 	}
 
 }
