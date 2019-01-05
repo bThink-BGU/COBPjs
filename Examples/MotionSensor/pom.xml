@@ -24,7 +24,15 @@
 			<!-- <scope>system</scope>
 			<systemPath>../BPjs.Context/</systemPath> -->
 		</dependency>
-		
+
+		<dependency>
+			<groupId>org.junit.jupiter</groupId>
+			<artifactId>junit-jupiter-api</artifactId>
+			<version>5.3.2</version>
+			<scope>compile</scope>
+		</dependency>
+
+
 		<dependency>
 			<groupId>com.github.bthink-bgu</groupId>
 			<artifactId>BPjs</artifactId>
@@ -65,7 +73,6 @@
 			<artifactId>activation</artifactId>
 			<version>1.1.1</version>
 		</dependency>
-
 	</dependencies>
 </project>
 

@@ -1,6 +1,6 @@
 package il.ac.bgu.cs.bp.bpjs.context.roomsexample;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
