@@ -1,7 +1,9 @@
 importPackage(Packages.il.ac.bgu.cs.bp.bpjs.context.events);
 importPackage(Packages.il.ac.bgu.cs.bp.bpjs.context);
+importPackage(Packages.java.util);
 
-function subscribe(id, ctxName, func) {
+
+function subscribe(id, ctxName, func) { //TODO: Add  parameter "boolean applyToCurrentInstances" ?
 	bp.registerBThread(id + "ListenerBT", function() {
 		while (true) {
 			ctx = bp.sync({ waitFor:AnyNewContextEvent(ctxName), interrupt:UnsubscribeEvent(id) }).ctx;
@@ -13,6 +15,7 @@ function subscribe(id, ctxName, func) {
 	return id;
 }
 
+CTX.subscribe = subscribe;
 
 // Highest priority
 bp.registerBThread("ContextReporterBT", function() {

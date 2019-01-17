@@ -11,15 +11,17 @@ import javax.persistence.EntityManagerFactory;
 import javax.persistence.Persistence;
 import javax.persistence.TypedQuery;
 
-import il.ac.bgu.cs.bp.bpjs.context.events.ContextEndedEvent;
 import il.ac.bgu.cs.bp.bpjs.context.events.NewContextEvent;
 import il.ac.bgu.cs.bp.bpjs.execution.BProgramRunner;
 import il.ac.bgu.cs.bp.bpjs.execution.listeners.PrintBProgramRunnerListener;
 import il.ac.bgu.cs.bp.bpjs.model.BEvent;
 import il.ac.bgu.cs.bp.bpjs.model.BProgram;
 import il.ac.bgu.cs.bp.bpjs.model.ResourceBProgram;
+import org.mozilla.javascript.NativeFunction;
 
 public class CTX {
+
+	public static NativeFunction subscribe;
 
 	private static EntityManagerFactory emf;
 	private static EntityManager em;
@@ -116,4 +118,18 @@ public class CTX {
 		emf.close();
 	}
 
+
+	public static class ContextEndedEvent extends BEvent {
+
+		public String contextName;
+		public Object ctx;
+
+		public int col;
+
+		public ContextEndedEvent(String contextName, Object ctx) {
+			super("ContextEndedEvent(" + contextName + "," + ctx + ")");
+			this.contextName = contextName;
+			this.ctx = ctx;
+		}
+	}
 }

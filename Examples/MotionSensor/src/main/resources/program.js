@@ -3,7 +3,7 @@ importPackage(Packages.java.util);
 
 // ---------------------------------------------
 bp.registerBThread("BT1", function() {
-	subscribe("NonEmptyRoomListener", "NonEmptyRooms", function(room) {
+	CTX.subscribe("NonEmptyRoomListener", "NonEmptyRooms", function(room) {
 		bp.sync({ request:bp.Event("Turn on light in room: " + room ) });
 	});
 
@@ -21,7 +21,7 @@ bp.registerBThread("BT2", function() {
 // ---------------------------------------------
 bp.registerBThread("Room BTs", function() {
 
-	subscribe("MotionDetector","Rooms", function(room) {
+	CTX.subscribe("MotionDetector","Rooms", function(room) {
 		while(true) {
 			bp.sync({ waitFor:MotionDetectedEvent(room.getMotionSensor()) });
 			bp.sync({ request:UpdateContexDBEvent("Room.markRoomAsNonEmpty", { room: room }) });
@@ -33,8 +33,8 @@ bp.registerBThread("Room BTs", function() {
 		}
 	});
 
-	
-	subscribe("MotionStopDetector", "Rooms", function(room) {
+
+	CTX.subscribe("MotionStopDetector", "Rooms", function(room) {
 		while(true) {
 			bp.sync({ waitFor:MotionStoppedEvent(room.getMotionSensor()) });
 			bp.sync({ request:UpdateContexDBEvent("Room.markRoomAsEmpty", { room: room }) });
