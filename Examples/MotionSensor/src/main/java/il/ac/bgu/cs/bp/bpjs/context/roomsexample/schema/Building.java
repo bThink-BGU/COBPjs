@@ -12,7 +12,6 @@ public class Building extends BasicEntity {
     @OneToMany()
     private List<Room> rooms = new ArrayList<>();
 
-
     public Building() {
         super();
     }

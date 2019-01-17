@@ -5,7 +5,6 @@ import java.util.Map.Entry;
 import javax.persistence.EntityManager;
 import javax.persistence.Query;
 
-import il.ac.bgu.cs.bp.bpjs.context.events.UpdateContexDBEvent;
 import il.ac.bgu.cs.bp.bpjs.execution.listeners.BProgramRunnerListenerAdapter;
 import il.ac.bgu.cs.bp.bpjs.model.BEvent;
 import il.ac.bgu.cs.bp.bpjs.model.BProgram;
@@ -22,12 +21,11 @@ public class DBActuator extends BProgramRunnerListenerAdapter {
 	public void eventSelected(BProgram bp, BEvent theEvent) {
 
 		// Actuator for context update
-		if (theEvent instanceof UpdateContexDBEvent) {
-			UpdateContexDBEvent updCtxDbEvent = (UpdateContexDBEvent) theEvent;
+		if (theEvent instanceof CTX.UpdateEvent) {
+			CTX.UpdateEvent updateEvent = (CTX.UpdateEvent) theEvent;
+			Query query = em.createNamedQuery(updateEvent.query);
 
-			Query query = em.createNamedQuery(updCtxDbEvent.query);
-
-			for (Entry<String, Object> e : updCtxDbEvent.parameters.entrySet()) {
+			for (Entry<String, Object> e : updateEvent.parameters.entrySet()) {
 				query.setParameter(e.getKey(), e.getValue());
 			}
 

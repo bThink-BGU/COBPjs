@@ -3,10 +3,7 @@ package il.ac.bgu.cs.bp.bpjs.context;
 import java.util.*;
 import java.util.function.Consumer;
 
-import javax.persistence.EntityManager;
-import javax.persistence.EntityManagerFactory;
-import javax.persistence.Persistence;
-import javax.persistence.TypedQuery;
+import javax.persistence.*;
 
 import il.ac.bgu.cs.bp.bpjs.execution.BProgramRunner;
 import il.ac.bgu.cs.bp.bpjs.execution.listeners.PrintBProgramRunnerListener;
@@ -17,9 +14,7 @@ import il.ac.bgu.cs.bp.bpjs.model.eventsets.EventSet;
 import org.mozilla.javascript.NativeFunction;
 
 public class CTX {
-
 	public static NativeFunction subscribe;
-
 	private static EntityManagerFactory emf;
 	private static EntityManager em;
 
@@ -28,7 +23,6 @@ public class CTX {
 		TypedQuery<?> query;
 		List<?> activeContexts = new LinkedList<Object>();
 	}
-
 	private static List<CtxType> contextTypes = new LinkedList<CtxType>();
 	private static BEvent[] contextEvents;
 
@@ -42,24 +36,29 @@ public class CTX {
 		updateContexts();
 	}
 
+	public static void populateDB(Collection<?> data) {
+		em.getTransaction().begin();
+		for (Object o: data) {
+			em.merge(o);
+		}
+		em.getTransaction().commit();
+		CTX.updateContexts();
+	}
+
 	public static BProgram run(String program) {
 		BProgram bprog = new ResourceBProgram("context.js", program);
 
+		//TODO: remove?
 		MyPrioritizedBThreadsEventSelectionStrategy eventSelectionStrategy = new MyPrioritizedBThreadsEventSelectionStrategy();
 		eventSelectionStrategy.setPriority("ContextReporterBT", 1000);
-
 		bprog.setEventSelectionStrategy(eventSelectionStrategy);
 
 		bprog.setWaitForExternalEvents(true);
-
 		BProgramRunner rnr = new BProgramRunner(bprog);
 		rnr.addListener(new PrintBProgramRunnerListener());
-
 		rnr.addListener(new DBActuator(em));
-		
 		Thread thread = new Thread(rnr);
 		thread.start();
-
 		return bprog;
 	}
 
@@ -103,11 +102,9 @@ public class CTX {
 		return null;
 	}
 
-	public static void init(Consumer<EntityManager> f) {
+	public static void init() {
 		emf = Persistence.createEntityManagerFactory("ContextDB");
 		em = emf.createEntityManager();
-
-		f.accept(em);
 	}
 
 	public static void close() {

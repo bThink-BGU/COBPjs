@@ -9,35 +9,15 @@
     </named-query> 
     <named-query name="NonEmptyRooms">
         <query>SELECT r FROM Room r where r.hasPerson=true</query>
-    </named-query>    
-    <named-native-query name="NonEmptyRooms.sql">
-        <query>SELECT * FROM Room</query>
-    </named-native-query>
+    </named-query>
     
-    
-	<!-- Command -->
+	<!-- Commands -->
     <named-query name="Room.markRoomAsNonEmpty">
         <query>Update Room R set R.hasPerson=true where R=:room</query>
     </named-query>
-    
-
-	<!-- Command -->
     <named-query name="Room.markRoomAsEmpty">
         <query>Update Room R set R.hasPerson=false where R=:room</query>
     </named-query>
-
-
-    <!--  Views.Create  -->
-    <named-native-query name="Views.NonEmptyRoom.Create">
-        <query>CREATE VIEW non_empty_room AS SELECT * FROM Room WHERE room.hasperson</query>
-    </named-native-query>
-
-
-    <!--  Views.Drop  -->
-    <named-native-query name="Views.NonEmptyRoom.Drop">
-        <query>DROP VIEW  non_empty_room</query>
-    </named-native-query>
-
 
 
 </entity-mappings>

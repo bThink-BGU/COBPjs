@@ -1,4 +1,3 @@
-importPackage(Packages.il.ac.bgu.cs.bp.bpjs.context.events);
 importPackage(Packages.il.ac.bgu.cs.bp.bpjs.context);
 importPackage(Packages.java.util);
 
@@ -6,7 +5,7 @@ importPackage(Packages.java.util);
 function subscribe(id, ctxName, func) { //TODO: Add  parameter "boolean applyToCurrentInstances" ?
 	bp.registerBThread(id + "ListenerBT", function() {
 		while (true) {
-			ctx = bp.sync({ waitFor:AnyNewContextEvent(ctxName), interrupt:UnsubscribeEvent(id) }).ctx;
+			ctx = bp.sync({ waitFor:CTX.AnyNewContextEvent(ctxName), interrupt:CTX.UnsubscribeEvent(id) }).ctx;
 			bp.registerBThread("handler for a new context of type " + id, function() {
 				func(ctx);
 			});
@@ -26,7 +25,7 @@ bp.registerBThread("ContextReporterBT", function() {
 		}
 		
 		// Wait for next update
-		bp.sync({ waitFor:AnyUpdateContextDBEvent() });
+		bp.sync({ waitFor:CTX.AnyUpdateContextDBEvent() });
 	}
 });
 
