@@ -1,9 +1,6 @@
 package il.ac.bgu.cs.bp.bpjs.context;
 
-import java.util.HashSet;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.function.Consumer;
 
 import javax.persistence.EntityManager;
@@ -11,12 +8,12 @@ import javax.persistence.EntityManagerFactory;
 import javax.persistence.Persistence;
 import javax.persistence.TypedQuery;
 
-import il.ac.bgu.cs.bp.bpjs.context.events.NewContextEvent;
 import il.ac.bgu.cs.bp.bpjs.execution.BProgramRunner;
 import il.ac.bgu.cs.bp.bpjs.execution.listeners.PrintBProgramRunnerListener;
 import il.ac.bgu.cs.bp.bpjs.model.BEvent;
 import il.ac.bgu.cs.bp.bpjs.model.BProgram;
 import il.ac.bgu.cs.bp.bpjs.model.ResourceBProgram;
+import il.ac.bgu.cs.bp.bpjs.model.eventsets.EventSet;
 import org.mozilla.javascript.NativeFunction;
 
 public class CTX {
@@ -118,13 +115,22 @@ public class CTX {
 		emf.close();
 	}
 
-
-	public static class ContextEndedEvent extends BEvent {
-
+	//region Internal Events
+	public static class NewContextEvent extends BEvent {
 		public String contextName;
 		public Object ctx;
-
 		public int col;
+
+		public NewContextEvent(String contextName, Object ctx) {
+			super("NewContextEvent(" + contextName + "," + ctx + ")");
+			this.contextName = contextName;
+			this.ctx = ctx;
+		}
+	}
+
+	public static class ContextEndedEvent extends BEvent {
+		public String contextName;
+		public Object ctx;
 
 		public ContextEndedEvent(String contextName, Object ctx) {
 			super("ContextEndedEvent(" + contextName + "," + ctx + ")");
@@ -132,4 +138,52 @@ public class CTX {
 			this.ctx = ctx;
 		}
 	}
+
+	public static class UpdateEvent extends BEvent {
+		public final String query;
+		public Map<String, Object> parameters;
+
+		public UpdateEvent(String query, Map<String, Object> parameters) {
+			super("UpdateEvent(" + query + "," + parameters.entrySet() + ")");
+			this.query = query;
+			this.parameters = parameters;
+		}
+
+		public UpdateEvent(String query) {
+			this(query, new HashMap<String, Object>());
+		}
+	}
+
+	public static class UnsubscribeEvent extends BEvent {
+		public final String id;
+
+		public UnsubscribeEvent(String id) {
+			super("UnsubscribeEvent(" + id + ")");
+			this.id = id;
+		}
+	}
+	//endregion
+
+	//region Internal EventSets
+	public static class AnyNewContextEvent implements EventSet {
+		public String contextName;
+
+		public AnyNewContextEvent(String contextName) {
+			super();
+			this.contextName = contextName;
+		}
+
+		@Override
+		public boolean contains(BEvent event) {
+			return (event instanceof NewContextEvent) && ((NewContextEvent) event).contextName.equals(contextName);
+		}
+	}
+
+	public static class AnyUpdateContextDBEvent implements EventSet {
+		@Override
+		public boolean contains(BEvent event) {
+			return event instanceof UpdateEvent;
+		}
+	}
+	//endregion
 }

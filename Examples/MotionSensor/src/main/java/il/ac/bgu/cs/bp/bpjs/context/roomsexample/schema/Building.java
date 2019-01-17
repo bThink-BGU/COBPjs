@@ -8,7 +8,7 @@ import javax.persistence.OneToMany;
 
 
 @Entity
-public class Building extends BasicEntity{	
+public class Building extends BasicEntity {
     @OneToMany()
     private List<Room> rooms = new ArrayList<>();
 
