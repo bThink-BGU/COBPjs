@@ -7,7 +7,6 @@ import java.io.PrintStream;
 
 import il.ac.bgu.cs.bp.bpjs.context.roomsexample.events.MotionDetectedEvent;
 import il.ac.bgu.cs.bp.bpjs.context.roomsexample.events.MotionStoppedEvent;
-import il.ac.bgu.cs.bp.bpjs.context.roomsexample.events.Stop;
 import il.ac.bgu.cs.bp.bpjs.context.roomsexample.schema.Emergency;
 import il.ac.bgu.cs.bp.bpjs.context.roomsexample.schema.rooms.Room;
 import org.junit.jupiter.api.Test;
@@ -30,26 +29,22 @@ public class RoomsExample {
 
 		BProgram bprog = CTX.run("program.js");
 
-/*
 		// Simulation of external events
 		Thread.sleep(1000);
-		Room r96_226 = new Room("96/226");
-		Office r37_123 = new Office("37/123");
-		Office r96_225 = new Office("96/225");
 
-		bprog.enqueueExternalEvent(new MotionDetectedEvent(r37_123.getMotionSensor()));
-		bprog.enqueueExternalEvent(new MotionDetectedEvent(r96_225.getMotionSensor()));
+		Object[] rooms = CTX.getContextsOfType("Room");
 
-		Thread.sleep(1000);
-
-		bprog.enqueueExternalEvent(new MotionStoppedEvent(r37_123.getMotionSensor()));
+		bprog.enqueueExternalEvent(new MotionDetectedEvent(((Room)rooms[0]).getMotionDetector()));
+		bprog.enqueueExternalEvent(new MotionDetectedEvent(((Room)rooms[1]).getMotionDetector()));
 
 		Thread.sleep(1000);
 
-		bprog.enqueueExternalEvent(new Stop());
-		bprog.enqueueExternalEvent(new MotionDetectedEvent(r96_226.getMotionSensor()));
+		bprog.enqueueExternalEvent(new MotionStoppedEvent(((Room)rooms[1]).getMotionDetector()));
+
 		Thread.sleep(1000);
-*/
+
+//		bprog.enqueueExternalEvent(new MotionDetectedEvent(((Room)rooms[2]).getMotionDetector()));
+		Thread.sleep(1000);
 
 		//TODO: REMOVED
 		//CTX.close();

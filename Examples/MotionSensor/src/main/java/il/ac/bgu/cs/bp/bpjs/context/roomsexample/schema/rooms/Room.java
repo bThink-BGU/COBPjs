@@ -40,7 +40,7 @@ public class Room extends BasicEntity {
 		this.hasPerson = hasPerson;
 	}
 
-	public MotionDetector getMotionSensor() {
+	public MotionDetector getMotionDetector() {
 		return motionDetector;
 	}
 	public SmartLight getSmartLight() {

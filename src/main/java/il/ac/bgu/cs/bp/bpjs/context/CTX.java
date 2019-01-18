@@ -21,6 +21,7 @@ public class CTX {
 	private static class CtxType {
 		String name;
 		TypedQuery<?> query;
+		Class<?> cls;
 		List<?> activeContexts = new LinkedList<Object>();
 	}
 	private static List<CtxType> contextTypes = new LinkedList<CtxType>();
@@ -29,6 +30,7 @@ public class CTX {
 	public static void registerContextQuery(String name, Class<?> cls) {
 		CtxType newType = new CtxType();
 		newType.name = name;
+		newType.cls = cls;
 		newType.query = em.createNamedQuery(name, cls);
 		contextTypes.add(newType);
 		

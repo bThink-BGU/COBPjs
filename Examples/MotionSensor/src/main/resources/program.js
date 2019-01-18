@@ -4,6 +4,15 @@ importPackage(Packages.il.ac.bgu.cs.bp.bpjs.context.roomsexample.schema);
 importPackage(Packages.il.ac.bgu.cs.bp.bpjs.context.roomsexample.schema.devices);
 importPackage(Packages.il.ac.bgu.cs.bp.bpjs.context.roomsexample.schema.rooms);
 
+CTX.subscribe("DetectMotionStartInRooms","Room",function (r) {
+	bp.sync({ waitFor:MotionDetectedEvent(r.MotionDetector()) });
+	bp.sync({ request:CTX.update("Room_markRoomAsNonEmpty", {room: r}) });
+});
+CTX.subscribe("DetectMotionStopInRooms","Room",function (r) {
+	bp.sync({ waitFor:MotionStoppedEvent(r.MotionDetector()) });
+	bp.sync({ request:CTX.update("Room_markRoomAsEmpty", {room: r}) });
+});
+
 CTX.subscribe("TurnLightsOnInNonemptyRooms","Nonempty Room",function (r) {
 	bp.sync({ request:TurnLightOnEvent(r.getSmartLight()) });
 });
