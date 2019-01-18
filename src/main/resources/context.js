@@ -1,6 +1,4 @@
 importPackage(Packages.il.ac.bgu.cs.bp.bpjs.context);
-importPackage(Packages.java.util);
-
 
 function subscribe(id, ctxName, func) { //TODO: Add  parameter "boolean applyToCurrentInstances" ?
 	bp.registerBThread(id + "ListenerBT", function() {
@@ -20,7 +18,7 @@ CTX.subscribe = subscribe;
 bp.registerBThread("ContextReporterBT", function() {
 	while (true) {
 		// Trigger new context events
-		for each (var event in CTX.getContextEvents()) {
+		for (var event in CTX.getContextEvents()) {
 			bp.sync({ request: event });
 		}
 		

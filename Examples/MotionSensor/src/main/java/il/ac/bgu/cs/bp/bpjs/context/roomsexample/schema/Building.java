@@ -1,5 +1,7 @@
 package il.ac.bgu.cs.bp.bpjs.context.roomsexample.schema;
 
+import il.ac.bgu.cs.bp.bpjs.context.roomsexample.schema.rooms.Room;
+
 import java.util.ArrayList;
 import java.util.List;
 

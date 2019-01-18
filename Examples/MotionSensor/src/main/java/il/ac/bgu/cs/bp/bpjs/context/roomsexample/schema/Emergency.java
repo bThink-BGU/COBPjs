@@ -1,14 +1,16 @@
 package il.ac.bgu.cs.bp.bpjs.context.roomsexample.schema;
 
+import javax.persistence.Column;
 import javax.persistence.Entity;
 
+
 @Entity
-public class Office extends Room {
-    public Office() {
+public class Emergency extends BasicEntity {
+    public Emergency() {
         super();
     }
 
-    public Office(String id) {
+    public Emergency(String id) {
         super(id);
     }
 }
