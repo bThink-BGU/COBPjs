@@ -43,7 +43,7 @@ public class RoomsExample {
 
 		Thread.sleep(1000);
 
-//		bprog.enqueueExternalEvent(new MotionDetectedEvent(((Room)rooms[2]).getMotionDetector()));
+		bprog.enqueueExternalEvent(new MotionDetectedEvent(((Room)rooms[2]).getMotionDetector()));
 		Thread.sleep(1000);
 
 		//TODO: REMOVED
