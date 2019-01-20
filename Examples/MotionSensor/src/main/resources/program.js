@@ -37,7 +37,6 @@ CTX.subscribe("DisableLightsOffDuringAnEmergency","Emergency",function (e) {
 
 //region DB Population
 bp.registerBThread("PopulateDB", function() {
-    bp.sync({waitFor:bp.Event("finished_bt_initialization")});
     var achiya = new Worker(000000000, "Achiya Elyasaf");
     var gera = new Worker(111111111, "Gera Weiss");
     var arnon = new Worker(222222222, "Arnon Sturm");
@@ -45,5 +44,6 @@ bp.registerBThread("PopulateDB", function() {
     var office96_225 = new Office("96/225", arnon);
     var office37_123 = new Office("37/123", gera);
     CTX.populateDB([achiya,gera,arnon,office37_123,office96_224,office96_225]);
+    bp.sync({request:bp.Event("end_of_population")});
 });
 //endregion

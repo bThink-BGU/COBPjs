@@ -31,8 +31,6 @@ public class RoomsExample {
 		BProgram bprog = CTX.run("program.js");
 
 		// Simulation of external events
-		Thread.sleep(1000);
-		bprog.enqueueExternalEvent(new BEvent("finished_bt_initialization"));
 
 		Thread.sleep(1000);
 		Object[] rooms = CTX.getContextsOfType("Room");
