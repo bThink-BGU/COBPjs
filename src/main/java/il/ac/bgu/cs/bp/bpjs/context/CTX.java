@@ -1,6 +1,9 @@
 package il.ac.bgu.cs.bp.bpjs.context;
 
 import java.util.*;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.function.Consumer;
 
 import javax.persistence.*;
@@ -17,6 +20,9 @@ public class CTX {
 	public static NativeFunction subscribe;
 	private static EntityManagerFactory emf;
 	private static EntityManager em;
+	private static ExecutorService pool;
+	private static BProgramRunner rnr;
+	private static BProgram bprog;
 
 	private static class CtxType {
 		String name;
@@ -50,7 +56,7 @@ public class CTX {
 	public static BProgram run(String... programs) {
 		List<String> a = new ArrayList<>(List.of(programs));
 		a.add(0,"context.js");
-		BProgram bprog = new ResourceBProgram(a);
+		bprog = new ResourceBProgram(a);
 
 		//TODO: remove?
 		MyPrioritizedBThreadsEventSelectionStrategy eventSelectionStrategy = new MyPrioritizedBThreadsEventSelectionStrategy();
@@ -58,11 +64,24 @@ public class CTX {
 		bprog.setEventSelectionStrategy(eventSelectionStrategy);
 
 		bprog.setWaitForExternalEvents(true);
-		BProgramRunner rnr = new BProgramRunner(bprog);
+		rnr = new BProgramRunner(bprog);
 		rnr.addListener(new PrintBProgramRunnerListener());
 		rnr.addListener(new DBActuator(em));
-		Thread thread = new Thread(rnr);
-		thread.start();
+
+		pool = Executors.newFixedThreadPool(2);
+		pool.execute(rnr);
+		pool.execute(new Runnable() {
+			private int tick = 0;
+			@Override
+			public void run() {
+				try {
+					Thread.sleep(1000);
+					bprog.enqueueExternalEvent(new TickEvent(tick));
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}
+			}
+		});
 		return bprog;
 	}
 
@@ -172,6 +191,17 @@ public class CTX {
 			this.id = id;
 		}
 	}
+	public static class TickEvent extends BEvent {
+		public final int tick;
+		private TickEvent(int tick) {
+			super("Tick");
+			this.tick = tick;
+		}
+		@Override
+		public String toString() {
+			return "Tick: " + tick;
+		}
+	}
 	//endregion
 
 	//region Internal EventSets
@@ -193,6 +223,13 @@ public class CTX {
 		@Override
 		public boolean contains(BEvent event) {
 			return event instanceof UpdateEvent || event instanceof InsertEvent;
+		}
+	}
+
+	public static class AnyTickEvent implements EventSet {
+		@Override
+		public boolean contains(BEvent event) {
+			return event instanceof TickEvent;
 		}
 	}
 	//endregion

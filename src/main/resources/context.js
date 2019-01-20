@@ -4,7 +4,7 @@ function subscribe(id, ctxName, func) { //TODO: Add  parameter "boolean applyToC
     bp.registerBThread(id + "ListenerBT", function() {
         while (true) {
             ctx = bp.sync({ waitFor:CTX.AnyNewContextEvent(ctxName), interrupt:CTX.UnsubscribeEvent(id) }).ctx;
-            bp.registerBThread("handler for a new context of type " + id, function() {
+            bp.registerBThread("handler '" + id + "' for a new context of type '" + ctxName + "'", function() {
                 func(ctx);
             });
         }
@@ -16,12 +16,11 @@ CTX.subscribe = subscribe;
 
 // Highest priority
 bp.registerBThread("ContextReporterBT", function() {
-    // bp.sync({ waitFor:bp.Event("end_of_population")});
     while (true) {
         // Trigger new context events
-        for (var event in CTX.getContextEvents()) {
-            bp.log.info("pass" + event);
-            bp.sync({ request: event });
+        var events =CTX.getContextEvents();
+        for (var i = 0, len = events.length; i < len; i++) {
+            bp.sync({ request: events[i] });
         }
 
         // Wait for next update

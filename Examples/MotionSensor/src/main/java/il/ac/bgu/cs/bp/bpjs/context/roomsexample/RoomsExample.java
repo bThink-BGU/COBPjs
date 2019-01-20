@@ -25,7 +25,7 @@ public class RoomsExample {
 
         CTX.registerContextQuery("Room", Room.class);
 		CTX.registerContextQuery("Nonempty Room", Room.class);
-		CTX.registerContextQuery("Office Room", Office.class);
+		CTX.registerContextQuery("Office", Office.class);
 		CTX.registerContextQuery("Emergency", Emergency.class);
 
 		BProgram bprog = CTX.run("db_population.js", "program.js");
@@ -34,16 +34,15 @@ public class RoomsExample {
 		Thread.sleep(1000);
 		Object[] rooms = CTX.getContextsOfType("Room");
 
-		bprog.enqueueExternalEvent(new MotionDetectedEvent(((Room)rooms[0]).getMotionDetector()));
-		bprog.enqueueExternalEvent(new MotionDetectedEvent(((Room)rooms[1]).getMotionDetector()));
+		for (Object room : rooms) {
+			bprog.enqueueExternalEvent(new MotionDetectedEvent(((Room)room).getMotionDetector()));
+		}
 
 		Thread.sleep(1000);
 
-		bprog.enqueueExternalEvent(new MotionStoppedEvent(((Room)rooms[1]).getMotionDetector()));
-
-		Thread.sleep(1000);
-
-		bprog.enqueueExternalEvent(new MotionDetectedEvent(((Room)rooms[2]).getMotionDetector()));
+		for (Object room : rooms) {
+			bprog.enqueueExternalEvent(new MotionStoppedEvent(((Room)room).getMotionDetector()));
+		}
 		Thread.sleep(1000);
 
 		//TODO: REMOVED
@@ -52,7 +51,6 @@ public class RoomsExample {
 
 	@Test
 	void test() throws InterruptedException {
-
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		PrintStream ps = new PrintStream(baos);
 		PrintStream old = System.out;
