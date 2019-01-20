@@ -9,6 +9,7 @@ import il.ac.bgu.cs.bp.bpjs.context.roomsexample.events.MotionDetectedEvent;
 import il.ac.bgu.cs.bp.bpjs.context.roomsexample.events.MotionStoppedEvent;
 import il.ac.bgu.cs.bp.bpjs.context.roomsexample.schema.Emergency;
 import il.ac.bgu.cs.bp.bpjs.context.roomsexample.schema.rooms.Room;
+import il.ac.bgu.cs.bp.bpjs.model.BEvent;
 import org.junit.jupiter.api.Test;
 
 import il.ac.bgu.cs.bp.bpjs.context.CTX;
@@ -31,7 +32,9 @@ public class RoomsExample {
 
 		// Simulation of external events
 		Thread.sleep(1000);
+		bprog.enqueueExternalEvent(new BEvent("finished_bt_initialization"));
 
+		Thread.sleep(1000);
 		Object[] rooms = CTX.getContextsOfType("Room");
 
 		bprog.enqueueExternalEvent(new MotionDetectedEvent(((Room)rooms[0]).getMotionDetector()));
