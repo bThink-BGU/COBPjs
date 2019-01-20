@@ -12,21 +12,33 @@ CTX.subscribe("DetectMotionStopInRooms","Room",function (r) {
     bp.sync({ waitFor:MotionStoppedEvent(r.getMotionDetector()) });
     bp.sync({ request:CTX.UpdateEvent("Room_markRoomAsEmpty", {room: r}) });
 });
+
 CTX.subscribe("DelayRoomAsEmpty","Room",function (r) {
     var threeMinutesInMillis = 1000 * 60 * 3;
-    bp.sync({ waitFor:MotionStoppedEvent(r.getMotionDetector()) });
-    var e = bp.sync({
-        waitFor:CTX.AnyTickEvent(),
-        block: CTX.UpdateEvent("Room_markRoomAsEmpty", {room: r}),
-        interrupt: MotionDetectedEvent(r.getMotionDetector())});
-    var e = bp.sync({
-        waitFor:CTX.TickEvent(e.tick + threeMinutesInMillis),
-        block: CTX.UpdateEvent("Room_markRoomAsEmpty", {room: r}),
-        interrupt: MotionDetectedEvent(r.getMotionDetector())});
+    var motionDetectedEvent = MotionDetectedEvent(r.getMotionDetector());
+    var i = 0;
+    while(true) {
+        bp.sync({waitFor: MotionStoppedEvent(r.getMotionDetector())});
+        bp.registerBThread("DelayRoomAsEmptyHelper_"+(i++), function() {
+            var e = bp.sync({
+                waitFor: CTX.AnyTickEvent(),
+                block: CTX.UpdateEvent("Room_markRoomAsEmpty", {room: r}),
+                interrupt: motionDetectedEvent,
+            });
+            bp.sync({
+                waitFor: CTX.TickEvent(e.tick + threeMinutesInMillis),
+                block: CTX.UpdateEvent("Room_markRoomAsEmpty", {room: r}),
+                interrupt: motionDetectedEvent,
+            });
+        });
+    }
 });
 
 CTX.subscribe("TurnLightsOnInNonemptyRooms","Nonempty Room",function (room) {
-    bp.sync({ request:TurnLightOnEvent(room.getSmartLight()) });
+    bp.sync({
+        request:TurnLightOnEvent(room.getSmartLight()),
+        interrupt: CTX.ContextEndedEvent("Nonempty Room", room)
+    });
 });
 CTX.subscribe("TurnLightsOffInEmptyRooms","Room",function (room) {
     bp.sync({ request:TurnLightOffEvent(room.getSmartLight()) });
