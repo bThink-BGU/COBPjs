@@ -47,8 +47,17 @@ public class CTX {
 		CTX.updateContexts();
 	}
 
-	public static BProgram run(String program) {
-		BProgram bprog = new ResourceBProgram("context.js", program);
+	public static void persistObject(Object o) {
+		em.getTransaction().begin();
+		em.merge(o);
+		em.getTransaction().commit();
+		CTX.updateContexts();
+	}
+
+	public static BProgram run(String... programs) {
+		List<String> a = new ArrayList<>(List.of(programs));
+		a.add(0,"context.js");
+		BProgram bprog = new ResourceBProgram(a);
 
 		//TODO: remove?
 		MyPrioritizedBThreadsEventSelectionStrategy eventSelectionStrategy = new MyPrioritizedBThreadsEventSelectionStrategy();
@@ -138,6 +147,24 @@ public class CTX {
 		}
 	}
 
+	public static class InsertEvent extends BEvent {
+		public final Object persistObject;
+
+		public InsertEvent(Object persistObject) {
+			super("InsertEvent(" + persistObject + ")");
+			this.persistObject = persistObject;
+		}
+	}
+
+	public static class PopulateEvent extends BEvent {
+		public final List<?> persistObjects;
+
+		public PopulateEvent(List<?> persistObjects) {
+			super("PopulateEvent(" + persistObjects + ")");
+			this.persistObjects = persistObjects;
+		}
+	}
+
 	public static class UpdateEvent extends BEvent {
 		public final String query;
 		public Map<String, Object> parameters;
@@ -181,7 +208,10 @@ public class CTX {
 	public static class AnyUpdateContextDBEvent implements EventSet {
 		@Override
 		public boolean contains(BEvent event) {
-			return event instanceof UpdateEvent;
+			return
+					event instanceof UpdateEvent ||
+							event instanceof InsertEvent ||
+							event instanceof PopulateEvent;
 		}
 	}
 	//endregion

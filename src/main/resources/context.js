@@ -16,7 +16,7 @@ CTX.subscribe = subscribe;
 
 // Highest priority
 bp.registerBThread("ContextReporterBT", function() {
-    bp.sync({ waitFor:bp.Event("end_of_population")});
+    // bp.sync({ waitFor:bp.Event("end_of_population")});
     while (true) {
         // Trigger new context events
         for (var event in CTX.getContextEvents()) {

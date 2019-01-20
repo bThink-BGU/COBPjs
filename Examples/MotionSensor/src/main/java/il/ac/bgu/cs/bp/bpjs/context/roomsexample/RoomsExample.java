@@ -28,10 +28,9 @@ public class RoomsExample {
 		CTX.registerContextQuery("Office Room", Office.class);
 		CTX.registerContextQuery("Emergency", Emergency.class);
 
-		BProgram bprog = CTX.run("program.js");
+		BProgram bprog = CTX.run("db_population.js", "program.js");
 
 		// Simulation of external events
-
 		Thread.sleep(1000);
 		Object[] rooms = CTX.getContextsOfType("Room");
 
