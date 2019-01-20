@@ -8,6 +8,6 @@ bp.registerBThread("PopulateDB", function() {
 
     // bp.sync({ request:CTX.InsertEvent(achiya) });
 
-    bp.sync({ request: CTX.PopulateEvent([achiya,gera,arnon,office37_123,office96_224,office96_225]) });
+    bp.sync({ request: CTX.InsertEvent([achiya,gera,arnon,office37_123,office96_224,office96_225]) });
     // bp.sync({request:bp.Event("end_of_population")});
 });

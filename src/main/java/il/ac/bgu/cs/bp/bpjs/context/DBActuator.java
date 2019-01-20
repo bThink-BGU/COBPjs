@@ -35,9 +35,7 @@ public class DBActuator extends BProgramRunnerListenerAdapter {
 
 			CTX.updateContexts();
 		} else if (theEvent instanceof CTX.InsertEvent) {
-			CTX.persistObject(((CTX.InsertEvent) theEvent).persistObject);
-		} else if (theEvent instanceof CTX.PopulateEvent) {
-			CTX.populateDB(((CTX.PopulateEvent) theEvent).persistObjects);
+			CTX.persistObjects(((CTX.InsertEvent) theEvent).persistObjects);
 		}
 	}
 }

@@ -38,18 +38,11 @@ public class CTX {
 		updateContexts();
 	}
 
-	public static void populateDB(Collection<?> data) {
+	public static void persistObjects(Object[] objects) {
 		em.getTransaction().begin();
-		for (Object o: data) {
+		for (Object o: objects) {
 			em.merge(o);
 		}
-		em.getTransaction().commit();
-		CTX.updateContexts();
-	}
-
-	public static void persistObject(Object o) {
-		em.getTransaction().begin();
-		em.merge(o);
 		em.getTransaction().commit();
 		CTX.updateContexts();
 	}
@@ -148,19 +141,10 @@ public class CTX {
 	}
 
 	public static class InsertEvent extends BEvent {
-		public final Object persistObject;
+		public final Object[] persistObjects;
 
-		public InsertEvent(Object persistObject) {
-			super("InsertEvent(" + persistObject + ")");
-			this.persistObject = persistObject;
-		}
-	}
-
-	public static class PopulateEvent extends BEvent {
-		public final List<?> persistObjects;
-
-		public PopulateEvent(List<?> persistObjects) {
-			super("PopulateEvent(" + persistObjects + ")");
+		public InsertEvent(Object ... persistObjects) {
+			super("InsertEvent(" + persistObjects + ")");
 			this.persistObjects = persistObjects;
 		}
 	}
@@ -208,10 +192,7 @@ public class CTX {
 	public static class AnyUpdateContextDBEvent implements EventSet {
 		@Override
 		public boolean contains(BEvent event) {
-			return
-					event instanceof UpdateEvent ||
-							event instanceof InsertEvent ||
-							event instanceof PopulateEvent;
+			return event instanceof UpdateEvent || event instanceof InsertEvent;
 		}
 	}
 	//endregion
