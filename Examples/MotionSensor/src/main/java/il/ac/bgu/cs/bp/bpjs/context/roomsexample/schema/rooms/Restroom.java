@@ -1,13 +1,15 @@
 package il.ac.bgu.cs.bp.bpjs.context.roomsexample.schema.rooms;
 
+import il.ac.bgu.cs.bp.bpjs.context.roomsexample.schema.Building;
+
 import javax.persistence.Entity;
 
 @Entity
 public class Restroom extends Room {
-    public Restroom() {
+    protected Restroom() {
         super();
     }
-    public Restroom(String id) {
-        super(id);
+    public Restroom(String id, Building building) {
+        super(id, building);
     }
 }

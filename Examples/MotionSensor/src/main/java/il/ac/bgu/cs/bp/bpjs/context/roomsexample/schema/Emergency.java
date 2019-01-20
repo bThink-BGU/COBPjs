@@ -6,7 +6,7 @@ import javax.persistence.Entity;
 
 @Entity
 public class Emergency extends BasicEntity {
-    public Emergency() {
+    protected Emergency() {
         super();
     }
 

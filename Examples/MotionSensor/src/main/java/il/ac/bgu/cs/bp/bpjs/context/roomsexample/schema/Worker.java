@@ -14,7 +14,7 @@ public class Worker extends BasicEntity {
     @OneToOne
     private Room room = null;
 
-    public Worker() {
+    protected Worker() {
         super();
     }
 

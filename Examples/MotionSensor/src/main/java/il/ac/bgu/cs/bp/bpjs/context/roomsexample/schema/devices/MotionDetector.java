@@ -6,9 +6,7 @@ import javax.persistence.Entity;
 
 @Entity
 public class MotionDetector extends BasicEntity {
-	public MotionDetector() {
-		super();
-	}
+	protected MotionDetector() { super(); }
 	public MotionDetector(String id) {
 		super(id);
 	}

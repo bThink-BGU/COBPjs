@@ -13,7 +13,7 @@ public class AirConditioner extends BasicEntity {
 	@Column
 	private boolean turnedOn = false;
 
-	public AirConditioner() {
+	protected AirConditioner() {
 		super();
 	}
 	public AirConditioner(String id) {

@@ -6,7 +6,7 @@ import javax.persistence.Entity;
 
 @Entity
 public class SmartLight extends BasicEntity {
-	public SmartLight() {
+	protected SmartLight() {
 		super();
 	}
 	public SmartLight(String id) {

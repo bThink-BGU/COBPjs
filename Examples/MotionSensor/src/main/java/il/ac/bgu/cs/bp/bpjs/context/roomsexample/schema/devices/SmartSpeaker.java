@@ -6,7 +6,7 @@ import javax.persistence.Entity;
 
 @Entity
 public class SmartSpeaker extends BasicEntity {
-	public SmartSpeaker() {
+	protected SmartSpeaker() {
 		super();
 	}
 	public SmartSpeaker(String id) {

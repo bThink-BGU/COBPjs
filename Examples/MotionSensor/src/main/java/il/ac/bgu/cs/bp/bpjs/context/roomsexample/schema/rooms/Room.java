@@ -1,15 +1,13 @@
 package il.ac.bgu.cs.bp.bpjs.context.roomsexample.schema.rooms;
 
 import il.ac.bgu.cs.bp.bpjs.context.roomsexample.schema.BasicEntity;
+import il.ac.bgu.cs.bp.bpjs.context.roomsexample.schema.Building;
 import il.ac.bgu.cs.bp.bpjs.context.roomsexample.schema.Worker;
 import il.ac.bgu.cs.bp.bpjs.context.roomsexample.schema.devices.MotionDetector;
 import il.ac.bgu.cs.bp.bpjs.context.roomsexample.schema.devices.SmartLight;
 import il.ac.bgu.cs.bp.bpjs.context.roomsexample.schema.devices.SmartSpeaker;
 
-import javax.persistence.CascadeType;
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.OneToOne;
+import javax.persistence.*;
 
 @Entity
 public class Room extends BasicEntity {
@@ -21,16 +19,20 @@ public class Room extends BasicEntity {
 	private SmartLight smartLight;
 	@OneToOne(cascade = CascadeType.MERGE)
 	private SmartSpeaker smartSpeaker;
+	@ManyToOne
+	@JoinColumn(name = "building_fk")
+	private Building building;
 
-	public Room() {
+	protected Room() {
 		super();
 	}
 
-	public Room(String id) {
-		super(id);
-		motionDetector = new MotionDetector(id + ".MotionDetector");
-		smartLight = new SmartLight(id + ".SmartLight");
-		smartSpeaker = new SmartSpeaker(id + ".SmartSpeaker");
+	public Room(String id, Building building) {
+		super(building.getId() + "/" + id);
+		motionDetector = new MotionDetector(getId() + ".MotionDetector");
+		smartLight = new SmartLight(getId() + ".SmartLight");
+		smartSpeaker = new SmartSpeaker(getId() + ".SmartSpeaker");
+		this.building = building;
 	}
 
 	public boolean hasPerson() {

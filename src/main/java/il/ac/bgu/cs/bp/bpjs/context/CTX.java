@@ -77,7 +77,7 @@ public class CTX {
 				try {
 					while(true) {
 						Thread.sleep(1000);
-						bprog.enqueueExternalEvent(new TickEvent(tick));
+						bprog.enqueueExternalEvent(new TickEvent(++tick));
 					}
 				} catch (InterruptedException e) {
 					e.printStackTrace();
@@ -195,7 +195,7 @@ public class CTX {
 	}
 	public static class TickEvent extends BEvent {
 		public final int tick;
-		private TickEvent(int tick) {
+		public TickEvent(int tick) {
 			super("Tick");
 			this.tick = tick;
 		}

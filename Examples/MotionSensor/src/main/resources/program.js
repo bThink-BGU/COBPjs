@@ -14,7 +14,8 @@ CTX.subscribe("DetectMotionStopInRooms","Room",function (r) {
 });
 
 CTX.subscribe("DelayRoomAsEmpty","Room",function (r) {
-    var threeMinutesInMillis = 1000 * 60 * 3;
+    // var numberOfTicks = 60 * 3;
+    var numberOfTicks = 5;
     var motionDetectedEvent = MotionDetectedEvent(r.getMotionDetector());
     var i = 0;
     while(true) {
@@ -26,7 +27,7 @@ CTX.subscribe("DelayRoomAsEmpty","Room",function (r) {
                 interrupt: motionDetectedEvent,
             });
             bp.sync({
-                waitFor: CTX.TickEvent(e.tick + threeMinutesInMillis),
+                waitFor: CTX.TickEvent(e.tick + numberOfTicks),
                 block: CTX.UpdateEvent("Room_markRoomAsEmpty", {room: r}),
                 interrupt: motionDetectedEvent,
             });
