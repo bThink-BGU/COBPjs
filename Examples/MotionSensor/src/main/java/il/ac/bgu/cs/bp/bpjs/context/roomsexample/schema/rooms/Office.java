@@ -4,11 +4,12 @@ import il.ac.bgu.cs.bp.bpjs.context.roomsexample.schema.Building;
 import il.ac.bgu.cs.bp.bpjs.context.roomsexample.schema.Worker;
 import il.ac.bgu.cs.bp.bpjs.context.roomsexample.schema.devices.AirConditioner;
 
-import javax.persistence.CascadeType;
-import javax.persistence.Entity;
-import javax.persistence.OneToOne;
+import javax.persistence.*;
 
 @Entity
+@NamedQueries(value = {
+        @NamedQuery(name = "Office.findAll", query = "SELECT o FROM Office o")
+})
 public class Office extends Room {
     @OneToOne(cascade = CascadeType.MERGE)
     private AirConditioner airConditioner;

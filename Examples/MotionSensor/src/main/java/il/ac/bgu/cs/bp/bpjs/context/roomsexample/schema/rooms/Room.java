@@ -10,6 +10,12 @@ import il.ac.bgu.cs.bp.bpjs.context.roomsexample.schema.devices.SmartSpeaker;
 import javax.persistence.*;
 
 @Entity
+@NamedQueries(value = {
+		@NamedQuery(name = "Room.findAll", query = "SELECT r FROM Room r"),
+		@NamedQuery(name = "Room.findAllNonEmpty", query = "SELECT r FROM Room r where r.hasPerson=true"),
+		@NamedQuery(name = "Room.markAsEmpty", query = "Update Room R set R.hasPerson=false where R=:room"),
+		@NamedQuery(name = "Room.markAsNonEmpty", query = "Update Room R set R.hasPerson=true where R=:room")
+})
 public class Room extends BasicEntity {
 	@Column
 	private boolean hasPerson = false;

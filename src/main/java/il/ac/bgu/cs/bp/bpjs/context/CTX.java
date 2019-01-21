@@ -1,5 +1,6 @@
 package il.ac.bgu.cs.bp.bpjs.context;
 
+import java.lang.reflect.Type;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -7,6 +8,8 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.function.Consumer;
 
 import javax.persistence.*;
+import javax.persistence.metamodel.IdentifiableType;
+import javax.persistence.metamodel.ManagedType;
 
 import il.ac.bgu.cs.bp.bpjs.execution.BProgramRunner;
 import il.ac.bgu.cs.bp.bpjs.execution.listeners.PrintBProgramRunnerListener;
@@ -14,6 +17,8 @@ import il.ac.bgu.cs.bp.bpjs.model.BEvent;
 import il.ac.bgu.cs.bp.bpjs.model.BProgram;
 import il.ac.bgu.cs.bp.bpjs.model.ResourceBProgram;
 import il.ac.bgu.cs.bp.bpjs.model.eventsets.EventSet;
+import org.hibernate.internal.SessionFactoryImpl;
+import org.hibernate.query.spi.NamedQueryRepository;
 import org.mozilla.javascript.NativeFunction;
 
 public class CTX {
@@ -24,25 +29,14 @@ public class CTX {
 	private static BProgramRunner rnr;
 	private static BProgram bprog;
 
-	private static class CtxType {
+	private static class CtxType<T> {
 		String name;
-		TypedQuery<?> query;
-		Class<?> cls;
-		List<?> activeContexts = new LinkedList<Object>();
+		TypedQuery<T> query;
+		Class<T> cls;
+		List<T> activeContexts = new LinkedList<>();
 	}
-	private static List<CtxType> contextTypes = new LinkedList<CtxType>();
+	private static List<CtxType<?>> contextTypes = new LinkedList<>();
 	private static BEvent[] contextEvents;
-
-	public static void registerContextQuery(String name, Class<?> cls) {
-		CtxType newType = new CtxType();
-		newType.name = name;
-		newType.cls = cls;
-		newType.query = em.createNamedQuery(name, cls);
-		contextTypes.add(newType);
-		
-		// An easy, inefficient, way to initialize the new context 
-		updateContexts();
-	}
 
 	public static void persistObjects(Object[] objects) {
 		em.getTransaction().begin();
@@ -127,9 +121,62 @@ public class CTX {
 		return null;
 	}
 
+	public static <T> List<T> getContextsOfType(String type, Class<T> clz) {
+		for (CtxType ct : contextTypes) {
+			if (ct.name.equals(type)) {
+				return ct.activeContexts;
+			}
+		}
+		return null;
+	}
+
+	private static HashMap<Class<?>, NamedQuery[]> findAllNamedQueries(EntityManagerFactory emf) {
+		HashMap<Class<?>, NamedQuery[]> allNamedQueries = new HashMap<>();
+		Set<ManagedType<?>> managedTypes = emf.getMetamodel().getManagedTypes();
+		for (ManagedType<?> managedType: managedTypes) {
+			if (managedType instanceof IdentifiableType) {
+				@SuppressWarnings("rawtypes")
+//				Class<? extends ManagedType> identifiableTypeClass = managedType.getClass();
+				Class<?> javaClass = managedType.getJavaType();
+				NamedQueries namedQueries = javaClass.getAnnotation(NamedQueries.class);
+				if (namedQueries != null) {
+					allNamedQueries.put(managedType.getJavaType(),namedQueries.value());
+				}
+
+				NamedQuery namedQuery = javaClass.getAnnotation(NamedQuery.class);
+				if (namedQuery != null) {
+					allNamedQueries.put(managedType.getJavaType(), new NamedQuery[]{namedQuery});
+				}
+			}
+		}
+		return allNamedQueries;
+	}
+
+	private static <T> void registerContextQuery(String name, TypedQuery<T> query, Class<T> cls) {
+		CtxType<T> newType = new CtxType<>();
+		newType.name = name;
+		newType.cls = cls;
+		newType.query = query;
+		contextTypes.add(newType);
+	}
+
 	public static void init() {
 		emf = Persistence.createEntityManagerFactory("ContextDB");
 		em = emf.createEntityManager();
+		HashMap<Class<?>, NamedQuery[]> queries = findAllNamedQueries(emf);
+		for(Map.Entry<Class<?>, NamedQuery[]> entry : queries.entrySet()) {
+			Class<?> key = entry.getKey();
+			Type p = key.getGenericSuperclass();
+			for (NamedQuery nq : entry.getValue()) {
+				try {
+					TypedQuery q = em.createNamedQuery(nq.name(), key);
+					registerContextQuery(nq.name(), q, key);
+				} catch (Exception e) {
+
+				}
+			}
+		}
+		updateContexts();
 	}
 
 	public static void close() {

@@ -4,75 +4,61 @@ importPackage(Packages.il.ac.bgu.cs.bp.bpjs.context.roomsexample.schema);
 importPackage(Packages.il.ac.bgu.cs.bp.bpjs.context.roomsexample.schema.devices);
 importPackage(Packages.il.ac.bgu.cs.bp.bpjs.context.roomsexample.schema.rooms);
 
-CTX.subscribe("DetectMotionStartInRooms","Room",function (room) {
+CTX.subscribe("DetectMotionStartInRooms","Room.findAll",function (room) {
     bp.sync({ waitFor:MotionDetectedEvent(room.getMotionDetector()) });
-    bp.sync({ request:CTX.UpdateEvent("Room_markRoomAsNonEmpty", {room: room}) });
+    bp.sync({ request:CTX.UpdateEvent("Room.markAsNonEmpty", {room: room}) });
 });
-CTX.subscribe("DetectMotionStopInRooms","Room",function (r) {
-    bp.sync({ waitFor:MotionStoppedEvent(r.getMotionDetector()) });
-    bp.sync({ request:CTX.UpdateEvent("Room_markRoomAsEmpty", {room: r}) });
+CTX.subscribe("DetectMotionStopInRooms","Room.findAll",function (room) {
+    bp.sync({ waitFor:MotionStoppedEvent(room.getMotionDetector()) });
+    bp.sync({ request:CTX.UpdateEvent("Room.markAsEmpty", {room: room}) });
 });
 
-CTX.subscribe("DelayRoomAsEmpty","Room",function (r) {
+CTX.subscribe("DelayRoomAsEmpty","Room.findAll",function (room) {
     // var numberOfTicks = 60 * 3;
     var numberOfTicks = 5;
-    var motionDetectedEvent = MotionDetectedEvent(r.getMotionDetector());
+    var motionDetectedEvent = MotionDetectedEvent(room.getMotionDetector());
     var i = 0;
     while(true) {
-        bp.sync({waitFor: MotionStoppedEvent(r.getMotionDetector())});
+        bp.sync({waitFor: MotionStoppedEvent(room.getMotionDetector())});
         bp.registerBThread("DelayRoomAsEmptyHelper_"+(i++), function() {
             var e = bp.sync({
                 waitFor: CTX.AnyTickEvent(),
-                block: CTX.UpdateEvent("Room_markRoomAsEmpty", {room: r}),
+                block: CTX.UpdateEvent("Room.markAsEmpty", {room: room}),
                 interrupt: motionDetectedEvent,
             });
             bp.sync({
                 waitFor: CTX.TickEvent(e.tick + numberOfTicks),
-                block: CTX.UpdateEvent("Room_markRoomAsEmpty", {room: r}),
+                block: CTX.UpdateEvent("Room.markAsEmpty", {room: room}),
                 interrupt: motionDetectedEvent,
             });
         });
     }
 });
 
-CTX.subscribe("TurnLightsOnInNonemptyRooms","Nonempty Room",function (room) {
+CTX.subscribe("TurnLightsOnInNonemptyRooms","Room.findAllNonEmpty",function (room) {
     bp.sync({
         request:TurnLightOnEvent(room.getSmartLight()),
-        interrupt: CTX.ContextEndedEvent("Nonempty Room", room)
+        interrupt: CTX.ContextEndedEvent("Room.findAllNonEmpty", room)
     });
 });
-CTX.subscribe("TurnLightsOffInEmptyRooms","Room",function (room) {
+CTX.subscribe("TurnLightsOffInEmptyRooms","Room.findAll",function (room) {
     bp.sync({ request:TurnLightOffEvent(room.getSmartLight()) });
 });
 
-CTX.subscribe("OfficeBehaviors","Office",function (o) {
-    CTX.subscribe("TurnACOnInNonemptyOffices","Nonempty Room",function (r) {
-        if(o === r) {
-            bp.sync({ request:TurnACOnEvent(r.getAirConditioner()) });
+CTX.subscribe("OfficeBehaviors","Office.findAll",function (office) {
+    CTX.subscribe("TurnACOnInNonemptyOffices","Room.findAllNonEmpty",function (room) {
+        if(office === room) {
+            bp.sync({ request:TurnACOnEvent(room.getAirConditioner()) });
         }
     });
-    CTX.subscribe("TurnACOffInEmptyOffices","Room",function (r) {
-        if(o === r) {
-            bp.sync({ request:TurnACOffEvent(r.getAirConditioner()) });
+    CTX.subscribe("TurnACOffInEmptyOffices","Room.findAll",function (room) {
+        if(office === room) {
+            bp.sync({ request:TurnACOffEvent(room.getAirConditioner()) });
         }
     });
 });
 
-
-/*CTX.subscribe("TurnACOnInNonemptyOffices","Nonempty Room",function (r) {
-    // TODO: need to check this!
-    if(r isinstanceof Office)
-    bp.sync({ request:TurnACOnEvent(r.getAirConditioner()) });
-});
-CTX.subscribe("TurnACOffInEmptyOffices","Room",function (r) {
-    // TODO: need to check this!
-    if(r isinstanceof Office)
-    bp.sync({ request:TurnACOffEvent(r.getAirConditioner()) });
-});*/
-
-CTX.subscribe("DisableLightsOffDuringAnEmergency","Emergency",function (e) {
-    CTX.subscribe("DisableLightsOffDuringAnEmergency.Room","Room",function (r) {
-        bp.sync({block: AnyTurnLightOffEvent(),
-        interrupt:CTX.ContextEndedEvent("Emergency",e)});
-    });
+CTX.subscribe("DisableLightsOffDuringAnEmergency","Emergency.findAll",function (emergency) {
+    bp.sync({block: AnyTurnLightOffEvent(),
+        interrupt: CTX.ContextEndedEvent("Emergency.findAll", emergency)});
 });

@@ -23,24 +23,24 @@ public class RoomsExample {
 
 		CTX.init();
 
-        CTX.registerContextQuery("Room", Room.class);
+        /*CTX.registerContextQuery("Room", Room.class);
 		CTX.registerContextQuery("Nonempty Room", Room.class);
 		CTX.registerContextQuery("Office", Office.class);
-		CTX.registerContextQuery("Emergency", Emergency.class);
+		CTX.registerContextQuery("Emergency", Emergency.class);*/
 
 		BProgram bprog = CTX.run("db_population.js", "program.js");
 
 		// Simulation of external events
 		Thread.sleep(1000);
-		Object[] rooms = CTX.getContextsOfType("Room");
+		Room[] rooms = CTX.getContextsOfType("Room.findAll", Room.class);
 
-		for (Object room : rooms) {
+		for (Room room : rooms) {
 			bprog.enqueueExternalEvent(new MotionDetectedEvent(((Room)room).getMotionDetector()));
 		}
 
 		Thread.sleep(1000);
 
-		for (Object room : rooms) {
+		for (Room room : rooms) {
 			bprog.enqueueExternalEvent(new MotionStoppedEvent(((Room)room).getMotionDetector()));
 		}
 		Thread.sleep(1000);

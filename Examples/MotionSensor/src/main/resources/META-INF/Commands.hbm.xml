@@ -2,11 +2,11 @@
 <entity-mappings xmlns="http://java.sun.com/xml/ns/persistence/orm"
         version="2.0">
 
-    <named-query name="Room_markRoomAsNonEmpty">
+    <!--<named-query name="Room_markRoomAsNonEmpty">
         <query>Update Room R set R.hasPerson=true where R=:room</query>
     </named-query>
     <named-query name="Room_markRoomAsEmpty">
         <query>Update Room R set R.hasPerson=false where R=:room</query>
-    </named-query>
+    </named-query>-->
 
 </entity-mappings>

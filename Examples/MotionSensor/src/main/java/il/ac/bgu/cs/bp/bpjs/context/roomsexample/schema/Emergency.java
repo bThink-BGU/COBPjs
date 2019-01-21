@@ -1,10 +1,13 @@
 package il.ac.bgu.cs.bp.bpjs.context.roomsexample.schema;
 
-import javax.persistence.Column;
 import javax.persistence.Entity;
-
+import javax.persistence.NamedQueries;
+import javax.persistence.NamedQuery;
 
 @Entity
+@NamedQueries(value = {
+        @NamedQuery(name = "Emergency.findAll", query = "SELECT e FROM Emergency e")
+})
 public class Emergency extends BasicEntity {
     protected Emergency() {
         super();
