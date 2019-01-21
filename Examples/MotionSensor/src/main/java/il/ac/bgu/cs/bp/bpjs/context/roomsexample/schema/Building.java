@@ -13,6 +13,7 @@ import javax.persistence.OneToMany;
 
 @Entity
 public class Building extends BasicEntity {
+
     @OneToMany(cascade = CascadeType.ALL, mappedBy = "building", orphanRemoval = true)
     private List<Room> rooms = new ArrayList<>();
 

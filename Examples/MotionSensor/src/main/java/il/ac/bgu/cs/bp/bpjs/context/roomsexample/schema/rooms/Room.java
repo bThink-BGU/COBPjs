@@ -2,7 +2,6 @@ package il.ac.bgu.cs.bp.bpjs.context.roomsexample.schema.rooms;
 
 import il.ac.bgu.cs.bp.bpjs.context.roomsexample.schema.BasicEntity;
 import il.ac.bgu.cs.bp.bpjs.context.roomsexample.schema.Building;
-import il.ac.bgu.cs.bp.bpjs.context.roomsexample.schema.Worker;
 import il.ac.bgu.cs.bp.bpjs.context.roomsexample.schema.devices.MotionDetector;
 import il.ac.bgu.cs.bp.bpjs.context.roomsexample.schema.devices.SmartLight;
 import il.ac.bgu.cs.bp.bpjs.context.roomsexample.schema.devices.SmartSpeaker;
@@ -19,12 +18,16 @@ import javax.persistence.*;
 public class Room extends BasicEntity {
 	@Column
 	private boolean hasPerson = false;
+
 	@OneToOne(cascade = CascadeType.MERGE)
 	private MotionDetector motionDetector;
+
 	@OneToOne(cascade = CascadeType.MERGE)
 	private SmartLight smartLight;
+
 	@OneToOne(cascade = CascadeType.MERGE)
 	private SmartSpeaker smartSpeaker;
+
 	@ManyToOne
 	@JoinColumn(name = "building_fk")
 	private Building building;
@@ -44,10 +47,6 @@ public class Room extends BasicEntity {
 	public boolean hasPerson() {
 		return hasPerson;
 	}
-	public void setHasPerson(boolean hasPerson) {
-		this.hasPerson = hasPerson;
-	}
-
 	public MotionDetector getMotionDetector() {
 		return motionDetector;
 	}
