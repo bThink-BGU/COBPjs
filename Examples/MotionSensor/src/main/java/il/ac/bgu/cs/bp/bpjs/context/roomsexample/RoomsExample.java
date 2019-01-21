@@ -1,6 +1,11 @@
 package il.ac.bgu.cs.bp.bpjs.context.roomsexample;
 
+import java.security.cert.CollectionCertStoreParameters;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 import il.ac.bgu.cs.bp.bpjs.context.roomsexample.events.MotionDetectedEvent;
 import il.ac.bgu.cs.bp.bpjs.context.roomsexample.events.MotionStoppedEvent;
@@ -19,19 +24,14 @@ public class RoomsExample {
 
 		// Simulation of external events
 		Thread.sleep(1000);
-		List<Room> rooms = CTX.getContextsOfType("Room.findAll", Room.class);
+		Map<String, Room> rooms = CTX.getContextsOfType("Room.findAll", Room.class)
+				.stream().collect(Collectors.toMap(Room::getId, Function.identity()));
 
-		for (Room room : rooms) {
-			bprog.enqueueExternalEvent(new MotionDetectedEvent(((Room)room).getMotionDetector()));
-		}
-
+		bprog.enqueueExternalEvent(new MotionDetectedEvent((rooms.get("37/123").getMotionDetector())));
 		Thread.sleep(1000);
-
-		for (Room room : rooms) {
-			bprog.enqueueExternalEvent(new MotionStoppedEvent(((Room)room).getMotionDetector()));
-		}
+		bprog.enqueueExternalEvent(new MotionStoppedEvent(rooms.get("37/123").getMotionDetector()));
 		Thread.sleep(1000);
-
+		bprog.enqueueExternalEvent(new MotionDetectedEvent((rooms.get("37/123").getMotionDetector())));
 		//TODO: REMOVED
 		//CTX.close();
 	}

@@ -44,7 +44,7 @@ public class CTX {
 	}
 
 	public static BProgram run(String... programs) {
-		List<String> a = new ArrayList<>(List.of(programs));
+		List<String> a = new ArrayList<>(Arrays.asList(programs));
 		a.add(0,"context.js");
 		bprog = new ResourceBProgram(a);
 
