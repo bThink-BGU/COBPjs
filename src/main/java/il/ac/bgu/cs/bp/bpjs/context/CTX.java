@@ -4,8 +4,6 @@ import java.lang.reflect.Type;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.ThreadPoolExecutor;
-import java.util.function.Consumer;
 
 import javax.persistence.*;
 import javax.persistence.metamodel.IdentifiableType;
@@ -17,8 +15,6 @@ import il.ac.bgu.cs.bp.bpjs.model.BEvent;
 import il.ac.bgu.cs.bp.bpjs.model.BProgram;
 import il.ac.bgu.cs.bp.bpjs.model.ResourceBProgram;
 import il.ac.bgu.cs.bp.bpjs.model.eventsets.EventSet;
-import org.hibernate.internal.SessionFactoryImpl;
-import org.hibernate.query.spi.NamedQueryRepository;
 import org.mozilla.javascript.NativeFunction;
 
 public class CTX {
@@ -160,8 +156,8 @@ public class CTX {
 		contextTypes.add(newType);
 	}
 
-	public static void init() {
-		emf = Persistence.createEntityManagerFactory("ContextDB");
+	public static void init(String persistenceUnit) {
+		emf = Persistence.createEntityManagerFactory(persistenceUnit);
 		em = emf.createEntityManager();
 		HashMap<Class<?>, NamedQuery[]> queries = findAllNamedQueries(emf);
 		for(Map.Entry<Class<?>, NamedQuery[]> entry : queries.entrySet()) {
