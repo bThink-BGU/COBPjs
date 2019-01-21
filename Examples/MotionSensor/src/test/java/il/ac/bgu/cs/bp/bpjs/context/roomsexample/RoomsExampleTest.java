@@ -17,18 +17,24 @@ class RoomsExampleTest {
 
     @Test
     void run() throws InterruptedException {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        PrintStream ps = new PrintStream(baos);
-        PrintStream old = System.out;
-        System.setOut(ps);
+        ByteArrayOutputStream baosOut = new ByteArrayOutputStream();
+        ByteArrayOutputStream baosErr = new ByteArrayOutputStream();
+        PrintStream psOut = new PrintStream(baosOut);
+        PrintStream psErr = new PrintStream(baosErr);
+        PrintStream oldOut = System.out;
+        PrintStream oldErr = System.err;
+
+        System.setOut(psOut);
+        System.setErr(psErr);
         roomsExample.run("test_population_data.js", "test");
         System.out.flush();
-
-        System.setOut(old);
-        System.out.println(baos.toString());
+        System.err.flush();
+        System.setOut(oldOut);
+        System.setErr(oldErr);
+//        System.out.println(baosOut.toString());
 
         Pattern regex = Pattern.compile("(.*)Started\n(.*)",Pattern.DOTALL);
-        Matcher matcher = regex.matcher(baos.toString());
+        Matcher matcher = regex.matcher(baosOut.toString());
         System.out.println();
         System.out.println();
         System.out.println();
