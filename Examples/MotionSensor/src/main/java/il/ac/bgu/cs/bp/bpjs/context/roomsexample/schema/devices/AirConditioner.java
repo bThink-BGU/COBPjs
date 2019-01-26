@@ -24,19 +24,19 @@ public class AirConditioner extends BasicEntity {
 		return temprature;
 	}
 
-	public void setTemprature(int temprature) {
+	/*public void setTemprature(int temprature) {
 		this.temprature = temprature;
-	}
+	}*/
 
 	public boolean isTurnedOn() {
 		return turnedOn;
 	}
 
-	public void turnOn() {
+	/*public void turnOn() {
 		turnedOn = true;
-	}
+	}*/
 
-	public void turnOff() {
+	/*public void turnOff() {
 		turnedOn = false;
-	}
+	}*/
 }

@@ -1,9 +1,12 @@
 importPackage(Packages.il.ac.bgu.cs.bp.bpjs.context);
 
+var CTX = ContextService;
+var CTX_instance = CTX.getInstance();
+
 function subscribe(id, ctxName, func) { //TODO: Add  parameter "boolean applyToCurrentInstances" ?
     bp.registerBThread(id + "ListenerBT", function() {
         while (true) {
-            ctx = bp.sync({ waitFor:CTX.AnyNewContextEvent(ctxName), interrupt:CTX.UnsubscribeEvent(id) }).ctx;
+            var ctx = bp.sync({ waitFor:CTX.AnyNewContextEvent(ctxName), interrupt:CTX.UnsubscribeEvent(id) }).ctx;
             bp.registerBThread("handler '" + id + "' for a new context of type '" + ctxName + "'", function() {
                 func(ctx);
             });
@@ -18,7 +21,7 @@ CTX.subscribe = subscribe;
 bp.registerBThread("ContextReporterBT", function() {
     while (true) {
         // Trigger new context events
-        var events =CTX.getContextEvents();
+        var events =CTX_instance.getContextEvents();
         for (var i = 0, len = events.length; i < len; i++) {
             bp.sync({ request: events[i] });
         }
