@@ -5,8 +5,6 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import il.ac.bgu.cs.bp.bpjs.context.ContextService;
-import il.ac.bgu.cs.bp.bpjs.context.roomsexample.events.MotionDetectedEvent;
-import il.ac.bgu.cs.bp.bpjs.context.roomsexample.events.MotionStoppedEvent;
 import il.ac.bgu.cs.bp.bpjs.context.roomsexample.schema.rooms.Room;
 
 import il.ac.bgu.cs.bp.bpjs.model.BProgram;
@@ -24,11 +22,11 @@ public class RoomsExample {
 		Map<String, Room> rooms = contextService.<Room>getContextsOfType("Room")
 				.stream().collect(Collectors.toMap(Room::getId, Function.identity()));
 
-		bprog.enqueueExternalEvent(new MotionDetectedEvent((rooms.get("37/123").getMotionDetector())));
+		bprog.enqueueExternalEvent((rooms.get("37/123").getMotionDetector()).startedEvent());
 		Thread.sleep(1000);
-		bprog.enqueueExternalEvent(new MotionStoppedEvent(rooms.get("37/123").getMotionDetector()));
+		bprog.enqueueExternalEvent(rooms.get("37/123").getMotionDetector().stoppedEvent());
 		Thread.sleep(1000);
-		bprog.enqueueExternalEvent(new MotionDetectedEvent((rooms.get("37/123").getMotionDetector())));
+		bprog.enqueueExternalEvent(rooms.get("37/123").getMotionDetector().startedEvent());
 		//TODO: REMOVED
 		//ContextService.close();
 	}
