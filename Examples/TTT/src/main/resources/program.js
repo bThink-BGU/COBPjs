@@ -3,60 +3,6 @@ importPackage(Packages.il.ac.bgu.cs.bp.bpjs.context.examples.ttt.schema);
 
 bp.log.info('Tic-Tac-Toe - Let the game begin!');
 
-var context = {
-    cell: ['i','j','value'], // null or !null
-    playing: ['value'], //true or false
-    triple: ['cell0','cell1','cell2']
-};
-
-//#region QUERIES
-
-var Queries=[
-    {
-        name:"Empty Cells",
-        query: "select row,col from cell where value == null"
-    },
-    {
-        name:"NonEmpty Cells",
-        query: "select row,col from cell where value != null"
-    },
-    {
-        name:"Cells",
-        query: "select row,col from cell"
-    },
-    {
-        name:"Playing",
-        query: "select * from playing where value == true"
-    },
-    {
-        name:"End of Game",
-        query: "select * from playing where value == false"
-    },
-    {
-        name:"Triple",
-        query: "select * from triple"
-    }
-];
-
-//#endregion QUERIES
-
-//#region COMMANDS
-
-var Commands=[
-    {
-        name:"Mark Cell as non empty",
-        query:"update cell set value={2} where row={0} and col={1}",
-        params: {cell: ""}
-    },
-    {
-        name:"Finish the game",
-        query:"update playing set value={0}",
-        params: {value:""}
-    }
-];
-
-//#endregion COMMANDS
-
 // GameRules:
 
 //#region HELP FUNCTIONS
