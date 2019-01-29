@@ -10,10 +10,10 @@ import javax.persistence.*;
 
 @Entity
 @NamedQueries(value = {
-		@NamedQuery(name = "Room.findAll", query = "SELECT r FROM Room r"),
-		@NamedQuery(name = "Room.findAllNonEmpty", query = "SELECT r FROM Room r where r.hasPerson=true"),
-		@NamedQuery(name = "Room.markAsEmpty", query = "Update Room R set R.hasPerson=false where R=:room"),
-		@NamedQuery(name = "Room.markAsNonEmpty", query = "Update Room R set R.hasPerson=true where R=:room")
+		@NamedQuery(name = "Room", query = "SELECT r FROM Room r"),
+		@NamedQuery(name = "NonEmptyRoom", query = "SELECT r FROM Room r where r.hasPerson=true"),
+		@NamedQuery(name = "MarkRoomAsEmpty", query = "Update Room R set R.hasPerson=false where R=:room"),
+		@NamedQuery(name = "MarkRoomAsNonEmpty", query = "Update Room R set R.hasPerson=true where R=:room")
 })
 public class Room extends BasicEntity {
 	@Column

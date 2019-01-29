@@ -8,7 +8,7 @@ import javax.persistence.*;
 
 @Entity
 @NamedQueries(value = {
-        @NamedQuery(name = "Office.findAll", query = "SELECT o FROM Office o")
+        @NamedQuery(name = "Office", query = "SELECT o FROM Office o")
 })
 public class Office extends Room {
     @OneToOne(cascade = CascadeType.MERGE)

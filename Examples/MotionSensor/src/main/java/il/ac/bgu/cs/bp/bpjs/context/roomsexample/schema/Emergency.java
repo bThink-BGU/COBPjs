@@ -6,7 +6,7 @@ import javax.persistence.NamedQuery;
 
 @Entity
 @NamedQueries(value = {
-        @NamedQuery(name = "Emergency.findAll", query = "SELECT e FROM Emergency e")
+        @NamedQuery(name = "Emergency", query = "SELECT e FROM Emergency e")
 })
 public class Emergency extends BasicEntity {
     protected Emergency() {

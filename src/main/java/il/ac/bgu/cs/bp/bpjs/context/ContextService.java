@@ -1,6 +1,5 @@
 package il.ac.bgu.cs.bp.bpjs.context;
 
-import java.lang.reflect.Type;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -17,33 +16,43 @@ import il.ac.bgu.cs.bp.bpjs.model.ResourceBProgram;
 import il.ac.bgu.cs.bp.bpjs.model.eventsets.EventSet;
 import org.mozilla.javascript.NativeFunction;
 
-public class CTX {
+public class ContextService {
+	private static ContextService uniqInstance = new ContextService();
+	@SuppressWarnings("unused")
 	public static NativeFunction subscribe;
-	private static EntityManagerFactory emf;
-	private static EntityManager em;
-	private static ExecutorService pool;
-	private static BProgramRunner rnr;
-	private static BProgram bprog;
+	private EntityManagerFactory emf;
+	private EntityManager em;
+	private ExecutorService pool;
+	private BProgram bprog;
+	private List<CtxType> contextTypes = new LinkedList<>();
+	private BEvent[] contextEvents;
 
-	private static class CtxType<T> {
-		String name;
-		TypedQuery<T> query;
-		Class<T> cls;
-		List<T> activeContexts = new LinkedList<>();
+	private ContextService() {}
+
+	@SuppressWarnings("unused")
+	public static ContextService getInstance() {
+		return uniqInstance;
 	}
-	private static List<CtxType<?>> contextTypes = new LinkedList<>();
-	private static BEvent[] contextEvents;
 
-	public static void persistObjects(Object[] objects) {
+	private static class CtxType {
+		String name;
+		TypedQuery query;
+		Class cls;
+		List<?> activeContexts = new LinkedList<>();
+	}
+
+	private void persistObjects(Object ... objects) {
+		if(objects == null)
+			return;
 		em.getTransaction().begin();
 		for (Object o: objects) {
 			em.merge(o);
 		}
 		em.getTransaction().commit();
-		CTX.updateContexts();
+		updateContexts();
 	}
 
-	public static BProgram run(String... programs) {
+	public BProgram run(String... programs) {
 		List<String> a = new ArrayList<>(Arrays.asList(programs));
 		a.add(0,"context.js");
 		bprog = new ResourceBProgram(a);
@@ -54,17 +63,18 @@ public class CTX {
 		bprog.setEventSelectionStrategy(eventSelectionStrategy);
 
 		bprog.setWaitForExternalEvents(true);
-		rnr = new BProgramRunner(bprog);
+		BProgramRunner rnr = new BProgramRunner(bprog);
 		rnr.addListener(new PrintBProgramRunnerListener());
-		rnr.addListener(new DBActuator(em));
+		rnr.addListener(new DBActuator());
 
-		pool = Executors.newFixedThreadPool(2);
+		pool = Executors.newCachedThreadPool();
 		pool.execute(rnr);
 		pool.execute(new Runnable() {
 			private int tick = 0;
 			@Override
 			public void run() {
 				try {
+					//noinspection InfiniteLoopStatement
 					while(true) {
 						Thread.sleep(1000);
 						bprog.enqueueExternalEvent(new TickEvent(++tick));
@@ -78,61 +88,59 @@ public class CTX {
 	}
 
 	// Produce context update events to be triggered after each update event
-	public static void updateContexts() {
-		Set<BEvent> events = new HashSet<BEvent>();
-
-		for (CtxType ctxType : contextTypes) {
+	private void updateContexts() {
+		Set<BEvent> events = new HashSet<>();
+		contextTypes.forEach(ctxType -> {
 			// Remember the list of contexts that we already reported of
-			List<?> knownContexts = new LinkedList<Object>(ctxType.activeContexts);
-
+			List<?> knownContexts = new LinkedList<>(ctxType.activeContexts);
 			// Update the list of contexts
 			ctxType.activeContexts = ctxType.query.getResultList();
-
 			// Filter the contexts that we didn't yet report of
-			List<Object> newContexts = new LinkedList<Object>(ctxType.activeContexts);
-			newContexts.removeAll(knownContexts);
-
-			newContexts.stream().map(obj -> new NewContextEvent(ctxType.name, obj)).forEach(e -> events.add(e));
-
+			List<?> newContexts = new LinkedList<>(ctxType.activeContexts);
+            //noinspection SuspiciousMethodCalls
+            newContexts.removeAll(knownContexts);
 			// Compute the contexts that where just removed
+			newContexts.stream().map(obj -> new NewContextEvent(ctxType.name, obj)).forEach(events::add);
+			//noinspection SuspiciousMethodCalls
 			knownContexts.removeAll(ctxType.activeContexts);
-
-			knownContexts.stream().map(obj -> new ContextEndedEvent(ctxType.name, obj)).forEach(e -> events.add(e));
-		}
-
-		contextEvents = events.stream().toArray(BEvent[]::new);
+			knownContexts.stream().map(obj -> new ContextEndedEvent(ctxType.name, obj)).forEach(events::add);
+		});
+		contextEvents = events.toArray(new BEvent[0]);
 	}
 
 	// Produce context update events to be triggered after each update event
-	public static BEvent[] getContextEvents() {
+	@SuppressWarnings("unused")
+	public BEvent[] getContextEvents() {
 		return contextEvents;
 	}
 
-	public static Object[] getContextsOfType(String type) {
+	/*public Object[] getContextsOfType(String type) {
 		for (CtxType ct : contextTypes) {
 			if (ct.name.equals(type)) {
-				return ct.activeContexts.stream().toArray(Object[]::new);
+				return ct.activeContexts.toArray();
+			}
+		}
+		return null;
+	}*/
+
+	public <T> List<T> getContextsOfType(String type) {
+		for (CtxType ct : contextTypes) {
+			if (ct.name.equals(type)) {
+				@SuppressWarnings("unchecked")
+				List<T> l =  (List<T>) ct.activeContexts;
+				return l;
 			}
 		}
 		return null;
 	}
 
-	public static <T> List<T> getContextsOfType(String type, Class<T> clz) {
-		for (CtxType ct : contextTypes) {
-			if (ct.name.equals(type)) {
-				return ct.activeContexts;
-			}
-		}
-		return null;
-	}
-
-	private static HashMap<Class<?>, NamedQuery[]> findAllNamedQueries(EntityManagerFactory emf) {
+	private HashMap<Class<?>, NamedQuery[]> findAllNamedQueries(EntityManagerFactory emf) {
 		HashMap<Class<?>, NamedQuery[]> allNamedQueries = new HashMap<>();
 		Set<ManagedType<?>> managedTypes = emf.getMetamodel().getManagedTypes();
 		for (ManagedType<?> managedType: managedTypes) {
 			if (managedType instanceof IdentifiableType) {
-				@SuppressWarnings("rawtypes")
 //				Class<? extends ManagedType> identifiableTypeClass = managedType.getClass();
+//				@SuppressWarnings("rawtypes")
 				Class<?> javaClass = managedType.getJavaType();
 				NamedQueries namedQueries = javaClass.getAnnotation(NamedQueries.class);
 				if (namedQueries != null) {
@@ -148,43 +156,42 @@ public class CTX {
 		return allNamedQueries;
 	}
 
-	private static <T> void registerContextQuery(String name, TypedQuery<T> query, Class<T> cls) {
-		CtxType<T> newType = new CtxType<>();
+	private void registerContextQuery(String name, TypedQuery<?> query, Class<?> cls) {
+		CtxType newType = new CtxType();
 		newType.name = name;
 		newType.cls = cls;
 		newType.query = query;
 		contextTypes.add(newType);
 	}
 
-	public static void init(String persistenceUnit) {
+	public void init(String persistenceUnit) {
 		emf = Persistence.createEntityManagerFactory(persistenceUnit);
 		em = emf.createEntityManager();
 		HashMap<Class<?>, NamedQuery[]> queries = findAllNamedQueries(emf);
 		for(Map.Entry<Class<?>, NamedQuery[]> entry : queries.entrySet()) {
 			Class<?> key = entry.getKey();
-			Type p = key.getGenericSuperclass();
 			for (NamedQuery nq : entry.getValue()) {
 				try {
 					TypedQuery q = em.createNamedQuery(nq.name(), key);
 					registerContextQuery(nq.name(), q, key);
-				} catch (Exception e) {
-
-				}
+				} catch (Exception ignored) { }
 			}
 		}
 		updateContexts();
 	}
 
-	public static void close() {
+	@SuppressWarnings("unused")
+	public void close() {
+		pool.shutdown();
 		em.close();
 		emf.close();
 	}
 
 	//region Internal Events
+	@SuppressWarnings("WeakerAccess")
 	public static class NewContextEvent extends BEvent {
-		public String contextName;
-		public Object ctx;
-		public int col;
+		public final String contextName;
+		public final Object ctx;
 
 		public NewContextEvent(String contextName, Object ctx) {
 			super("NewContextEvent(" + contextName + "," + ctx + ")");
@@ -193,6 +200,7 @@ public class CTX {
 		}
 	}
 
+	@SuppressWarnings("WeakerAccess")
 	public static class ContextEndedEvent extends BEvent {
 		public String contextName;
 		public Object ctx;
@@ -204,30 +212,53 @@ public class CTX {
 		}
 	}
 
+	@SuppressWarnings("WeakerAccess")
 	public static class InsertEvent extends BEvent {
 		public final Object[] persistObjects;
 
 		public InsertEvent(Object ... persistObjects) {
-			super("InsertEvent(" + persistObjects + ")");
+			super("InsertEvent(" + Arrays.toString(persistObjects) + ")");
 			this.persistObjects = persistObjects;
+		}
+
+		void execute() {
+		 	getInstance().persistObjects(persistObjects);
 		}
 	}
 
+	@SuppressWarnings("WeakerAccess")
 	public static class UpdateEvent extends BEvent {
 		public final String query;
-		public Map<String, Object> parameters;
+		public final Map<String, Object> parameters;
 
 		public UpdateEvent(String query, Map<String, Object> parameters) {
 			super("UpdateEvent(" + query + "," + parameters.entrySet() + ")");
 			this.query = query;
-			this.parameters = parameters;
+			this.parameters = Collections.unmodifiableMap(parameters);
 		}
 
+		@SuppressWarnings("unused")
 		public UpdateEvent(String query) {
-			this(query, new HashMap<String, Object>());
+			this(query, new HashMap<>());
+		}
+
+		void execute() {
+			EntityManager em = getInstance().em;
+			Query namedQuery = em.createNamedQuery(query);
+
+			for (Map.Entry<String, Object> e : parameters.entrySet()) {
+				namedQuery.setParameter(e.getKey(), e.getValue());
+			}
+
+			em.getTransaction().begin();
+			namedQuery.executeUpdate();
+			em.getTransaction().commit();
+
+			getInstance().updateContexts();
 		}
 	}
 
+	@SuppressWarnings("unused")
 	public static class UnsubscribeEvent extends BEvent {
 		public final String id;
 
@@ -236,6 +267,7 @@ public class CTX {
 			this.id = id;
 		}
 	}
+	@SuppressWarnings("WeakerAccess")
 	public static class TickEvent extends BEvent {
 		public final int tick;
 		public TickEvent(int tick) {
@@ -250,8 +282,9 @@ public class CTX {
 	//endregion
 
 	//region Internal EventSets
+	@SuppressWarnings({"WeakerAccess","unused"})
 	public static class AnyNewContextEvent implements EventSet {
-		public String contextName;
+		public final String contextName;
 
 		public AnyNewContextEvent(String contextName) {
 			super();
@@ -264,6 +297,7 @@ public class CTX {
 		}
 	}
 
+	@SuppressWarnings("unused")
 	public static class AnyUpdateContextDBEvent implements EventSet {
 		@Override
 		public boolean contains(BEvent event) {
@@ -271,6 +305,7 @@ public class CTX {
 		}
 	}
 
+	@SuppressWarnings("unused")
 	public static class AnyTickEvent implements EventSet {
 		@Override
 		public boolean contains(BEvent event) {
