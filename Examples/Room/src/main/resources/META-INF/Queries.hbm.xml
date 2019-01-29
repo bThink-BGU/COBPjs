@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<entity-mappings xmlns="http://java.sun.com/xml/ns/persistence/orm"
+        version="2.0">
+
+    <!--<named-query name="Room">
+        <query>SELECT r FROM Room r</query>
+    </named-query> 
+    <named-query name="Nonempty Room">
+        <query>SELECT r FROM Room r where r.hasPerson=true</query>
+    </named-query>
+    <named-query name="Office">
+        <query>SELECT o FROM Office o</query>
+    </named-query>
+    <named-query name="Cell">
+        <query>SELECT e FROM Cell e</query>
+    </named-query>-->
+
+</entity-mappings>
