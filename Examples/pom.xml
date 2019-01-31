@@ -14,7 +14,7 @@
     <name>Examples</name>
 
     <modules>
-        <module>MotionSensor</module>
+        <module>Room</module>
         <module>TTT</module>
     </modules>
 
