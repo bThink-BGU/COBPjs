@@ -26,7 +26,7 @@ class MainTest {
 
         System.setOut(psOut);
         System.setErr(psErr);
-        main.run("test_population_data.js", "Room-test");
+        main.run("test_population_data.js", "ContextDB-Test");
         System.out.flush();
         System.err.flush();
         System.setOut(oldOut);

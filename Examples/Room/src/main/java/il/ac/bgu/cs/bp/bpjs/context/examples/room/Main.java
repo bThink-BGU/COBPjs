@@ -33,6 +33,6 @@ public class Main {
 
 
 	public static void main(String[] args) throws InterruptedException {
-		new Main().run("db_population.js", "Room-ContextDB");
+		new Main().run("db_population.js", "ContextDB");
 	}
 }
