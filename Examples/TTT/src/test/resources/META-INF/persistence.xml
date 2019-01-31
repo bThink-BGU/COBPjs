@@ -3,6 +3,7 @@
 
     <persistence-unit name="ContextDB-Test" transaction-type="RESOURCE_LOCAL">
         <provider>org.hibernate.jpa.HibernatePersistenceProvider</provider>
+        <!--suppress JpaDomInspection -->
         <jar-file>${project.build.outputDirectory}</jar-file>
         <shared-cache-mode>NONE</shared-cache-mode>
         <properties>
