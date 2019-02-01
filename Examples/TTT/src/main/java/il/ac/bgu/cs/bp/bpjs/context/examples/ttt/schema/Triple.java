@@ -3,15 +3,15 @@ package il.ac.bgu.cs.bp.bpjs.context.examples.ttt.schema;
 import javax.persistence.*;
 
 @Entity
-//@NamedQueries(value = {
-//        @NamedQuery(name = "Triple", query = "SELECT t FROM Triple t")
-//})
+@NamedQueries(value = {
+        @NamedQuery(name = "Triple", query = "SELECT t FROM Triple t")
+})
 public class Triple extends BasicEntity {
-    @Column
+    @OneToOne(cascade = CascadeType.MERGE)
     public final Cell cell1;
-    @Column
+    @OneToOne(cascade = CascadeType.MERGE)
     public final Cell cell2;
-    @Column
+    @OneToOne(cascade = CascadeType.MERGE)
     public final Cell cell3;
 
     protected Triple() {

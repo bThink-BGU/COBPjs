@@ -1,26 +1,26 @@
 bp.registerBThread("PopulateDB", function() {
-    var cells = [];
+    var board = [];
     var triples = [];
 
     for(var i=0; i<3; i++){
-        var t = [];
+        var row = [];
         for(var j=0; j<3; j++){
             var cell = new Cell(i,j);
-            t.push(cell);
+            row.push(cell);
         }
-        cells.push(t);
+        board.push(row);
     }
 
     var diag1= [];
     var diag2= [];
     for(var i=0; i<3; i++) {
-        diag1.push(cells[i][i]);
-        diag2.push(cells[i][2-i]);
+        diag1.push(board[i][i]);
+        diag2.push(board[i][2-i]);
         var row = [];
         var col = [];
         for (var j = 0; j < 3; j++) {
-            row.push(cells[i][j]);
-            col.push(cells[j][i]);
+            row.push(board[i][j]);
+            col.push(board[j][i]);
         }
         triples.push(new Triple("row_"+i, row));
         triples.push(new Triple("col_"+i, col));
@@ -28,6 +28,9 @@ bp.registerBThread("PopulateDB", function() {
     triples.push(new Triple("diag_1", diag1));
     triples.push(new Triple("diag_2", diag2));
 
-    //bp.sync({ request: CTX.InsertEvent(cells) });
-    //bp.sync({ request: CTX.InsertEvent(triples) });
+    // flattening board
+    var cells = [].concat.apply([], board);
+
+    bp.sync({ request: CTX.InsertEvent(cells) });
+    bp.sync({ request: CTX.InsertEvent(triples) });
 });
