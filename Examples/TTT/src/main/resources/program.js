@@ -3,8 +3,6 @@ importPackage(Packages.il.ac.bgu.cs.bp.bpjs.context.examples.ttt.schema);
 
 bp.log.info('Tic-Tac-Toe - Let the game begin!');
 
-// GameRules:
-
 //#region HELP FUNCTIONS
 function createEvent(name, c) {
     return bp.Event(name,"{Cell:"+c+"}")
@@ -16,10 +14,10 @@ function createEvent(name, c) {
 var move = bp.EventSet("Move events", function(e) {
     return e.name === 'O' || e.name === 'X';
 });
-var turnX = bp.EventSet("turnX", function(e) {
+var XEvents = bp.EventSet("XEvents", function(e) {
     return e.name == 'X';
 });
-var turnO = bp.EventSet("turnO", function(e) {
+var OEvents = bp.EventSet("OEvents", function(e) {
     return e.name == 'O' ;
 });
 var EndGame = bp.EventSet("EndGame", function(e) {
@@ -28,8 +26,7 @@ var EndGame = bp.EventSet("EndGame", function(e) {
 //#endregion EventSets
 
 //#region CEll BEHAVIORS
-
-CTX.subscribe("ClickHandler","Cells", function(c) {
+CTX.subscribe("ClickHandler","Cell", function(c) {
     while (true) {
         bp.sync({ waitFor:[ createEvent('Click', c) ] });
         bp.sync({ request:[ createEvent('X', c) ] });
@@ -37,44 +34,39 @@ CTX.subscribe("ClickHandler","Cells", function(c) {
 });
 
 //detect black cell , white cell - query name
-CTX.subscribe("detect black cell","Empty Cells",function(c) { //select * from cell where value == null
-    bp.sync({ waitFor:[ createEvent('X', c), createEvent('O',c)] });
-    CTX.UpdateEvent("mark cell as non empty",{cell:c });
+CTX.subscribe("Update cell upon X or O", "EmptyCell", function(c) {
+    var e = bp.sync({ waitFor:[ createEvent('X', c), createEvent('O',c)] });
+    bp.sync({ request: CTX.UpdateEvent("UpdateCell", {cell: c, val: e.name}) });
 });
 
-//block X,O on black cell
-CTX.subscribe("block X,O on black cell","NonEmpty Cells",function(c) { //select * from cell where value != null
+//block X,O on nonempty cell
+CTX.subscribe("block X,O on nonempty cell","NonEmptyCell",function(c) {
     bp.sync({ block:[ createEvent('X', c), createEvent('O',c) ] });
 });
-
 //endregion CEll BEHAVIORS
 
-//#region ENFORCE TURNS
-CTX.subscribe("EnforceTurns", function() {
+//#region GAME RULES
+bp.registerBThread("EnforceTurns", function() {
     while (true) {
         bp.sync({
-            waitFor: turnX,
-            block: turnO
+            waitFor: XEvents,
+            block: OEvents
         });
         bp.sync({
-            waitFor: turnO,
-            block: turnX
+            waitFor: OEvents,
+            block: XEvents
         });
     }
 });
 
-//#endregion ENFORCE TURNS
-
-//#region GAME RULES
-
 // Represents when the game ends
-CTX.subscribe("block all cells","",function() { //select * from playing where value == false
+bp.registerBThread("block X or O on endgame", function() {
     bp.sync({ waitFor:EndGame });
-    bp.sync({ block:[ turnX, turnO] });
+    bp.sync({ block:[ XEvents, OEvents] });
 });
 
 // Represents when it is a draw
-CTX.subscribe("DetectDraw", function() {
+bp.registerBThread("DetectDraw", function() {
     // For debug
     bp.sync({ waitFor: move });
     bp.sync({ waitFor: move });
@@ -96,11 +88,8 @@ CTX.subscribe("DetectDraw", function() {
 //#endregion GAME RULES
 
 //#region TRIPLE BEHAVIORS
-
 // Represents when X wins
-//bp.registerBThread("DetectXWin","Triple",interrupt:endgame, function(t) {
-//bp.registerBThread("DetectXWin",["Triple","Playing"], function(t) {
-CTX.subscribe("DetectXWin","Triple",function(t) {
+CTX.subscribe("DetectXWin", "Triple", function(t) {
     for (var c = 0; c < 3; c++) {
         bp.sync({ waitFor:[ createEvent('X', t.cell0), createEvent('X', t.cell1), createEvent('X', t.cell2) ] });
     }
@@ -108,7 +97,7 @@ CTX.subscribe("DetectXWin","Triple",function(t) {
 });
 
 // Represents when O wins
-CTX.subscribe("DetectOWin","Triple",function(t) {
+CTX.subscribe("DetectOWin", "Triple", function(t) {
     for (var c = 0; c < 3; c++) {
         bp.sync({ waitFor:[ createEvent('O', t.cell0), createEvent('O', t.cell1), createEvent('O', t.cell2) ] });
     }
@@ -116,88 +105,86 @@ CTX.subscribe("DetectOWin","Triple",function(t) {
 });
 
 // Player O strategy to add a the third O to win
-CTX.subscribe("AddThirdO","Triple",function(t) {
+CTX.subscribe("AddThirdO", "Triple", function(t) {
     bp.sync({ waitFor:[ createEvent('O', t.cell0), createEvent('O', t.cell1), createEvent('O', t.cell2) ] });
     bp.sync({ waitFor:[ createEvent('O', t.cell0), createEvent('O', t.cell1), createEvent('O', t.cell2) ] });
     bp.sync({ request: [ createEvent('O', t.cell0), createEvent('O', t.cell1), createEvent('O', t.cell2) ] }, 50);
 });
 
 // Player O strategy to prevent the third X of player X
-CTX.subscribe("PreventThirdX","Triple",function(t) {
+CTX.subscribe("PreventThirdX", "Triple", function(t) {
     bp.sync({ waitFor:[ createEvent('X', t.cell0), createEvent('X', t.cell1), createEvent('X', t.cell2) ] });
     bp.sync({ waitFor:[ createEvent('X', t.cell0), createEvent('X', t.cell1), createEvent('X', t.cell2) ] });
     bp.sync({ request: [ createEvent('O', t.cell0), createEvent('O', t.cell1), createEvent('O', t.cell2) ] }, 40);
 });
-
 //#endregion TRIPLE BEHAVIORS
 
 //#region PLAYER O STRATEGY
-
 // Player O strategy to prevent the Fork22 of player X
 function addFork22PermutationBthreads(c1,c2){ //
-    CTX.subscribe("PreventFork22X", function() {
+    bp.registerBThread("PreventFork22X", function() {
         bp.sync({ waitFor:[ createEvent('X',c1) ] });
         bp.sync({ waitFor:[ createEvent('X',c2) ] });
-        bp.sync({ request:[ createEvent('O',{x:2,y:2}),createEvent('O',{x:0,y:2}), createEvent('O',{x:2,y:0})]}, 30);
+        bp.sync({ request:[ createEvent('O',board[2][2]),createEvent('O',board[0,2]), createEvent('O',board[2,0])]}, 30);
     });
 }
 
 // Player O strategy to prevent the Fork02 of player X
 function addFork02PermutationBthreads(c1,c2){ //
-    CTX.subscribe("PreventFork02X", function() {
+    bp.registerBThread("PreventFork02X", function() {
         bp.sync({ waitFor:[ createEvent('X',c1) ] });
         bp.sync({ waitFor:[ createEvent('X',c2) ] });
-        bp.sync({ request:[ createEvent('O',{x:0,y:2}),createEvent('O',{x:0,y:0}), createEvent('O',{x:2,y:2})]}, 30);
+        bp.sync({ request:[ createEvent('O',board[0,2]),createEvent('O',board[0,0]), createEvent('O',board[2,2])]}, 30);
     });
 }
 
 // Player O strategy to prevent the Fork20 of player X
 function addFork20PermutationBthreads(c1,c2){ //
-    CTX.subscribe("PreventFork20X", function() {
+    bp.registerBThread("PreventFork20X", function() {
         bp.sync({ waitFor:[ createEvent('X',c1) ] });
         bp.sync({ waitFor:[ createEvent('X',c2) ] });
-        bp.sync({ request:[ createEvent('O',{x:2,y:0}),createEvent('O',{x:0,y:0}), createEvent('O',{x:2,y:2})] }, 30);
+        bp.sync({ request:[ createEvent('O',board[2,0]),createEvent('O',board[0,0]), createEvent('O',board[2,2])] }, 30);
     });
 }
 
 // Player O strategy to prevent the Fork00 of player X
 function addFork00PermutationBthreads(c1,c2){ //
-    CTX.subscribe("PreventFork20X", function() {
+    bp.registerBThread("PreventFork20X", function() {
         bp.sync({ waitFor:[ createEvent('X',c1) ] });
         bp.sync({ waitFor:[ createEvent('X',c2) ] });
-        bp.sync({ request:[ createEvent('O',{x:0,y:0}),createEvent('O', {x:0,y:2}), createEvent('O',{x:2,y:0})] }, 30);
+        bp.sync({ request:[ createEvent('O',board[0,0]),createEvent('O', board[0,2]), createEvent('O',board[2,0])] }, 30);
     });
 }
 
 // Player O strategy to prevent the Forkdiagonal of player X
 function addForkdiagPermutationBthreads(c1,c2){ //
-    CTX.subscribe("PreventForkdiagX", function() {
+    bp.registerBThread("PreventForkdiagX", function() {
         bp.sync({ waitFor:[ createEvent('X',c1) ] });
         bp.sync({ waitFor:[ createEvent('X',c2) ] });
-        bp.sync({ request:[ createEvent('O', {x:0,y:1}),createEvent('O',{x:1,y:0}), reateEvent('O', {x:2,y:1}), createEvent('O', {x:1,y:2}) ] }, 30);
+        bp.sync({ request:[ createEvent('O', board[0,1]),createEvent('O',board[1,0]), reateEvent('O', board[2,1]), createEvent('O', board[1,2]) ] }, 30);
     });
 }
 
 // Preference to put O on the center
 bp.registerBThread("Center", function() {
     while (true) {
-        bp.sync({ request:[ createEvent('O', {x:1,y:1}) ] }, 35);
+        bp.sync({ request:[ createEvent('O', board[1,1]) ] }, 35);
     }
 });
 
 // Preference to put O on the corners
 bp.registerBThread("Corners", function() {
     while (true) {
-        bp.sync({ request:[ createEvent('O',{x:0,y:0}),createEvent('O',{x:0,y:2}),
-                createEvent('O', {x:2,y:0}), createEvent('O', {x:2,y:2}) ] }, 20);
+        bp.sync({ request:[ createEvent('O',board[0,0]),createEvent('O',board[0,2]),
+                createEvent('O', board[2,0]), createEvent('O', board[2,2]) ] }, 20);
     }
 });
 
 // Preference to put O on the sides
 bp.registerBThread("Sides", function() {
     while (true) {
-        bp.sync({ request:[ createEvent('O', {x:0,y:1}),createEvent('O', {x:1,y:0}),
-                createEvent('O',{x:2,y:1}), createEvent('O',{x:1,y:2}) ] }, 10);
+        bp.sync({ request:[ createEvent('O', board[0,1]),createEvent('O', board[1,0]),
+                createEvent('O',board[2,1]), createEvent('O',board[1,2]) ] }, 10);
     }
 });
 
@@ -240,24 +227,3 @@ forksdiag.forEach(function(f) {
     });
 });
 //#endregion PLAYER O STRATEGY
-
-//#region CONTEXT POPULATION
-
-// ADD CELLS
-for (var r = 0; r < 3; r++) {
-    for (var c = 0; c < 3; c++) {
-        //CTX.update('Add Cell', {i: r, j: c, value:null});
-        bp.sync({ request:UpdateContexDBEvent("Add Cell").parameters({i: r, j: c, value:null}) });
-    }
-}
-
-// ADD TRIPLE
-for (var c = 0; c < 3; c++) {
-    //CTX.update('Add Cell', {i: r, j: c, value:null});
-    bp.sync({ request:UpdateContexDBEvent("Add Triple").parameters({cell0: {x:c,y:0}, cell1: {x:c,y:1}, cell2:{x:c,y:2}})});
-    bp.sync({ request:UpdateContexDBEvent("Add Triple").parameters({cell0: {x:0,y:c}, cell1: {x:1,y:c}, cell2:{x:2,y:c}})});
-}
-bp.sync({ request:UpdateContexDBEvent("Add Triple").parameters({cell0: {x:0,y:0}, cell1: {x:1,y:1}, cell2:{x:2,y:2}}) });
-bp.sync({ request:UpdateContexDBEvent("Add Triple").parameters({cell0: {x:2,y:0}, cell1: {x:1,y:1}, cell2:{x:0,y:2}}) });
-
-//#endregion CONTEXT POPULATION
