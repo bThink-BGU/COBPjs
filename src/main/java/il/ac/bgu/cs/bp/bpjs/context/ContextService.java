@@ -69,7 +69,7 @@ public class ContextService {
 
 		pool = Executors.newCachedThreadPool();
 		pool.execute(rnr);
-		pool.execute(new Runnable() {
+		pool.execute(new Runnable() { //TODO: extract Ticker
 			private int tick = 0;
 			@Override
 			public void run() {
