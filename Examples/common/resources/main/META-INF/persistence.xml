@@ -3,14 +3,11 @@
 
     <persistence-unit name="ContextDB">
         <provider>org.hibernate.jpa.HibernatePersistenceProvider</provider>
-        <mapping-file>META-INF/EntitiesMapping.hbm.xml</mapping-file>
-        <mapping-file>META-INF/Queries.hbm.xml</mapping-file>
-        <mapping-file>META-INF/Commands.hbm.xml</mapping-file>
         <shared-cache-mode>NONE</shared-cache-mode>
         <properties>
             <!-- SQLite configuration -->
             <!--<property name="hibernate.connection.url" value="jdbc:sqlite::memory:"/>-->
-            <property name="hibernate.connection.url" value="jdbc:sqlite:${project.basedir}/src/main/resources/META-INF/context.db"/>
+            <property name="hibernate.connection.url" value="jdbc:sqlite:${project.basedir}/src/main/resources/context.db"/>
             <property name="hibernate.dialect" value="org.hibernate.dialect.SQLiteDialect" />
             <property name="hibernate.connection.driver_class" value="org.sqlite.JDBC"/>
             <property name="hibernate.connection.username" value=""/>

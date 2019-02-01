@@ -26,7 +26,7 @@ class MainTest {
 
         System.setOut(psOut);
         System.setErr(psErr);
-        tttExample.run("test_population_data.js", "test");
+        tttExample.run("test_population_data.js", "ContextDB-Test");
         System.out.flush();
         System.err.flush();
         System.setOut(oldOut);
