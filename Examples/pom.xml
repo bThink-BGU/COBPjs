@@ -6,7 +6,7 @@
 
     <groupId>com.github.bthink-bgu</groupId>
     <artifactId>BPjs-Context-Examples</artifactId>
-    <version>0.3</version>
+    <version>v0.3-alpha</version>
     <name>Examples</name>
     <packaging>pom</packaging>
 
