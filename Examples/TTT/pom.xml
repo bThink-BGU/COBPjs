@@ -12,17 +12,18 @@
     <artifactId>BPjs.Context.Examples.TTT</artifactId>
     <version>0.5</version>
     <name>Tic-Tac-Toe Example</name>
+    <packaging>jar</packaging>
 
     <properties>
         <exec.mainClass>il.ac.bgu.cs.bp.bpjs.context.examples.ttt.Main</exec.mainClass>
     </properties>
 
-    <dependencies>
-        <dependency>
-            <groupId>com.github.bthink-bgu</groupId>
-            <artifactId>BPjs.Context.Examples</artifactId>
-            <version>0.5</version>
-            <scope>pom</scope>
-        </dependency>
-    </dependencies>
+    <!--<dependencies>-->
+        <!--<dependency>-->
+            <!--<groupId>com.github.bthink-bgu</groupId>-->
+            <!--<artifactId>BPjs.Context.Examples</artifactId>-->
+            <!--<version>0.5</version>-->
+            <!--<scope>pom</scope>-->
+        <!--</dependency>-->
+    <!--</dependencies>-->
 </project>

@@ -6,10 +6,13 @@ var CTX_instance = CTX.getInstance();
 function subscribe(id, ctxName, func) { //TODO: Add  parameter "boolean applyToCurrentInstances" ?
     bp.registerBThread(id + "ListenerBT", function() {
         while (true) {
-            var ctx = bp.sync({ waitFor:CTX.AnyNewContextEvent(ctxName), interrupt:CTX.UnsubscribeEvent(id) }).ctx;
-            bp.registerBThread("handler '" + id + "' for a new context of type '" + ctxName + "'", function() {
-                func(ctx);
-            });
+            // Wrapping body with a function to avoid "Referencing mutable variable from closure"
+            (function () {
+                var ctx = bp.sync({ waitFor:CTX.AnyNewContextEvent(ctxName), interrupt:CTX.UnsubscribeEvent(id) }).ctx;
+                bp.registerBThread("handler '" + id + "' for a new context of type '" + ctxName + "'", function() {
+                    func(ctx);
+                });
+            })();
         }
     });
     return id;

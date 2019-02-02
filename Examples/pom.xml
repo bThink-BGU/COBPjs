@@ -16,7 +16,6 @@
         <exec.mainClass>should be filled in child module</exec.mainClass>
     </properties>
 
-
     <modules>
         <module>Room</module>
         <module>TTT</module>
@@ -25,9 +24,9 @@
     <dependencies>
         <dependency>
             <groupId>com.github.bthink-bgu</groupId>
-            <artifactId>BPjs.Context</artifactId>
+            <artifactId>BPjs.Context.Core</artifactId>
             <version>0.5</version>
-            <scope>compile</scope>
+            <!--<scope>compile</scope>-->
         </dependency>
 
         <dependency>

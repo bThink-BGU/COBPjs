@@ -12,19 +12,20 @@
     <artifactId>BPjs.Context.Examples.Room</artifactId>
     <version>0.5</version>
     <name>Room Example</name>
+    <packaging>jar</packaging>
 
     <properties>
         <exec.mainClass>il.ac.bgu.cs.bp.bpjs.context.examples.room.Main</exec.mainClass>
     </properties>
 
-    <dependencies>
-        <dependency>
-            <groupId>com.github.bthink-bgu</groupId>
-            <artifactId>BPjs.Context.Examples</artifactId>
-            <version>0.5</version>
-            <scope>pom</scope>
-        </dependency>
-    </dependencies>
+    <!--<dependencies>-->
+        <!--<dependency>-->
+            <!--<groupId>com.github.bthink-bgu</groupId>-->
+            <!--<artifactId>BPjs.Context.Examples</artifactId>-->
+            <!--<version>0.5</version>-->
+            <!--<scope>pom</scope>-->
+        <!--</dependency>-->
+    <!--</dependencies>-->
 </project>
 
 
