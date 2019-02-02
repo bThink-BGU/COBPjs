@@ -5,9 +5,9 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>com.github.bthink-bgu</groupId>
-    <artifactId>BPjs.Context.Examples</artifactId>
+    <artifactId>BPjs-Context-Examples</artifactId>
+    <version>0.3</version>
     <name>Examples</name>
-    <version>0.5</version>
     <packaging>pom</packaging>
 
     <properties>

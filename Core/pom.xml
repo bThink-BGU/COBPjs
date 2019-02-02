@@ -5,9 +5,9 @@
 	<modelVersion>4.0.0</modelVersion>
 
 	<groupId>com.github.bthink-bgu</groupId>
-	<artifactId>BPjs.Context.Core</artifactId>
+	<artifactId>BPjs-Context-Core</artifactId>
 	<name>Core</name>
-	<version>0.5</version>
+	<version>0.3</version>
 	<packaging>jar</packaging>
 
 	<properties>
