@@ -15,6 +15,7 @@ public class Main {
 
 		ContextService contextService = ContextService.getInstance();
 		contextService.init(persistenceUnit);
+		contextService.enableTicker();
 		BProgram bprog = contextService.run(dbPopulationScript, "program.js");
 
 		// Simulation of external events

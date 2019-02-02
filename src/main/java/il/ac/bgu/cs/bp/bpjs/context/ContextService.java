@@ -27,7 +27,9 @@ public class ContextService {
 	private List<CtxType> contextTypes = new LinkedList<>();
 	private BEvent[] contextEvents;
 
-	private ContextService() {}
+	private ContextService() {
+		pool = Executors.newCachedThreadPool();
+	}
 
 	@SuppressWarnings("unused")
 	public static ContextService getInstance() {
@@ -52,6 +54,24 @@ public class ContextService {
 		updateContexts();
 	}
 
+	public void enableTicker() {
+		pool.execute(new Runnable() {
+			private int tick = 0;
+			@Override
+			public void run() {
+				try {
+					//noinspection InfiniteLoopStatement
+					while(true) {
+						Thread.sleep(1000);
+						bprog.enqueueExternalEvent(new TickEvent(++tick));
+					}
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}
+			}
+		});
+	}
+
 	public BProgram run(String... programs) {
 		List<String> a = new ArrayList<>(Arrays.asList(programs));
 		a.add(0,"context.js");
@@ -67,23 +87,7 @@ public class ContextService {
 		rnr.addListener(new PrintBProgramRunnerListener());
 		rnr.addListener(new DBActuator());
 
-		pool = Executors.newCachedThreadPool();
 		pool.execute(rnr);
-		pool.execute(new Runnable() { //TODO: extract Ticker
-			private int tick = 0;
-			@Override
-			public void run() {
-				try {
-					//noinspection InfiniteLoopStatement
-					while(true) {
-						Thread.sleep(1000);
-						bprog.enqueueExternalEvent(new TickEvent(++tick));
-					}
-				} catch (InterruptedException e) {
-					e.printStackTrace();
-				}
-			}
-		});
 		return bprog;
 	}
 
@@ -113,15 +117,6 @@ public class ContextService {
 	public BEvent[] getContextEvents() {
 		return contextEvents;
 	}
-
-	/*public Object[] getContextsOfType(String type) {
-		for (CtxType ct : contextTypes) {
-			if (ct.name.equals(type)) {
-				return ct.activeContexts.toArray();
-			}
-		}
-		return null;
-	}*/
 
 	public <T> List<T> getContextsOfType(String type) {
 		for (CtxType ct : contextTypes) {
