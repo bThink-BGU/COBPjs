@@ -5,25 +5,22 @@
     <modelVersion>4.0.0</modelVersion>
 
     <parent>
-        <groupId>il.ac.bgu.bp</groupId>
-        <artifactId>examples</artifactId>
+        <groupId>com.github.bthink-bgu</groupId>
+        <artifactId>BPjs.Context.Examples</artifactId>
         <version>0.5</version>
     </parent>
-    <artifactId>room</artifactId>
+    <artifactId>BPjs.Context.Examples.Room</artifactId>
     <version>0.5</version>
-    <packaging>jar</packaging>
     <name>Room Example</name>
 
     <properties>
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <java.version>1.8</java.version>
         <exec.mainClass>il.ac.bgu.cs.bp.bpjs.context.examples.room.Main</exec.mainClass>
     </properties>
 
     <dependencies>
         <dependency>
-            <groupId>il.ac.bgu.bp</groupId>
-            <artifactId>examples</artifactId>
+            <groupId>com.github.bthink-bgu</groupId>
+            <artifactId>BPjs.Context.Examples</artifactId>
             <version>0.5</version>
             <scope>pom</scope>
         </dependency>
