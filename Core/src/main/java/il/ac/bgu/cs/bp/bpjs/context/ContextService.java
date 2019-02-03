@@ -9,6 +9,7 @@ import javax.persistence.metamodel.IdentifiableType;
 import javax.persistence.metamodel.ManagedType;
 
 import il.ac.bgu.cs.bp.bpjs.execution.BProgramRunner;
+import il.ac.bgu.cs.bp.bpjs.execution.listeners.BProgramRunnerListener;
 import il.ac.bgu.cs.bp.bpjs.execution.listeners.PrintBProgramRunnerListener;
 import il.ac.bgu.cs.bp.bpjs.model.BEvent;
 import il.ac.bgu.cs.bp.bpjs.model.BProgram;
@@ -24,11 +25,14 @@ public class ContextService {
 	private EntityManager em;
 	private ExecutorService pool;
 	private BProgram bprog;
+	private List<BProgramRunnerListener> listeners = new ArrayList<>();
 	private List<CtxType> contextTypes = new LinkedList<>();
 	private BEvent[] contextEvents;
 
 	private ContextService() {
 		pool = Executors.newCachedThreadPool();
+		listeners.add(new PrintBProgramRunnerListener());
+		listeners.add(new DBActuator());
 	}
 
 	@SuppressWarnings("unused")
@@ -72,6 +76,10 @@ public class ContextService {
 		});
 	}
 
+	public void addListener(BProgramRunnerListener listener) {
+		listeners.add(listener);
+	}
+
 	public BProgram run(String... programs) {
 		List<String> a = new ArrayList<>(Arrays.asList(programs));
 		a.add(0,"context.js");
@@ -84,8 +92,7 @@ public class ContextService {
 
 		bprog.setWaitForExternalEvents(true);
 		BProgramRunner rnr = new BProgramRunner(bprog);
-		rnr.addListener(new PrintBProgramRunnerListener());
-		rnr.addListener(new DBActuator());
+		listeners.forEach(listener -> rnr.addListener(listener));
 
 		pool.execute(rnr);
 		return bprog;
@@ -177,7 +184,7 @@ public class ContextService {
 
 	@SuppressWarnings("unused")
 	public void close() {
-		pool.shutdown();
+		pool.shutdownNow();
 		em.close();
 		emf.close();
 	}
