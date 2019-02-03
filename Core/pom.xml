@@ -7,7 +7,7 @@
 	<groupId>com.github.bthink-bgu</groupId>
 	<artifactId>BPjs-Context-Core</artifactId>
 	<name>Core</name>
-	<version>v0.3-alpha</version>
+	<version>v0.11-alpha</version>
 	<packaging>jar</packaging>
 
 	<properties>
