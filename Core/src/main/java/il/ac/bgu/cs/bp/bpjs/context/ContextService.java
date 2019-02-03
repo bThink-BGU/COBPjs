@@ -109,8 +109,8 @@ public class ContextService {
 			ctxType.activeContexts = ctxType.query.getResultList();
 			// Filter the contexts that we didn't yet report of
 			List<?> newContexts = new LinkedList<>(ctxType.activeContexts);
-            //noinspection SuspiciousMethodCalls
-            newContexts.removeAll(knownContexts);
+			//noinspection SuspiciousMethodCalls
+			newContexts.removeAll(knownContexts);
 			// Compute the contexts that where just removed
 			newContexts.stream().map(obj -> new NewContextEvent(ctxType.name, obj)).forEach(events::add);
 			//noinspection SuspiciousMethodCalls
@@ -225,7 +225,7 @@ public class ContextService {
 		}
 
 		void execute() {
-		 	getInstance().persistObjects(persistObjects);
+			getInstance().persistObjects(persistObjects);
 		}
 	}
 
@@ -300,7 +300,7 @@ public class ContextService {
 		}
 	}
 
-	@SuppressWarnings("unused")
+    @SuppressWarnings({"WeakerAccess","unused"})
 	public static class AnyUpdateContextDBEvent implements EventSet {
 		public final String contextName;
 
