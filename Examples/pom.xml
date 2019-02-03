@@ -24,9 +24,8 @@
     <dependencies>
         <dependency>
             <groupId>com.github.bthink-bgu</groupId>
-            <artifactId>BPjs.Context.Core</artifactId>
-            <version>0.5</version>
-            <!--<scope>compile</scope>-->
+            <artifactId>BPjs-Context-Core</artifactId>
+            <version>v0.3-alpha</version>
         </dependency>
 
         <dependency>
