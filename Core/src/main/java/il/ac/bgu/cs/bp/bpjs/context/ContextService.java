@@ -99,7 +99,7 @@ public class ContextService {
 		return bprog;
 	}
 
-	// Produce context update events to be triggered after each update event
+	// Produce contextName update events to be triggered after each update event
 	private void updateContexts() {
 		Set<BEvent> events = new HashSet<>();
 		contextTypes.forEach(ctxType -> {
@@ -120,7 +120,7 @@ public class ContextService {
 		contextEvents = events.toArray(new BEvent[0]);
 	}
 
-	// Produce context update events to be triggered after each update event
+	// Produce contextName update events to be triggered after each update event
 	@SuppressWarnings("unused")
 	public BEvent[] getContextEvents() {
 		return contextEvents;
@@ -231,23 +231,23 @@ public class ContextService {
 
 	@SuppressWarnings("WeakerAccess")
 	public static class UpdateEvent extends BEvent {
-		public final String query;
+		public final String contextName;
 		public final Map<String, Object> parameters;
 
-		public UpdateEvent(String query, Map<String, Object> parameters) {
-			super("UpdateEvent(" + query + "," + parameters.entrySet() + ")");
-			this.query = query;
+		public UpdateEvent(String contextName, Map<String, Object> parameters) {
+			super("UpdateEvent(" + contextName + "," + parameters.entrySet() + ")");
+			this.contextName = contextName;
 			this.parameters = Collections.unmodifiableMap(parameters);
 		}
 
 		@SuppressWarnings("unused")
-		public UpdateEvent(String query) {
-			this(query, new HashMap<>());
+		public UpdateEvent(String contextName) {
+			this(contextName, new HashMap<>());
 		}
 
 		void execute() {
 			EntityManager em = getInstance().em;
-			Query namedQuery = em.createNamedQuery(query);
+			Query namedQuery = em.createNamedQuery(contextName);
 
 			for (Map.Entry<String, Object> e : parameters.entrySet()) {
 				namedQuery.setParameter(e.getKey(), e.getValue());
@@ -302,9 +302,25 @@ public class ContextService {
 
 	@SuppressWarnings("unused")
 	public static class AnyUpdateContextDBEvent implements EventSet {
+		public final String contextName;
+
+		public AnyUpdateContextDBEvent() {
+			super();
+			contextName = null;
+		}
+
+		public AnyUpdateContextDBEvent(String contextName) {
+			super();
+			this.contextName = contextName;
+		}
+
 		@Override
 		public boolean contains(BEvent event) {
-			return event instanceof UpdateEvent || event instanceof InsertEvent;
+			if(contextName != null) {
+				return (event instanceof UpdateEvent && ((UpdateEvent) event).contextName.equals(contextName)) || (event instanceof InsertEvent);
+			} else {
+				return (event instanceof UpdateEvent) || (event instanceof InsertEvent);
+			}
 		}
 	}
 

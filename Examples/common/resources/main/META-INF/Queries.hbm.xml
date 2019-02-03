@@ -2,17 +2,17 @@
 <entity-mappings xmlns="http://java.sun.com/xml/ns/persistence/orm"
         version="2.0">
 
-    <!--<named-query name="Room">
-        <query>SELECT r FROM Room r</query>
-    </named-query> 
-    <named-query name="Nonempty Room">
-        <query>SELECT r FROM Room r where r.hasPerson=true</query>
-    </named-query>
-    <named-query name="Office">
-        <query>SELECT o FROM Office o</query>
-    </named-query>
-    <named-query name="Cell">
-        <query>SELECT e FROM Cell e</query>
-    </named-query>-->
+    <!--<named-contextName name="Room">
+        <contextName>SELECT r FROM Room r</contextName>
+    </named-contextName>
+    <named-contextName name="Nonempty Room">
+        <contextName>SELECT r FROM Room r where r.hasPerson=true</contextName>
+    </named-contextName>
+    <named-contextName name="Office">
+        <contextName>SELECT o FROM Office o</contextName>
+    </named-contextName>
+    <named-contextName name="Cell">
+        <contextName>SELECT e FROM Cell e</contextName>
+    </named-contextName>-->
 
 </entity-mappings>

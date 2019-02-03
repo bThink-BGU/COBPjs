@@ -9,7 +9,7 @@
         <properties>
             <!-- SQLite configuration -->
             <!--<property name="hibernate.connection.url" value="jdbc:sqlite::memory:"/>-->
-            <property name="hibernate.connection.url" value="jdbc:sqlite:${project.basedir}/src/test/resources/context-test.db"/>
+            <property name="hibernate.connection.url" value="jdbc:sqlite:${project.basedir}/src/test/resources/contextName-test.db"/>
             <property name="hibernate.dialect" value="org.hibernate.dialect.SQLiteDialect" />
             <property name="hibernate.connection.driver_class" value="org.sqlite.JDBC"/>
             <property name="hibernate.connection.username" value=""/>

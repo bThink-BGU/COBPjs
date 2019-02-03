@@ -7,7 +7,7 @@ import il.ac.bgu.cs.bp.bpjs.model.BProgram;
 public class DBActuator extends BProgramRunnerListenerAdapter {
 	@Override
 	public void eventSelected(BProgram bp, BEvent theEvent) {
-		// Actuator for context update
+		// Actuator for contextName update
 		if (theEvent instanceof ContextService.UpdateEvent) {
 			ContextService.UpdateEvent updateEvent = (ContextService.UpdateEvent) theEvent;
 			updateEvent.execute();
