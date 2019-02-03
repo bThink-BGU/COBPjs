@@ -31,8 +31,6 @@ public class ContextService {
 
 	private ContextService() {
 		pool = Executors.newCachedThreadPool();
-		addListener(new PrintBProgramRunnerListener());
-		addListener(new DBActuator());
 	}
 
 	@SuppressWarnings("unused")
@@ -94,7 +92,8 @@ public class ContextService {
 
 		bprog.setWaitForExternalEvents(true);
 		rnr = new BProgramRunner(bprog);
-
+        addListener(new PrintBProgramRunnerListener());
+        addListener(new DBActuator());
 		pool.execute(rnr);
 		return bprog;
 	}
