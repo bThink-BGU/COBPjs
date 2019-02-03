@@ -31,8 +31,8 @@ public class ContextService {
 
 	private ContextService() {
 		pool = Executors.newCachedThreadPool();
-		listeners.add(new PrintBProgramRunnerListener());
-		listeners.add(new DBActuator());
+		addListener(new PrintBProgramRunnerListener());
+		addListener(new DBActuator());
 	}
 
 	@SuppressWarnings("unused")
@@ -76,6 +76,7 @@ public class ContextService {
 		});
 	}
 
+	@SuppressWarnings("WeakerAccess")
 	public void addListener(BProgramRunnerListener listener) {
 		listeners.add(listener);
 	}
@@ -92,7 +93,7 @@ public class ContextService {
 
 		bprog.setWaitForExternalEvents(true);
 		BProgramRunner rnr = new BProgramRunner(bprog);
-		listeners.forEach(listener -> rnr.addListener(listener));
+		listeners.forEach(rnr::addListener);
 
 		pool.execute(rnr);
 		return bprog;
