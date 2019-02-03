@@ -25,7 +25,7 @@ public class ContextService {
 	private EntityManager em;
 	private ExecutorService pool;
 	private BProgram bprog;
-	private List<BProgramRunnerListener> listeners = new ArrayList<>();
+	private BProgramRunner rnr;
 	private List<CtxType> contextTypes = new LinkedList<>();
 	private BEvent[] contextEvents;
 
@@ -78,7 +78,8 @@ public class ContextService {
 
 	@SuppressWarnings("WeakerAccess")
 	public void addListener(BProgramRunnerListener listener) {
-		listeners.add(listener);
+		if(rnr!=null)
+			rnr.addListener(listener);
 	}
 
 	public BProgram run(String... programs) {
@@ -92,8 +93,7 @@ public class ContextService {
 		bprog.setEventSelectionStrategy(eventSelectionStrategy);
 
 		bprog.setWaitForExternalEvents(true);
-		BProgramRunner rnr = new BProgramRunner(bprog);
-		listeners.forEach(rnr::addListener);
+		rnr = new BProgramRunner(bprog);
 
 		pool.execute(rnr);
 		return bprog;
