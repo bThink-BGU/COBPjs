@@ -8,6 +8,8 @@ import javax.persistence.NamedQuery;
 @Entity
 @NamedQueries(value = {
         @NamedQuery(name = "Cell", query = "SELECT c FROM Cell c"),
+        @NamedQuery(name = "CornerCell", query = "SELECT c FROM Cell c WHERE (c.i = 0 AND c.j = 0) OR (c.i = 0 AND c.j = 0) OR (c.i = 0 AND c.j = 2) OR (c.i = 2 AND c.j = 0) OR (c.i = 2 AND c.j = 2)"),
+        @NamedQuery(name = "SpecificCell", query = "SELECT c FROM Cell c WHERE c.i=:i AND c.j=:j"),
         @NamedQuery(name = "EmptyCell", query = "SELECT c FROM Cell c WHERE c.value = ''"),
         @NamedQuery(name = "NonEmptyCell", query = "SELECT c FROM Cell c WHERE not(c.value = '')"),
         @NamedQuery(name = "UpdateCell", query = "Update Cell C set C.value=:val where C=:cell"),

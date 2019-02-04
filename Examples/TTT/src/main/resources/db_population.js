@@ -1,7 +1,18 @@
-var board = [];
+function registerAllCellsQueries() {
+    for (var i = 0; i < 3; i++) {
+        for (var j = 0; j < 3; j++) {
+            CTX_instance.registerParameterizedContextQuery("SpecificCell", "Cell[" + i + "," + j + "]", {
+                "i": i,
+                "j": j
+            });
+        }
+    }
+}
+
+registerAllCellsQueries();
 
 bp.registerBThread("PopulateDB", function() {
-    var triples = [], diag1 = [], diag2 = [],
+    var board = [], triples = [], diag1 = [], diag2 = [],
         row, col, i, j, cell, cells;
 
     for(i=0; i<3; i++){
@@ -28,9 +39,11 @@ bp.registerBThread("PopulateDB", function() {
     triples.push(new Triple("diag_1", diag1));
     triples.push(new Triple("diag_2", diag2));
 
-    // flattening board
+    // flattening board - for debugging
     cells = [].concat.apply([], board);
 
     bp.sync({ request: CTX.InsertEvent(cells) });
     bp.sync({ request: CTX.InsertEvent(triples) });
+
+    bp.sync({ request: bp.Event("Context Population Ended") });
 });

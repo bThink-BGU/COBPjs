@@ -8,6 +8,9 @@ import javax.persistence.*;
 import javax.persistence.metamodel.IdentifiableType;
 import javax.persistence.metamodel.ManagedType;
 
+import com.google.common.collect.ArrayListMultimap;
+import com.google.common.collect.Multimap;
+import com.google.common.collect.SetMultimap;
 import il.ac.bgu.cs.bp.bpjs.execution.BProgramRunner;
 import il.ac.bgu.cs.bp.bpjs.execution.listeners.BProgramRunnerListener;
 import il.ac.bgu.cs.bp.bpjs.execution.listeners.PrintBProgramRunnerListener;
@@ -16,26 +19,33 @@ import il.ac.bgu.cs.bp.bpjs.model.BProgram;
 import il.ac.bgu.cs.bp.bpjs.model.ResourceBProgram;
 import il.ac.bgu.cs.bp.bpjs.model.eventsets.EventSet;
 import org.mozilla.javascript.NativeFunction;
+import org.mozilla.javascript.NativeObject;
 
 public class ContextService {
 	private static ContextService uniqInstance = new ContextService();
 	@SuppressWarnings("unused")
 	public static NativeFunction subscribe;
+	@SuppressWarnings("unused")
+	public static NativeFunction subscribeWithParameters;
 	private EntityManagerFactory emf;
 	private EntityManager em;
 	private ExecutorService pool;
 	private BProgram bprog;
 	private BProgramRunner rnr;
-	private List<CtxType> contextTypes = new LinkedList<>();
+	private List<CtxType> contextTypes;
 	private BEvent[] contextEvents;
+	private Multimap<Class<?>, NamedQuery> namedQueries;
 
-	private ContextService() {
-		pool = Executors.newCachedThreadPool();
-	}
+	private ContextService() { }
 
 	@SuppressWarnings("unused")
 	public static ContextService getInstance() {
 		return uniqInstance;
+	}
+
+	@SuppressWarnings("unused")
+	public static <T> List<T> getContextsOfType(String type) {
+		return uniqInstance.getContextInstances(type);
 	}
 
 	private static class CtxType {
@@ -94,7 +104,11 @@ public class ContextService {
 		rnr = new BProgramRunner(bprog);
         addListener(new PrintBProgramRunnerListener());
         addListener(new DBActuator());
-		pool.execute(rnr);
+		try {
+			pool.execute(rnr);
+		} catch (Exception e) {
+			// ignored in case the bprogram has been stopped.
+		}
 		return bprog;
 	}
 
@@ -125,7 +139,8 @@ public class ContextService {
 		return contextEvents;
 	}
 
-	public <T> List<T> getContextsOfType(String type) {
+    @SuppressWarnings("WeakerAccess")
+	public <T> List<T> getContextInstances(String type) {
 		for (CtxType ct : contextTypes) {
 			if (ct.name.equals(type)) {
 				@SuppressWarnings("unchecked")
@@ -136,26 +151,25 @@ public class ContextService {
 		return null;
 	}
 
-	private HashMap<Class<?>, NamedQuery[]> findAllNamedQueries(EntityManagerFactory emf) {
-		HashMap<Class<?>, NamedQuery[]> allNamedQueries = new HashMap<>();
+	private void findAllNamedQueries(EntityManagerFactory emf) {
+		namedQueries = ArrayListMultimap.create();
 		Set<ManagedType<?>> managedTypes = emf.getMetamodel().getManagedTypes();
 		for (ManagedType<?> managedType: managedTypes) {
 			if (managedType instanceof IdentifiableType) {
 //				Class<? extends ManagedType> identifiableTypeClass = managedType.getClass();
 //				@SuppressWarnings("rawtypes")
 				Class<?> javaClass = managedType.getJavaType();
-				NamedQueries namedQueries = javaClass.getAnnotation(NamedQueries.class);
-				if (namedQueries != null) {
-					allNamedQueries.put(managedType.getJavaType(),namedQueries.value());
+				NamedQueries namedQueriesList = javaClass.getAnnotation(NamedQueries.class);
+				if (namedQueriesList != null) {
+					namedQueries.putAll(javaClass,Arrays.asList(namedQueriesList.value()));
 				}
 
 				NamedQuery namedQuery = javaClass.getAnnotation(NamedQuery.class);
 				if (namedQuery != null) {
-					allNamedQueries.put(managedType.getJavaType(), new NamedQuery[]{namedQuery});
+					namedQueries.put(javaClass, namedQuery);
 				}
 			}
 		}
-		return allNamedQueries;
 	}
 
 	private void registerContextQuery(String name, TypedQuery<?> query, Class<?> cls) {
@@ -164,21 +178,60 @@ public class ContextService {
 		newType.cls = cls;
 		newType.query = query;
 		contextTypes.add(newType);
+		updateContexts();
+	}
+
+	@SuppressWarnings("unused")
+	public void registerParameterizedContextQuery(String queryName, String uniqueId, NativeObject params) {
+		namedQueries.forEach((aClass, namedQuery) -> {
+			if(namedQuery.name().equals(queryName)) {
+				TypedQuery<?> q = em.createNamedQuery(queryName, aClass);
+				//noinspection unchecked
+				((Map<String,?>) params).forEach((key, val) -> {
+					Object v = val;
+					if(v instanceof Number) {
+						Number number= (Number) v;
+						String typeName = q.getParameter(key).getParameterType().getName();
+						switch (typeName){
+							case "java.lang.Integer":
+								v = number.intValue();
+								break;
+							case "java.lang.Long":
+								v = number.longValue();
+								break;
+							case "java.lang.Byte":
+								v = number.byteValue();
+								break;
+							case "java.lang.Short":
+								v = number.shortValue();
+								break;
+							case "java.lang.Float":
+								v = number.floatValue();
+								break;
+						}
+					}
+					q.setParameter(key, v);
+				});
+				registerContextQuery(uniqueId, q, aClass);
+			}
+		});
 	}
 
 	public void init(String persistenceUnit) {
+		contextTypes = new LinkedList<>();
+		pool = Executors.newCachedThreadPool();
 		emf = Persistence.createEntityManagerFactory(persistenceUnit);
 		em = emf.createEntityManager();
-		HashMap<Class<?>, NamedQuery[]> queries = findAllNamedQueries(emf);
-		for(Map.Entry<Class<?>, NamedQuery[]> entry : queries.entrySet()) {
-			Class<?> key = entry.getKey();
-			for (NamedQuery nq : entry.getValue()) {
-				try {
-					TypedQuery q = em.createNamedQuery(nq.name(), key);
-					registerContextQuery(nq.name(), q, key);
-				} catch (Exception ignored) { }
-			}
-		}
+		findAllNamedQueries(emf);
+		namedQueries.forEach((aClass, namedQuery) -> {
+			try {
+				TypedQuery<?> q = em.createNamedQuery(namedQuery.name(), aClass);
+				Set<Parameter<?>> parameters = q.getParameters();
+				if(parameters == null || parameters.isEmpty()) {
+					registerContextQuery(namedQuery.name(), em.createNamedQuery(namedQuery.name(), aClass), aClass);
+				}
+			} catch (Exception ignored) { }
+		});
 		updateContexts();
 	}
 

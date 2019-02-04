@@ -1,7 +1,13 @@
 package il.ac.bgu.cs.bp.bpjs.context.examples.ttt;
 
 import il.ac.bgu.cs.bp.bpjs.context.ContextService;
+import il.ac.bgu.cs.bp.bpjs.context.examples.ttt.schema.Cell;
+import il.ac.bgu.cs.bp.bpjs.model.BEvent;
 import il.ac.bgu.cs.bp.bpjs.model.BProgram;
+
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 public class Main {
 	void run(String dbPopulationScript, String persistenceUnit) throws InterruptedException {
@@ -13,16 +19,14 @@ public class Main {
 
 		// Simulation of external events
 		Thread.sleep(1000);
-		/*Map<String, Room> rooms = contextService.<Room>getContextsOfType("Room")
-				.stream().collect(Collectors.toMap(Room::getId, Function.identity()));
+		contextService.<Cell>getContextInstances("Cell")
+				.stream().collect(Collectors.toMap(Cell::getId, Function.identity()))
+		.values().forEach(cell -> bprog.enqueueExternalEvent(new BEvent("Click","{_row:"+cell.i+",_col:"+cell.j+"}")));
 
-		bprog.enqueueExternalEvent((rooms.get("37/123").getMotionDetector()).startedEvent());
-		Thread.sleep(1000);
-		bprog.enqueueExternalEvent(rooms.get("37/123").getMotionDetector().stoppedEvent());
-		Thread.sleep(1000);
-		bprog.enqueueExternalEvent(rooms.get("37/123").getMotionDetector().startedEvent());*/
-		//TODO: REMOVED
-		//ContextService.close();
+		Thread.sleep(5000);
+		contextService.close();
+		contextService.init(persistenceUnit);
+		contextService.run(dbPopulationScript, "program.js");
 	}
 
 
