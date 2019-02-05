@@ -14,9 +14,9 @@ public class Main {
 		System.out.println(">>>>>>>>>>>>>>>>>> Rooms example <<<<<<<<<<<<<<<<<<<");
 
 		ContextService contextService = ContextService.getInstance();
-		contextService.init(persistenceUnit);
+		contextService.init(persistenceUnit, dbPopulationScript, "program.js");
 		contextService.enableTicker();
-		BProgram bprog = contextService.run(dbPopulationScript, "program.js");
+		BProgram bprog = contextService.run();
 
 		// Simulation of external events
 		Thread.sleep(1000);

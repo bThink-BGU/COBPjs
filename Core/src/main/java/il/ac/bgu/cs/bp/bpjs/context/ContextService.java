@@ -90,20 +90,39 @@ public class ContextService {
 			rnr.addListener(listener);
 	}
 
-	public BProgram run(String... programs) {
-		List<String> a = new ArrayList<>(Arrays.asList(programs));
-		a.add(0,"context.js");
-		bprog = new ResourceBProgram(a);
+    public void init(String persistenceUnit, String... programs) {
+        contextTypes = new LinkedList<>();
+        pool = Executors.newCachedThreadPool();
+        emf = Persistence.createEntityManagerFactory(persistenceUnit);
+        em = emf.createEntityManager();
+        findAllNamedQueries(emf);
+        namedQueries.forEach((aClass, namedQuery) -> {
+            try {
+                TypedQuery<?> q = em.createNamedQuery(namedQuery.name(), aClass);
+                Set<Parameter<?>> parameters = q.getParameters();
+                if(parameters == null || parameters.isEmpty()) {
+                    registerContextQuery(namedQuery.name(), em.createNamedQuery(namedQuery.name(), aClass), aClass);
+                }
+            } catch (Exception ignored) { }
+        });
 
-		//TODO: remove?
-		MyPrioritizedBThreadsEventSelectionStrategy eventSelectionStrategy = new MyPrioritizedBThreadsEventSelectionStrategy();
-		eventSelectionStrategy.setPriority("ContextReporterBT", 1000);
-		bprog.setEventSelectionStrategy(eventSelectionStrategy);
+        List<String> a = new ArrayList<>(Arrays.asList(programs));
+        a.add(0,"context.js");
+        bprog = new ResourceBProgram(a);
 
-		bprog.setWaitForExternalEvents(true);
-		rnr = new BProgramRunner(bprog);
+        //TODO: remove?
+        MyPrioritizedBThreadsEventSelectionStrategy eventSelectionStrategy = new MyPrioritizedBThreadsEventSelectionStrategy();
+        eventSelectionStrategy.setPriority("ContextReporterBT", 1000);
+        bprog.setEventSelectionStrategy(eventSelectionStrategy);
+
+        bprog.setWaitForExternalEvents(true);
+        rnr = new BProgramRunner(bprog);
         addListener(new PrintBProgramRunnerListener());
         addListener(new DBActuator());
+    }
+
+	public BProgram run() {
+
 		try {
 			pool.execute(rnr);
 		} catch (Exception e) {
@@ -215,24 +234,6 @@ public class ContextService {
 				registerContextQuery(uniqueId, q, aClass);
 			}
 		});
-	}
-
-	public void init(String persistenceUnit) {
-		contextTypes = new LinkedList<>();
-		pool = Executors.newCachedThreadPool();
-		emf = Persistence.createEntityManagerFactory(persistenceUnit);
-		em = emf.createEntityManager();
-		findAllNamedQueries(emf);
-		namedQueries.forEach((aClass, namedQuery) -> {
-			try {
-				TypedQuery<?> q = em.createNamedQuery(namedQuery.name(), aClass);
-				Set<Parameter<?>> parameters = q.getParameters();
-				if(parameters == null || parameters.isEmpty()) {
-					registerContextQuery(namedQuery.name(), em.createNamedQuery(namedQuery.name(), aClass), aClass);
-				}
-			} catch (Exception ignored) { }
-		});
-		updateContexts();
 	}
 
 	@SuppressWarnings("unused")
