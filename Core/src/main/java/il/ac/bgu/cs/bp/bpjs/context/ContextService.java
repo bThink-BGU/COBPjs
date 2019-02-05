@@ -1,5 +1,6 @@
 package il.ac.bgu.cs.bp.bpjs.context;
 
+import java.io.Serializable;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -21,17 +22,17 @@ import il.ac.bgu.cs.bp.bpjs.model.eventsets.EventSet;
 import org.mozilla.javascript.NativeFunction;
 import org.mozilla.javascript.NativeObject;
 
-public class ContextService {
+public class ContextService implements Serializable {
 	private static ContextService uniqInstance = new ContextService();
 	@SuppressWarnings("unused")
 	public static NativeFunction subscribe;
 	@SuppressWarnings("unused")
 	public static NativeFunction subscribeWithParameters;
-	private EntityManagerFactory emf;
-	private EntityManager em;
-	private ExecutorService pool;
-	private BProgram bprog;
-	private BProgramRunner rnr;
+	private transient EntityManagerFactory emf;
+	private transient EntityManager em;
+	private transient ExecutorService pool;
+	private transient BProgram bprog;
+	private transient BProgramRunner rnr;
 	private List<CtxType> contextTypes;
 	private BEvent[] contextEvents;
 	private Multimap<Class<?>, NamedQuery> namedQueries;
@@ -48,9 +49,9 @@ public class ContextService {
 		return uniqInstance.getContextInstances(type);
 	}
 
-	private static class CtxType {
+	private static class CtxType implements Serializable{
 		String name;
-		TypedQuery query;
+		transient TypedQuery query;
 		Class cls;
 		List<?> activeContexts = new LinkedList<>();
 	}

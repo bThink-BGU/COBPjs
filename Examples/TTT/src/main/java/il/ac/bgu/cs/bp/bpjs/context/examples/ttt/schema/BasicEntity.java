@@ -2,10 +2,11 @@ package il.ac.bgu.cs.bp.bpjs.context.examples.ttt.schema;
 
 import javax.persistence.Id;
 import javax.persistence.MappedSuperclass;
+import java.io.Serializable;
 
 @MappedSuperclass
 @SuppressWarnings("WeakerAccess")
-public abstract class BasicEntity {
+public abstract class BasicEntity implements Serializable{
     @Id
 	private final String id;
 
