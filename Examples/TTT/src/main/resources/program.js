@@ -4,20 +4,21 @@ importPackage(Packages.il.ac.bgu.cs.bp.bpjs.context.examples.ttt.schema);
 
 //#region HELP FUNCTIONS
 function createEvent(name, c) {
-    return bp.Event(name,"{_row:"+c.i+",_col:"+c.j+"}")
+    return bp.Event(name, c);
+}
+
+function getCell(i,j){
+    return CTX.getContextsOfType("Cell["+i+","+j+"]").get(0);
 }
 //#endregion HELP FUNCTIONS
 
 //#region EventSets
 // Represents Enforce Turns
-var move = bp.EventSet("Move events", function(e) {
+var move = bp.EventSet("MoveEvents", function(e) {
     return e.name.equals("O") || e.name.equals("X");
 });
 var XEvents = bp.EventSet("XEvents", function(e) {
     return e.name.equals("X") ;
-});
-var CellUpdateEvents = bp.EventSet("CellUpdateEvents", function(e) {
-    return e instanceof CTX.UpdateEvent && e.contextName.equals("UpdateCell");
 });
 var OEvents = bp.EventSet("OEvents", function(e) {
     return e.name.equals("O");
@@ -31,7 +32,7 @@ var EndGame = bp.EventSet("EndGame", function(e) {
 //#region CEll BEHAVIORS
 CTX.subscribe("ClickHandler","Cell", function(c) {
     // while (true) {
-    bp.sync({ waitFor: createEvent('Click', c) });
+    bp.sync({ waitFor: createEvent("Click", c) });
     bp.sync({ request: createEvent("X", c) });
     // }
 });
@@ -46,12 +47,6 @@ CTX.subscribe("Update cell upon X or O", "EmptyCell", function(c) {
 CTX.subscribe("block X,O on nonempty cell","NonEmptyCell",function(c) {
     bp.sync({ block:[ createEvent("X", c), createEvent("O",c) ] });
 });
-
-CTX.subscribe("assert twice", "Cell", function(c){
-    bp.sync({waitFor:createEvent("O",c)});
-    bp.sync({waitFor:createEvent("O",c)});
-    bp.ASSERT(false,"O twice");
-});
 //endregion CEll BEHAVIORS
 
 //#region GAME RULES
@@ -62,15 +57,18 @@ bp.registerBThread("EnforceTurns", function() {
             block: OEvents
         });
         bp.sync({
-            waitFor: CellUpdateEvents,
-            block: move
-        });
-        bp.sync({
             waitFor: OEvents,
             block: XEvents
         });
+    }
+});
+
+bp.registerBThread("EnforceTurns", function() {
+    while (true) {
+        var e = bp.sync({ waitFor: move });
+        bp.log.info("HERE " + e);
         bp.sync({
-            waitFor: CellUpdateEvents,
+            waitFor: CTX.NewContextEvent("NonEmptyCell", e.data),
             block: move
         });
     }
@@ -144,8 +142,8 @@ function addFork22PermutationBthreads(c1,c2){ //
     bp.registerBThread("PreventFork22X", function() {
         bp.sync({ waitFor:[ createEvent("X",c1) ] });
         bp.sync({ waitFor:[ createEvent("X",c2) ] });
-        bp.sync({ request:[ createEvent("O",CTX.getContextsOfType("Cell[2,2]").get(0)),createEvent("O",CTX.getContextsOfType("Cell[0,2]").get(0)), createEvent("O",CTX.getContextsOfType("Cell[2,0]").get(0))]}, 30);
     });
+    bp.sync({ request:[ createEvent("O",getCell(2,2)),createEvent("O",getCell(0,2)), createEvent("O",getCell(2,0))]}, 30);
 }
 
 // Player O strategy to prevent the Fork02 of player X
@@ -153,7 +151,7 @@ function addFork02PermutationBthreads(c1,c2){ //
     bp.registerBThread("PreventFork02X", function() {
         bp.sync({ waitFor:[ createEvent("X",c1) ] });
         bp.sync({ waitFor:[ createEvent("X",c2) ] });
-        bp.sync({ request:[ createEvent("O",CTX.getContextsOfType("Cell[0,2]").get(0)),createEvent("O",CTX.getContextsOfType("Cell[0,0]").get(0)), createEvent("O",CTX.getContextsOfType("Cell[2,2]").get(0))]}, 30);
+        bp.sync({ request:[ createEvent("O",getCell(0,2)),createEvent("O",getCell(0,0)), createEvent("O",getCell(2,2))]}, 30);
     });
 }
 
@@ -162,7 +160,7 @@ function addFork20PermutationBthreads(c1,c2){ //
     bp.registerBThread("PreventFork20X", function() {
         bp.sync({ waitFor:[ createEvent("X",c1) ] });
         bp.sync({ waitFor:[ createEvent("X",c2) ] });
-        bp.sync({ request:[ createEvent("O",CTX.getContextsOfType("Cell[2,0]").get(0)),createEvent("O",CTX.getContextsOfType("Cell[0,0]").get(0)), createEvent("O",CTX.getContextsOfType("Cell[2,2]").get(0))] }, 30);
+        bp.sync({ request:[ createEvent("O",getCell(2,0)),createEvent("O",getCell(0,0)), createEvent("O",getCell(2,2))] }, 30);
     });
 }
 
@@ -171,7 +169,7 @@ function addFork00PermutationBthreads(c1,c2){ //
     bp.registerBThread("PreventFork20X", function() {
         bp.sync({ waitFor:[ createEvent("X",c1) ] });
         bp.sync({ waitFor:[ createEvent("X",c2) ] });
-        bp.sync({ request:[ createEvent("O",CTX.getContextsOfType("Cell[0,0]").get(0)),createEvent("O", CTX.getContextsOfType("Cell[0,2]").get(0)), createEvent("O",CTX.getContextsOfType("Cell[2,0]").get(0))] }, 30);
+        bp.sync({ request:[ createEvent("O",getCell(0,0)),createEvent("O", getCell(0,2)), createEvent("O",getCell(2,0))] }, 30);
     });
 }
 
@@ -180,14 +178,14 @@ function addForkdiagPermutationBthreads(c1,c2){ //
     bp.registerBThread("PreventForkdiagX", function() {
         bp.sync({ waitFor:[ createEvent("X",c1) ] });
         bp.sync({ waitFor:[ createEvent("X",c2) ] });
-        bp.sync({ request:[ createEvent("O", CTX.getContextsOfType("Cell[0,1]").get(0)),createEvent("O",CTX.getContextsOfType("Cell[1,0]").get(0)), reateEvent("O", CTX.getContextsOfType("Cell[2,1]").get(0)), createEvent("O", CTX.getContextsOfType("Cell[1,2]").get(0)) ] }, 30);
+        bp.sync({ request:[ createEvent("O", getCell(0,1)),createEvent("O",getCell(1,0)), reateEvent("O", getCell(2,1)), createEvent("O", getCell(1,2)) ] }, 30);
     });
 }
 //#endregion fork functions
 
 // Preference to put O on the center
-CTX.subscribe("Center", "Cell[1,1]", function(c) {
-    bp.sync({request: [createEvent("O", c)]}, 35);
+bp.registerBThread("Center", function() {
+    bp.sync({request: [createEvent("O", getCell(1,1))]}, 35);
 });
 
 // Preference to put O on the corners
@@ -202,8 +200,8 @@ bp.registerBThread("PLAYER O STRATEGIES", function() {
     bp.registerBThread("Sides", function () {
         while (true) {
             bp.sync({
-                request: [createEvent("O", CTX.getContextsOfType("Cell[0,1]").get(0)), createEvent("O", CTX.getContextsOfType("Cell[1,0]").get(0)),
-                    createEvent("O", CTX.getContextsOfType("Cell[2,1]").get(0)), createEvent("O", CTX.getContextsOfType("Cell[1,2]").get(0))]
+                request: [createEvent("O", getCell(0,1)), createEvent("O", getCell(1,0)),
+                    createEvent("O", getCell(2,1)), createEvent("O", getCell(1,2))]
             }, 10);
         }
     });

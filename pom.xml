@@ -13,4 +13,19 @@
 		<module>Core</module>
 		<module>Examples</module>
 	</modules>
+
+	<profiles>
+		<profile>
+			<id>all</id>
+			<modules>
+				<module>Core</module>
+			</modules>
+		</profile>
+		<profile>
+			<id>Examples</id>
+			<modules>
+				<module>Examples</module>
+			</modules>
+		</profile>
+	</profiles>
 </project>
