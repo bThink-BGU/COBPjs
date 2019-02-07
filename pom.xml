@@ -1,66 +1,31 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
-    <modelVersion>4.0.0</modelVersion>
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
 
-    <groupId>com.github.bthink-bgu</groupId>
-    <artifactId>BPjs-Context</artifactId>
-    <version>1.0.0</version>
-    <packaging>pom</packaging>
+	<groupId>com.github.bthink-bgu</groupId>
+	<artifactId>BPjs-Context</artifactId>
+	<version>v0.5-alpha</version>
+	<packaging>pom</packaging>
 
-    <properties>
+	<modules>
+		<module>Core</module>
+		<module>Examples</module>
+	</modules>
 
-        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-        <java.version>1.8</java.version>
-
-        <LibraryVersion>1.0.0</LibraryVersion>
-        <ExamplesVersion>1.0.0</ExamplesVersion>
-
-        <CoreVersion>0.1.0</CoreVersion>
-        <ExamplesTttVersion>0.1.0</ExamplesTttVersion>
-        <ExamplesRoomVersion>0.1.0</ExamplesRoomVersion>
-
-    </properties>
-
-    <dependencyManagement>
-        <dependencies>
-            <dependency>
-                <groupId>com.github.bthink-bgu</groupId>
-                <artifactId>BPjs</artifactId>
-                <version>0.9.5</version>
-            </dependency>
-            <dependency>
-                <groupId>org.hibernate</groupId>
-                <artifactId>hibernate-core</artifactId>
-                <version>5.3.7.Final</version>
-            </dependency>
-
-            <dependency>
-                <groupId>com.github.bthink-bgu</groupId>
-                <artifactId>BPjs-Core</artifactId>
-                <version>${CoreVersion}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.github.bthink-bgu</groupId>
-                <artifactId>BPjs-Context-Examples</artifactId>
-                <version>${ExamplesVersion}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.github.bthink-bgu</groupId>
-                <artifactId>BPjs-Context-Examples-Room</artifactId>
-                <version>${ExamplesRoomVersion}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.github.bthink-bgu</groupId>
-                <artifactId>BPjs-Context-Examples-TTT</artifactId>
-                <version>${ExamplesTttVersion}</version>
-            </dependency>
-        </dependencies>
-    </dependencyManagement>
-
-    <modules>
-        <module>Library</module>
-    </modules>
-
+	<profiles>
+		<profile>
+			<id>all</id>
+			<modules>
+				<module>Core</module>
+			</modules>
+		</profile>
+		<profile>
+			<id>Examples</id>
+			<modules>
+				<module>Examples</module>
+			</modules>
+		</profile>
+	</profiles>
 </project>
