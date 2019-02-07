@@ -66,7 +66,7 @@ bp.registerBThread("EnforceTurns", function() {
 bp.registerBThread("EnforceTurns", function() {
     while (true) {
         var e = bp.sync({ waitFor: move });
-        bp.log.info("HERE " + e);
+        // bp.log.info("HERE " + e);
         bp.sync({
             waitFor: CTX.NewContextEvent("NonEmptyCell", e.data),
             block: move
@@ -142,8 +142,8 @@ function addFork22PermutationBthreads(c1,c2){ //
     bp.registerBThread("PreventFork22X", function() {
         bp.sync({ waitFor:[ createEvent("X",c1) ] });
         bp.sync({ waitFor:[ createEvent("X",c2) ] });
+        bp.sync({ request:[ createEvent("O",getCell(2,2)),createEvent("O",getCell(0,2)), createEvent("O",getCell(2,0))]}, 30);
     });
-    bp.sync({ request:[ createEvent("O",getCell(2,2)),createEvent("O",getCell(0,2)), createEvent("O",getCell(2,0))]}, 30);
 }
 
 // Player O strategy to prevent the Fork02 of player X
@@ -185,6 +185,8 @@ function addForkdiagPermutationBthreads(c1,c2){ //
 
 // Preference to put O on the center
 bp.registerBThread("Center", function() {
+    bp.sync({waitFor: bp.Event("Context Population Ended")});
+
     bp.sync({request: [createEvent("O", getCell(1,1))]}, 35);
 });
 
@@ -206,12 +208,12 @@ bp.registerBThread("PLAYER O STRATEGIES", function() {
         }
     });
 
-    var forks22 = [[{x: 1, y: 2}, {x: 2, y: 0}], [{x: 2, y: 1}, {x: 0, y: 2}], [{x: 1, y: 2}, {x: 2, y: 1}]];
-    var forks02 = [[{x: 1, y: 2}, {x: 0, y: 0}], [{x: 0, y: 1}, {x: 2, y: 2}], [{x: 1, y: 2}, {x: 0, y: 1}]];
-    var forks20 = [[{x: 1, y: 0}, {x: 2, y: 2}], [{x: 2, y: 1}, {x: 0, y: 0}], [{x: 2, y: 1}, {x: 1, y: 0}]];
-    var forks00 = [[{x: 0, y: 1}, {x: 2, y: 0}], [{x: 1, y: 0}, {x: 0, y: 2}], [{x: 0, y: 1}, {x: 1, y: 0}]];
+    var forks22 = [[getCell(1, 2), getCell(2, 0)], [getCell(2, 1), getCell(0, 2)], [getCell(1, 2), getCell(2, 1)]];
+    var forks02 = [[getCell(1, 2), getCell(0, 0)], [getCell(0, 1), getCell(2, 2)], [getCell(1, 2), getCell(0, 1)]];
+    var forks20 = [[getCell(1, 0), getCell(2, 2)], [getCell(2, 1), getCell(0, 0)], [getCell(2, 1), getCell(1, 0)]];
+    var forks00 = [[getCell(0, 1), getCell(2, 0)], [getCell(1, 0), getCell(0, 2)], [getCell(0, 1), getCell(1, 0)]];
 
-    var forksdiag = [[{x: 0, y: 2}, {x: 2, y: 0}]];
+    var forksdiag = [[getCell(0, 2), getCell(2, 0)]];
 
     var permsforks = [[0, 1], [1, 0]];
 

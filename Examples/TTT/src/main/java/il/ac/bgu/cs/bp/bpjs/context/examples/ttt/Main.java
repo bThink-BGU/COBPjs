@@ -21,12 +21,12 @@ public class Main {
 		Thread.sleep(1000);
 		contextService.<Cell>getContextInstances("Cell")
 				.stream().collect(Collectors.toMap(Cell::getId, Function.identity()))
-		.values().forEach(cell -> bprog.enqueueExternalEvent(new BEvent("Click","{_row:"+cell.i+",_col:"+cell.j+"}")));
+		.values().forEach(cell -> bprog.enqueueExternalEvent(new BEvent("Click",cell)));
 
-		Thread.sleep(5000);
+		/*Thread.sleep(5000);
 		contextService.close();
 		contextService.init(persistenceUnit, dbPopulationScript, "program.js");
-		contextService.run();
+		contextService.run();*/
 	}
 
 

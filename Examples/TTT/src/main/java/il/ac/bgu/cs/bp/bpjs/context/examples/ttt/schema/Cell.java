@@ -29,7 +29,7 @@ public class Cell extends BasicEntity {
     }
 
     public Cell(int i, int j) {
-        super("cell1("+i+","+j+")");
+        super("cell("+i+","+j+")");
         this.i = i;
         this.j = j;
     }
