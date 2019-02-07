@@ -6,26 +6,60 @@
 
 	<groupId>com.github.bthink-bgu</groupId>
 	<artifactId>BPjs-Context</artifactId>
-	<version>v0.5-alpha</version>
+	<version>1.0.0</version>
 	<packaging>pom</packaging>
+
+	<properties>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<java.version>1.8</java.version>
+
+		<core.version>0.1.0</core.version>
+		<examples.ttt.version>0.1.0</examples.ttt.version>
+		<examples.room.version>0.1.0</examples.room.version>
+	</properties>
+
+	<dependencyManagement>
+		<dependencies>
+			<dependency>
+				<groupId>com.github.bthink-bgu</groupId>
+				<artifactId>BPjs</artifactId>
+				<version>0.9.5</version>
+			</dependency>
+
+			<dependency>
+				<groupId>org.hibernate</groupId>
+				<artifactId>hibernate-core</artifactId>
+				<version>5.3.7.Final</version>
+			</dependency>
+
+			<dependency>
+				<groupId>org.junit.jupiter</groupId>
+				<artifactId>junit-jupiter-api</artifactId>
+				<version>5.3.2</version>
+				<scope>test</scope>
+			</dependency>
+		</dependencies>
+	</dependencyManagement>
+
+	<dependencies>
+		<dependency>
+			<groupId>org.hibernate</groupId>
+			<artifactId>hibernate-core</artifactId>
+		</dependency>
+
+		<dependency>
+			<groupId>com.github.bthink-bgu</groupId>
+			<artifactId>BPjs</artifactId>
+		</dependency>
+
+		<dependency>
+			<groupId>org.junit.jupiter</groupId>
+			<artifactId>junit-jupiter-api</artifactId>
+		</dependency>
+	</dependencies>
 
 	<modules>
 		<module>Core</module>
 		<module>Examples</module>
 	</modules>
-
-	<profiles>
-		<profile>
-			<id>all</id>
-			<modules>
-				<module>Core</module>
-			</modules>
-		</profile>
-		<profile>
-			<id>Examples</id>
-			<modules>
-				<module>Examples</module>
-			</modules>
-		</profile>
-	</profiles>
 </project>

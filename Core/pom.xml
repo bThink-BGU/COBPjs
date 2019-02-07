@@ -4,22 +4,20 @@
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
-	<groupId>com.github.bthink-bgu</groupId>
+	<parent>
+		<groupId>com.github.bthink-bgu</groupId>
+		<artifactId>BPjs-Context</artifactId>
+		<version>1.0.0</version>
+	</parent>
 	<artifactId>BPjs-Context-Core</artifactId>
 	<name>Core</name>
-	<version>v0.5-alpha</version>
+	<version>${core.version}</version>
 	<packaging>jar</packaging>
-
-	<properties>
-		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<java.version>1.8</java.version>
-	</properties>
 
 	<dependencies>
 		<dependency>
 			<groupId>com.github.bthink-bgu</groupId>
 			<artifactId>BPjs</artifactId>
-			<version>0.9.5</version>
 		</dependency>
 
 		<dependency>
@@ -32,7 +30,6 @@
 		<dependency>
 			<groupId>org.hibernate</groupId>
 			<artifactId>hibernate-core</artifactId>
-			<version>5.3.7.Final</version>
 		</dependency>
 
 		<dependency>

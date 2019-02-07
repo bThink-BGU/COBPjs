@@ -7,10 +7,10 @@
     <parent>
         <groupId>com.github.bthink-bgu</groupId>
         <artifactId>BPjs-Context-Examples</artifactId>
-        <version>v0.5-alpha</version>
+        <version>1.0.0</version>
     </parent>
     <artifactId>BPjs-Context-Examples-TTT</artifactId>
-    <!--<version>0.3</version>-->
+    <version>${examples.ttt.version}</version>
     <name>Tic-Tac-Toe Example</name>
     <packaging>jar</packaging>
 
