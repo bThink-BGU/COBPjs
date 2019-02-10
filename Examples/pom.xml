@@ -15,13 +15,10 @@
     <packaging>pom</packaging>
 
     <properties>
-        <exec.mainClass>should be filled in child module</exec.mainClass>
+        <!-- Set in child pom.xml  -->
+        <exec.mainClass>none</exec.mainClass>
+        <exec.verifierClass>none</exec.verifierClass>
     </properties>
-
-    <modules>
-        <module>Room</module>
-        <module>TTT</module>
-    </modules>
 
     <dependencies>
         <dependency>
@@ -106,15 +103,37 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>
                 <version>3.1.1</version>
-                <configuration>
-                    <archive>
-                        <manifest>
-                            <mainClass>${exec.mainClass}</mainClass>
-                            <addClasspath>true</addClasspath>
-                            <classpathPrefix>dependency-jars/</classpathPrefix>
-                        </manifest>
-                    </archive>
-                </configuration>
+                <executions>
+                    <execution>
+                        <id>default-jar</id>
+                        <phase>package</phase>
+                        <goals><goal>jar</goal></goals>
+                        <configuration>
+                            <archive>
+                                <manifest>
+                                    <mainClass>${exec.mainClass}</mainClass>
+                                    <addClasspath>true</addClasspath>
+                                    <classpathPrefix>dependency-jars/</classpathPrefix>
+                                </manifest>
+                            </archive>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>verifier</id>
+                        <phase>package</phase>
+                        <goals><goal>jar</goal></goals>
+                        <configuration>
+                            <classifier>verifier</classifier>
+                            <archive>
+                                <manifest>
+                                    <mainClass>${exec.verifierClass}</mainClass>
+                                    <addClasspath>true</addClasspath>
+                                    <classpathPrefix>dependency-jars/</classpathPrefix>
+                                </manifest>
+                            </archive>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -138,6 +157,12 @@
         </plugins>
     </build>
 
+    <modules>
+        <module>Room</module>
+        <module>TTT</module>
+    </modules>
+
 </project>
+
 
 

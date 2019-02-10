@@ -16,5 +16,7 @@
 
     <properties>
         <exec.mainClass>il.ac.bgu.cs.bp.bpjs.context.examples.ttt.Main</exec.mainClass>
+        <exec.verifierClass>il.ac.bgu.cs.bp.bpjs.context.examples.ttt.Verifier</exec.verifierClass>
     </properties>
+
 </project>
