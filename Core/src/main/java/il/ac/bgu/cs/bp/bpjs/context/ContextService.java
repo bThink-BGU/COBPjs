@@ -118,7 +118,9 @@ public class ContextService implements Serializable {
 
 		//TODO: remove?
 		MyPrioritizedBThreadsEventSelectionStrategy eventSelectionStrategy = new MyPrioritizedBThreadsEventSelectionStrategy();
-		eventSelectionStrategy.setPriority("ContextReporterBT", 1000);
+		int maxPriority = 1000;//Integer.MAX_VALUE;
+		eventSelectionStrategy.setPriority("ContextReporterBT", maxPriority);
+		eventSelectionStrategy.setPriority("PopulateDB", maxPriority - 1);
 		bprog.setEventSelectionStrategy(eventSelectionStrategy);
 
 		bprog.setWaitForExternalEvents(true);
