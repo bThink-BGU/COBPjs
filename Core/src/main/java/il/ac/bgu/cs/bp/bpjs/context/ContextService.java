@@ -85,6 +85,10 @@ public class ContextService implements Serializable {
 		});
 	}
 
+	public BProgram getBProgram() {
+		return bprog;
+	}
+
 	@SuppressWarnings("WeakerAccess")
 	public void addListener(BProgramRunnerListener listener) {
 		if(rnr!=null)
@@ -92,44 +96,44 @@ public class ContextService implements Serializable {
 	}
 
     public void init(String persistenceUnit, String... programs) {
-        contextTypes = new LinkedList<>();
-        pool = Executors.newCachedThreadPool();
-        emf = Persistence.createEntityManagerFactory(persistenceUnit);
-        em = emf.createEntityManager();
-        findAllNamedQueries(emf);
-        namedQueries.forEach((aClass, namedQuery) -> {
-            try {
-                TypedQuery<?> q = em.createNamedQuery(namedQuery.name(), aClass);
-                Set<Parameter<?>> parameters = q.getParameters();
-                if(parameters == null || parameters.isEmpty()) {
-                    registerContextQuery(namedQuery.name(), em.createNamedQuery(namedQuery.name(), aClass), aClass);
-                }
-            } catch (Exception ignored) { }
-        });
+		contextTypes = new LinkedList<>();
+		pool = Executors.newCachedThreadPool();
+		emf = Persistence.createEntityManagerFactory(persistenceUnit);
+		em = emf.createEntityManager();
+		findAllNamedQueries(emf);
+		namedQueries.forEach((aClass, namedQuery) -> {
+			try {
+				TypedQuery<?> q = em.createNamedQuery(namedQuery.name(), aClass);
+				Set<Parameter<?>> parameters = q.getParameters();
+				if (parameters == null || parameters.isEmpty()) {
+					registerContextQuery(namedQuery.name(), em.createNamedQuery(namedQuery.name(), aClass), aClass);
+				}
+			} catch (Exception ignored) {
+			}
+		});
 
-        List<String> a = new ArrayList<>(Arrays.asList(programs));
-        a.add(0,"context.js");
-        bprog = new ResourceBProgram(a);
+		List<String> a = new ArrayList<>(Arrays.asList(programs));
+		a.add(0, "context.js");
+		bprog = new ResourceBProgram(a);
 
-        //TODO: remove?
-        MyPrioritizedBThreadsEventSelectionStrategy eventSelectionStrategy = new MyPrioritizedBThreadsEventSelectionStrategy();
-        eventSelectionStrategy.setPriority("ContextReporterBT", 1000);
-        bprog.setEventSelectionStrategy(eventSelectionStrategy);
+		//TODO: remove?
+		MyPrioritizedBThreadsEventSelectionStrategy eventSelectionStrategy = new MyPrioritizedBThreadsEventSelectionStrategy();
+		eventSelectionStrategy.setPriority("ContextReporterBT", 1000);
+		bprog.setEventSelectionStrategy(eventSelectionStrategy);
 
-        bprog.setWaitForExternalEvents(true);
-        rnr = new BProgramRunner(bprog);
-        addListener(new PrintBProgramRunnerListener());
-        addListener(new DBActuator());
-    }
+		bprog.setWaitForExternalEvents(true);
+		rnr = new BProgramRunner(bprog);
+		addListener(new PrintBProgramRunnerListener());
+		addListener(new DBActuator());
+	}
 
-	public BProgram run() {
+	public void run() {
 
 		try {
 			pool.execute(rnr);
 		} catch (Exception e) {
 			// ignored in case the bprogram has been stopped.
 		}
-		return bprog;
 	}
 
 	// Produce contextName update events to be triggered after each update event

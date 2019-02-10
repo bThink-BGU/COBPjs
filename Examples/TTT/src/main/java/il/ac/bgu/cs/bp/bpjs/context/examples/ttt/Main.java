@@ -14,8 +14,9 @@ public class Main {
 		System.out.println(">>>>>>>>>>>>>>>>>> TTT Blockly example <<<<<<<<<<<<<<<<<<<");
 
 		ContextService contextService = ContextService.getInstance();
-		contextService.init(persistenceUnit, dbPopulationScript, "program.js");
-		BProgram bprog = contextService.run();
+		contextService.init(persistenceUnit, dbPopulationScript, "program.js", "runtime_assertions.js");
+		contextService.run();
+		BProgram bprog = contextService.getBProgram();
 
 		// Simulation of external events
 		Thread.sleep(1000);
