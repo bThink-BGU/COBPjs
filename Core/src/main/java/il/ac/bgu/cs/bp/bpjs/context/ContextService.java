@@ -96,7 +96,22 @@ public class ContextService implements Serializable {
 			rnr.addListener(listener);
 	}
 
-    public void init(String persistenceUnit, String... programs) {
+	public void initFromString(String persistenceUnit, String program) {
+		bprog = new ResourceBProgram("context.js");
+		bprog.appendSource(program);
+
+		init(persistenceUnit);
+	}
+
+    public void initFromResources(String persistenceUnit, String... programs) {
+		List<String> a = new ArrayList<>(Arrays.asList(programs));
+		a.add(0, "context.js");
+		bprog = new ResourceBProgram(a);
+
+		init(persistenceUnit);
+	}
+
+	private void init(String persistenceUnit) {
 		contextTypes = new LinkedList<>();
 		pool = Executors.newCachedThreadPool();
 		emf = Persistence.createEntityManagerFactory(persistenceUnit);
@@ -113,16 +128,13 @@ public class ContextService implements Serializable {
 			}
 		});
 
-		List<String> a = new ArrayList<>(Arrays.asList(programs));
-		a.add(0, "context.js");
-		bprog = new ResourceBProgram(a);
-
 		ContextualEventSelectionStrategy eventSelectionStrategy = new PrioritizedBSyncEventSelectionStrategy();
 		eventSelectionStrategy.setPriority("ContextReporterBT", 1000);
 		eventSelectionStrategy.setPriority("PopulateDB", 999);
-		bprog.setEventSelectionStrategy(eventSelectionStrategy);
 
+		bprog.setEventSelectionStrategy(eventSelectionStrategy);
 		bprog.setWaitForExternalEvents(true);
+
 		rnr = new BProgramRunner(bprog);
 		addListener(new PrintBProgramRunnerListener());
 		addListener(new DBActuator());

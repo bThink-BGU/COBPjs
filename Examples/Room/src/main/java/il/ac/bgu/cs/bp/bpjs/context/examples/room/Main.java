@@ -14,7 +14,7 @@ public class Main {
 		System.out.println(">>>>>>>>>>>>>>>>>> Rooms example <<<<<<<<<<<<<<<<<<<");
 
 		ContextService contextService = ContextService.getInstance();
-		contextService.init(persistenceUnit, dbPopulationScript, "program.js");
+		contextService.initFromResources(persistenceUnit, dbPopulationScript, "program.js");
 		contextService.enableTicker();
 		contextService.run();
 		BProgram bprog = contextService.getBProgram();

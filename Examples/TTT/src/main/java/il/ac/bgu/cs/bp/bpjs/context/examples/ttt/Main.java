@@ -5,7 +5,6 @@ import il.ac.bgu.cs.bp.bpjs.context.examples.ttt.schema.Cell;
 import il.ac.bgu.cs.bp.bpjs.model.BEvent;
 import il.ac.bgu.cs.bp.bpjs.model.BProgram;
 
-import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -14,7 +13,7 @@ public class Main {
 		System.out.println(">>>>>>>>>>>>>>>>>> TTT Blockly example <<<<<<<<<<<<<<<<<<<");
 
 		ContextService contextService = ContextService.getInstance();
-		contextService.init(persistenceUnit, dbPopulationScript, "program.js", "runtime_assertions.js");
+		contextService.initFromResources(persistenceUnit, dbPopulationScript, "program.js", "runtime_assertions.js");
 		contextService.run();
 		BProgram bprog = contextService.getBProgram();
 
@@ -26,7 +25,7 @@ public class Main {
 
 		/*Thread.sleep(5000);
 		contextService.close();
-		contextService.init(persistenceUnit, dbPopulationScript, "program.js");
+		contextService.initFromResources(persistenceUnit, dbPopulationScript, "program.js");
 		contextService.run();*/
 	}
 
