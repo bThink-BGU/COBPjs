@@ -131,7 +131,7 @@ public class PrioritizedBSyncEventSelectionStrategy extends AbstractEventSelecti
             return statements.stream()
                     .filter( Objects::nonNull )
                     .filter(s -> getSyncValue(s) == maxValue)
-                    .flatMap(s -> filteredEvents.stream())
+                    .flatMap(s -> getRequestedAndInFilteredEvents(s, filteredEvents).stream())
                     .collect(toSet());
         } finally {
             Context.exit();

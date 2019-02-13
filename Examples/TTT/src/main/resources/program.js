@@ -50,28 +50,28 @@ CTX.subscribe("block X,O on nonempty cell","NonEmptyCell",function(c) {
 //endregion CEll BEHAVIORS
 
 //#region GAME RULES
-// bp.registerBThread("EnforceTurns", function() {
-//     while (true) {
-//         bp.sync({
-//             waitFor: XEvents,
-//             block: OEvents
-//         });
-//         bp.sync({
-//             waitFor: OEvents,
-//             block: XEvents
-//         });
-//     }
-// });
 
-bp.registerBThread("EnforceTurns", function() {
+bp.registerBThread("EnforceTurnsXO", function() {
+    while (true) {
+        bp.sync({
+            waitFor: XEvents,
+            block: OEvents
+        });
+        bp.sync({
+            waitFor: OEvents,
+            block: XEvents
+        });
+    }
+});
+
+bp.registerBThread("EnforceMoveAfterNonEmptyCell", function() {
     while (true) {
         var e = bp.sync({ waitFor: move });
-        // bp.log.info("HERE " + e);
         bp.sync({
             waitFor: CTX.NewContextEvent("NonEmptyCell", e.data),
             block: move
         });
-    }
+}
 });
 
 // Represents when the game ends
@@ -82,21 +82,9 @@ bp.registerBThread("block X or O on endgame", function() {
 
 // Represents when it is a draw
 bp.registerBThread("DetectDraw", function() {
-    // For debug
-    bp.sync({ waitFor: move });
-    bp.sync({ waitFor: move });
-    bp.sync({ waitFor: move });
-
-    bp.sync({ waitFor: move });
-    bp.sync({ waitFor: move });
-    bp.sync({ waitFor: move });
-
-    bp.sync({ waitFor: move });
-    bp.sync({ waitFor: move });
-    bp.sync({ waitFor: move });
-    /*
-     * for (var i=0; i< 9; i++) { bp.sync({ waitFor:[ move ] }); }
-     */
+    for (var i = 0; i < 9; i++) {
+        bp.sync({ waitFor: move });
+    }
     bp.sync({ request: bp.Event('Draw') }, 90);
 });
 
@@ -178,7 +166,7 @@ function addForkdiagPermutationBthreads(c1,c2){ //
     bp.registerBThread("PreventForkdiagX", function() {
         bp.sync({ waitFor:[ createEvent("X",c1) ] });
         bp.sync({ waitFor:[ createEvent("X",c2) ] });
-        bp.sync({ request:[ createEvent("O", getCell(0,1)),createEvent("O",getCell(1,0)), reateEvent("O", getCell(2,1)), createEvent("O", getCell(1,2)) ] }, 30);
+        bp.sync({ request:[ createEvent("O", getCell(0,1)),createEvent("O",getCell(1,0)), createEvent("O", getCell(2,1)), createEvent("O", getCell(1,2)) ] }, 30);
     });
 }
 //#endregion fork functions
