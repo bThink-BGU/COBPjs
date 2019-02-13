@@ -50,18 +50,18 @@ CTX.subscribe("block X,O on nonempty cell","NonEmptyCell",function(c) {
 //endregion CEll BEHAVIORS
 
 //#region GAME RULES
-bp.registerBThread("EnforceTurns", function() {
-    while (true) {
-        bp.sync({
-            waitFor: XEvents,
-            block: OEvents
-        });
-        bp.sync({
-            waitFor: OEvents,
-            block: XEvents
-        });
-    }
-});
+// bp.registerBThread("EnforceTurns", function() {
+//     while (true) {
+//         bp.sync({
+//             waitFor: XEvents,
+//             block: OEvents
+//         });
+//         bp.sync({
+//             waitFor: OEvents,
+//             block: XEvents
+//         });
+//     }
+// });
 
 bp.registerBThread("EnforceTurns", function() {
     while (true) {

@@ -11,7 +11,8 @@ import javax.persistence.metamodel.ManagedType;
 
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
-import com.google.common.collect.SetMultimap;
+import il.ac.bgu.cs.bp.bpjs.context.eventselection.ContextualEventSelectionStrategy;
+import il.ac.bgu.cs.bp.bpjs.context.eventselection.PrioritizedBSyncEventSelectionStrategy;
 import il.ac.bgu.cs.bp.bpjs.execution.BProgramRunner;
 import il.ac.bgu.cs.bp.bpjs.execution.listeners.BProgramRunnerListener;
 import il.ac.bgu.cs.bp.bpjs.execution.listeners.PrintBProgramRunnerListener;
@@ -116,9 +117,9 @@ public class ContextService implements Serializable {
 		a.add(0, "context.js");
 		bprog = new ResourceBProgram(a);
 
-		//TODO: remove?
-		MyPrioritizedBThreadsEventSelectionStrategy eventSelectionStrategy = new MyPrioritizedBThreadsEventSelectionStrategy();
+		ContextualEventSelectionStrategy eventSelectionStrategy = new PrioritizedBSyncEventSelectionStrategy();
 		eventSelectionStrategy.setPriority("ContextReporterBT", 1000);
+		eventSelectionStrategy.setPriority("PopulateDB", 999);
 		bprog.setEventSelectionStrategy(eventSelectionStrategy);
 
 		bprog.setWaitForExternalEvents(true);
