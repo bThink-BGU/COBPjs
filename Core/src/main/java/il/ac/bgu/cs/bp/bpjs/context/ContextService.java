@@ -1,5 +1,6 @@
 package il.ac.bgu.cs.bp.bpjs.context;
 
+import java.io.ObjectStreamException;
 import java.io.Serializable;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
@@ -37,6 +38,7 @@ public class ContextService implements Serializable {
 	private List<CtxType> contextTypes;
 	private BEvent[] contextEvents;
 	private Multimap<Class<?>, NamedQuery> namedQueries;
+	private Object dbDump = null;
 
 	private ContextService() { }
 
@@ -55,6 +57,22 @@ public class ContextService implements Serializable {
 		transient TypedQuery query;
 		Class cls;
 		List<?> activeContexts = new LinkedList<>();
+	}
+
+	private Object readResolve() throws ObjectStreamException {
+		uniqInstance.contextEvents = contextEvents;
+		uniqInstance.contextTypes = contextTypes;
+		uniqInstance.namedQueries = namedQueries;
+		if(dbDump!=null){
+			//TODO replace db data
+			// OR clear all tables and then persist all object in contextTypes
+		}
+		return uniqInstance;
+	}
+
+	private Object writeReplace() throws ObjectStreamException {
+		//TODO write dbDump
+		return this;
 	}
 
 	private void persistObjects(Object ... objects) {
