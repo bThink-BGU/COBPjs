@@ -114,13 +114,6 @@ public class ContextService implements Serializable {
 			rnr.addListener(listener);
 	}
 
-	public void initFromString(String persistenceUnit, String program) {
-		bprog = new ResourceBProgram("context.js");
-		bprog.appendSource(program);
-
-		init(persistenceUnit);
-	}
-
     public void initFromResources(String persistenceUnit, String... programs) {
 		List<String> a = new ArrayList<>(Arrays.asList(programs));
 		a.add(0, "context.js");
@@ -134,7 +127,7 @@ public class ContextService implements Serializable {
 		pool = Executors.newCachedThreadPool();
 		emf = Persistence.createEntityManagerFactory(persistenceUnit);
 		em = emf.createEntityManager();
-		findAllNamedQueries(emf);
+		namedQueries = findAllNamedQueries(emf);
 		namedQueries.forEach((aClass, namedQuery) -> {
 			try {
 				TypedQuery<?> q = em.createNamedQuery(namedQuery.name(), aClass);
@@ -206,8 +199,8 @@ public class ContextService implements Serializable {
 		return null;
 	}
 
-	private void findAllNamedQueries(EntityManagerFactory emf) {
-		namedQueries = ArrayListMultimap.create();
+	private static Multimap<Class<?>, NamedQuery> findAllNamedQueries(EntityManagerFactory emf) {
+		Multimap<Class<?>, NamedQuery> answer = ArrayListMultimap.create();
 		Set<ManagedType<?>> managedTypes = emf.getMetamodel().getManagedTypes();
 		for (ManagedType<?> managedType: managedTypes) {
 			if (managedType instanceof IdentifiableType) {
@@ -216,15 +209,16 @@ public class ContextService implements Serializable {
 				Class<?> javaClass = managedType.getJavaType();
 				NamedQueries namedQueriesList = javaClass.getAnnotation(NamedQueries.class);
 				if (namedQueriesList != null) {
-					namedQueries.putAll(javaClass,Arrays.asList(namedQueriesList.value()));
+					answer.putAll(javaClass,Arrays.asList(namedQueriesList.value()));
 				}
 
 				NamedQuery namedQuery = javaClass.getAnnotation(NamedQuery.class);
 				if (namedQuery != null) {
-					namedQueries.put(javaClass, namedQuery);
+					answer.put(javaClass, namedQuery);
 				}
 			}
 		}
+		return answer;
 	}
 
 	private void registerContextQuery(String name, TypedQuery<?> query, Class<?> cls) {
@@ -274,9 +268,14 @@ public class ContextService implements Serializable {
 
 	@SuppressWarnings("unused")
 	public void close() {
-		pool.shutdownNow();
 		em.close();
 		emf.close();
+		rnr.halt();
+		pool.shutdownNow();
+		rnr = null;
+		bprog = null;
+		emf = null;
+		em = null;
 	}
 
 	//region Internal Events
