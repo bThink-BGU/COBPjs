@@ -90,18 +90,22 @@ public class ContextService implements Serializable {
 	}
 
 	private Object writeReplace() throws ObjectStreamException {
+	    /*Properties p = new Properties();
+	    p.putAll(emf.getProperties());
+	    dbDump = Db2Sql.dumpDB(p);*/
         Session session = em.unwrap(Session.class);
         session.doWork(connection -> {
-            StringBuffer sb = new StringBuffer();
-            for(EntityType<?> e : em.getMetamodel().getEntities()){
-                Db2Sql.dumpTable(connection,sb,e.getName());
-            }
-            if(sb.length() > 0) {
-                dbDump = sb.toString();
-            } else {
-                dbDump = null;
-            }
-        });
+			StringBuffer sb = new StringBuffer();
+			for(EntityType<?> e : em.getMetamodel().getEntities()){
+				Db2Sql.dumpTable(connection,sb,e.getName());
+			}
+			if(sb.length() > 0) {
+				dbDump = sb.toString();
+			} else {
+				dbDump = null;
+			}
+		});
+//        System.out.println(dbDump);
 		return this;
 	}
 
