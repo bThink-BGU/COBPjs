@@ -141,18 +141,21 @@ public class ContextService implements Serializable {
 		return uniqInstance;
 	}
 
-    private void writeObject(ObjectOutputStream out) throws IOException {
-//    private Object writeReplace() throws ObjectStreamException {
+//    private void writeObject(ObjectOutputStream out) throws IOException {
+    private Object writeReplace() throws ObjectStreamException {
 	    dbDump = new LinkedList<>();
-	    if(this!=uniqInstance){
-            System.out.println("counter is "+counter.get());
-        }
-        Session session = em.unwrap(Session.class);
+        Session session = uniqInstance.em.unwrap(Session.class);
         session.doWork(connection -> {
-			em.getMetamodel().getEntities().forEach(e -> dbDump.addAll(Db2Sql.dumpTable(connection, e.getName())));
+            uniqInstance.em.getMetamodel().getEntities().forEach(e -> dbDump.addAll(Db2Sql.dumpTable(connection, e.getName())));
 		});
-//		return this;
-        out.defaultWriteObject();
+        if(this!=uniqInstance){
+            System.out.println("counter is "+counter.get());
+            uniqInstance.dbDump = dbDump;
+            uniqInstance.contextEvents = contextEvents;
+            uniqInstance.contextTypes = contextTypes;
+        }
+		return uniqInstance;
+//        out.defaultWriteObject();
 	}
 
 	private void persistObjects(Object ... objects) {
