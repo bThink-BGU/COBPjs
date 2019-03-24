@@ -2,16 +2,18 @@ package il.ac.bgu.cs.bp.bpjs.context;
 
 import java.io.ObjectStreamException;
 import java.io.Serializable;
+import java.sql.Connection;
+import java.sql.SQLException;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import javax.persistence.*;
+import javax.persistence.metamodel.EntityType;
 import javax.persistence.metamodel.IdentifiableType;
 import javax.persistence.metamodel.ManagedType;
 
-import com.google.common.collect.ArrayListMultimap;
-import com.google.common.collect.Multimap;
+import com.google.common.collect.*;
 import il.ac.bgu.cs.bp.bpjs.context.eventselection.ContextualEventSelectionStrategy;
 import il.ac.bgu.cs.bp.bpjs.context.eventselection.PrioritizedBSyncEventSelectionStrategy;
 import il.ac.bgu.cs.bp.bpjs.execution.BProgramRunner;
@@ -21,26 +23,37 @@ import il.ac.bgu.cs.bp.bpjs.model.BEvent;
 import il.ac.bgu.cs.bp.bpjs.model.BProgram;
 import il.ac.bgu.cs.bp.bpjs.model.ResourceBProgram;
 import il.ac.bgu.cs.bp.bpjs.model.eventsets.EventSet;
+import org.hibernate.Session;
+import org.hibernate.jdbc.Work;
 import org.mozilla.javascript.NativeFunction;
 import org.mozilla.javascript.NativeObject;
 
 public class ContextService implements Serializable {
-	private static ContextService uniqInstance = new ContextService();
+    private static ContextService uniqInstance = new ContextService();
 	@SuppressWarnings("unused")
 	public static NativeFunction subscribe;
 	@SuppressWarnings("unused")
 	public static NativeFunction subscribeWithParameters;
-	private transient EntityManagerFactory emf;
-	private transient EntityManager em;
-	private transient ExecutorService pool;
-	private transient BProgram bprog;
-	private transient BProgramRunner rnr;
-	private List<CtxType> contextTypes;
-	private BEvent[] contextEvents;
-	private Multimap<Class<?>, NamedQuery> namedQueries;
-	private Object dbDump = null;
+    private transient EntityManagerFactory emf;
+    private transient EntityManager em;
+    private transient ExecutorService pool;
+    private transient BProgram bprog;
+    private transient BProgramRunner rnr;
+	private transient List<CtxType> contextTypes;
+    private transient Multimap<Class<?>, NamedQuery> namedQueries;
+    private Multimap<String, ?> activeContexts;
+    private BEvent[] contextEvents;
+	private String dbDump = null;
+	private boolean verificationMode = false;
 
 	private ContextService() { }
+
+	public void enableVerificationMode() {
+		if(bprog != null) {
+			throw new IllegalStateException("Setting verification mode must be done before calling initFromResources or initFromString");
+		}
+		this.verificationMode = true;
+	}
 
 	@SuppressWarnings("unused")
 	public static ContextService getInstance() {
@@ -52,42 +65,66 @@ public class ContextService implements Serializable {
 		return uniqInstance.getContextInstances(type);
 	}
 
-	private static class CtxType implements Serializable{
+	private static class CtxType {
 		String name;
-		transient TypedQuery query;
+		TypedQuery query;
 		Class cls;
-		List<?> activeContexts = new LinkedList<>();
 	}
 
 	private Object readResolve() throws ObjectStreamException {
 		uniqInstance.contextEvents = contextEvents;
 		uniqInstance.contextTypes = contextTypes;
 		uniqInstance.namedQueries = namedQueries;
-		if(dbDump!=null){
-			//TODO replace db data
-			// OR clear all tables and then persist all object in contextTypes
+		uniqInstance.activeContexts = activeContexts;
+		
+		if(dbDump!=null) {
+            System.out.println(dbDump);
+		    uniqInstance.em.getTransaction().begin();
+            for(EntityType<?> e : uniqInstance.em.getMetamodel().getEntities()){
+                uniqInstance.em.createQuery("Delete from "+e.getName()+" e").executeUpdate();
+            }
+            uniqInstance.em.createNativeQuery(dbDump).executeUpdate();
+            uniqInstance.em.getTransaction().commit();
 		}
 		return uniqInstance;
 	}
 
 	private Object writeReplace() throws ObjectStreamException {
-		//TODO write dbDump
+	    /*Properties p = new Properties();
+	    p.putAll(emf.getProperties());
+	    dbDump = Db2Sql.dumpDB(p);*/
+        Session session = em.unwrap(Session.class);
+        session.doWork(new Work() {
+            @Override
+            public void execute(Connection connection) throws SQLException {
+                StringBuffer sb = new StringBuffer();
+                for(EntityType<?> e : em.getMetamodel().getEntities()){
+                    Db2Sql.dumpTable(connection,sb,e.getName());
+                }
+                if(sb.length() > 0) {
+                    dbDump = sb.toString();
+                } else {
+                    dbDump = null;
+                }
+            }
+        });
+//        System.out.println(dbDump);
 		return this;
 	}
 
 	private void persistObjects(Object ... objects) {
 		if(objects == null)
 			return;
-		em.getTransaction().begin();
+        em.getTransaction().begin();
 		for (Object o: objects) {
-			em.merge(o);
+            em.merge(o);
 		}
-		em.getTransaction().commit();
+        em.getTransaction().commit();
 		updateContexts();
 	}
 
 	public void enableTicker() {
-		pool.execute(new Runnable() {
+        pool.execute(new Runnable() {
 			private int tick = 0;
 			@Override
 			public void run() {
@@ -95,7 +132,7 @@ public class ContextService implements Serializable {
 					//noinspection InfiniteLoopStatement
 					while(true) {
 						Thread.sleep(1000);
-						bprog.enqueueExternalEvent(new TickEvent(++tick));
+                        bprog.enqueueExternalEvent(new TickEvent(++tick));
 					}
 				} catch (InterruptedException e) {
 					e.printStackTrace();
@@ -111,31 +148,37 @@ public class ContextService implements Serializable {
 	@SuppressWarnings("WeakerAccess")
 	public void addListener(BProgramRunnerListener listener) {
 		if(rnr!=null)
-			rnr.addListener(listener);
+            rnr.addListener(listener);
 	}
 
-	public void initFromString(String persistenceUnit, String program) {
-		bprog = new ResourceBProgram("context.js");
-		bprog.appendSource(program);
+	@SuppressWarnings("unused")
+    public void initFromString(String persistenceUnit, String program) {
+        bprog = new ResourceBProgram("context.js");
+        bprog.appendSource(program);
 
-		init(persistenceUnit);
-	}
+        init(persistenceUnit);
+    }
 
     public void initFromResources(String persistenceUnit, String... programs) {
 		List<String> a = new ArrayList<>(Arrays.asList(programs));
 		a.add(0, "context.js");
+		if(verificationMode) {
+			a.add("internal_context_verification.js");
+		}
 		bprog = new ResourceBProgram(a);
 
 		init(persistenceUnit);
 	}
 
 	private void init(String persistenceUnit) {
+	    close();
 		contextTypes = new LinkedList<>();
-		pool = Executors.newCachedThreadPool();
-		emf = Persistence.createEntityManagerFactory(persistenceUnit);
-		em = emf.createEntityManager();
-		findAllNamedQueries(emf);
-		namedQueries.forEach((aClass, namedQuery) -> {
+        pool = Executors.newCachedThreadPool();
+        emf = Persistence.createEntityManagerFactory(persistenceUnit);
+        em = emf.createEntityManager();
+        namedQueries = findAllNamedQueries(emf);
+        activeContexts = ArrayListMultimap.create();
+        namedQueries.forEach((aClass, namedQuery) -> {
 			try {
 				TypedQuery<?> q = em.createNamedQuery(namedQuery.name(), aClass);
 				Set<Parameter<?>> parameters = q.getParameters();
@@ -150,10 +193,10 @@ public class ContextService implements Serializable {
 		eventSelectionStrategy.setPriority("ContextReporterBT", 1000);
 		eventSelectionStrategy.setPriority("PopulateDB", 999);
 
-		bprog.setEventSelectionStrategy(eventSelectionStrategy);
-		bprog.setWaitForExternalEvents(true);
+        bprog.setEventSelectionStrategy(eventSelectionStrategy);
+        bprog.setWaitForExternalEvents(true);
 
-		rnr = new BProgramRunner(bprog);
+        rnr = new BProgramRunner(bprog);
 		addListener(new PrintBProgramRunnerListener());
 		addListener(new DBActuator());
 	}
@@ -161,7 +204,7 @@ public class ContextService implements Serializable {
 	public void run() {
 
 		try {
-			pool.execute(rnr);
+            pool.execute(rnr);
 		} catch (Exception e) {
 			// ignored in case the bprogram has been stopped.
 		}
@@ -172,25 +215,29 @@ public class ContextService implements Serializable {
 		Set<BEvent> events = new HashSet<>();
 		contextTypes.forEach(ctxType -> {
 			// Remember the list of contexts that we already reported of
-			List<?> knownContexts = new LinkedList<>(ctxType.activeContexts);
+			List<?> knownContexts = new LinkedList<>(activeContexts.get(ctxType.name));
 			// Update the list of contexts
-			ctxType.activeContexts = ctxType.query.getResultList();
+            activeContexts.replaceValues(ctxType.name, ctxType.query.getResultList());
 			// Filter the contexts that we didn't yet report of
-			List<?> newContexts = new LinkedList<>(ctxType.activeContexts);
+			List<?> newContexts = new LinkedList<>(activeContexts.get(ctxType.name));
 			//noinspection SuspiciousMethodCalls
 			newContexts.removeAll(knownContexts);
 			// Compute the contexts that where just removed
 			newContexts.stream().map(obj -> new NewContextEvent(ctxType.name, obj)).forEach(events::add);
 			//noinspection SuspiciousMethodCalls
-			knownContexts.removeAll(ctxType.activeContexts);
+			knownContexts.removeAll(activeContexts.get(ctxType.name));
 			knownContexts.stream().map(obj -> new ContextEndedEvent(ctxType.name, obj)).forEach(events::add);
 		});
 		contextEvents = events.toArray(new BEvent[0]);
 	}
 
+
+    public static BEvent[] getContextEvents() {
+        return getInstance().innerGetContextEvents();
+    }
+
 	// Produce contextName update events to be triggered after each update event
-	@SuppressWarnings("unused")
-	public BEvent[] getContextEvents() {
+	private BEvent[] innerGetContextEvents() {
 		return contextEvents;
 	}
 
@@ -199,15 +246,15 @@ public class ContextService implements Serializable {
 		for (CtxType ct : contextTypes) {
 			if (ct.name.equals(type)) {
 				@SuppressWarnings("unchecked")
-				List<T> l =  (List<T>) ct.activeContexts;
+				List<T> l =  (List<T>) activeContexts.get(ct.name);
 				return l;
 			}
 		}
 		return null;
 	}
 
-	private void findAllNamedQueries(EntityManagerFactory emf) {
-		namedQueries = ArrayListMultimap.create();
+	private static Multimap<Class<?>, NamedQuery> findAllNamedQueries(EntityManagerFactory emf) {
+        Multimap<Class<?>, NamedQuery> namedQueries = ArrayListMultimap.create();
 		Set<ManagedType<?>> managedTypes = emf.getMetamodel().getManagedTypes();
 		for (ManagedType<?> managedType: managedTypes) {
 			if (managedType instanceof IdentifiableType) {
@@ -225,6 +272,7 @@ public class ContextService implements Serializable {
 				}
 			}
 		}
+		return ImmutableMultimap.copyOf(namedQueries);
 	}
 
 	private void registerContextQuery(String name, TypedQuery<?> query, Class<?> cls) {
@@ -236,8 +284,12 @@ public class ContextService implements Serializable {
 		updateContexts();
 	}
 
+	public static void registerParameterizedContextQuery(String queryName, String uniqueId, NativeObject params) {
+	    getInstance().innerRegisterParameterizedContextQuery(queryName, uniqueId, params);
+    }
+
 	@SuppressWarnings("unused")
-	public void registerParameterizedContextQuery(String queryName, String uniqueId, NativeObject params) {
+	private void innerRegisterParameterizedContextQuery(String queryName, String uniqueId, NativeObject params) {
 		namedQueries.forEach((aClass, namedQuery) -> {
 			if(namedQuery.name().equals(queryName)) {
 				TypedQuery<?> q = em.createNamedQuery(queryName, aClass);
@@ -274,10 +326,12 @@ public class ContextService implements Serializable {
 
 	@SuppressWarnings("unused")
 	public void close() {
-		pool.shutdownNow();
-		em.close();
-		emf.close();
-	}
+        try {
+            pool.shutdownNow();
+            em.close();
+            emf.close();
+        } catch (Exception e) { }
+    }
 
 	//region Internal Events
 	@SuppressWarnings("WeakerAccess")
@@ -313,7 +367,7 @@ public class ContextService implements Serializable {
 			this.persistObjects = persistObjects;
 		}
 
-		void execute() {
+		public void execute() {
 			getInstance().persistObjects(persistObjects);
 		}
 	}
@@ -334,7 +388,7 @@ public class ContextService implements Serializable {
 			this(contextName, new HashMap<>());
 		}
 
-		void execute() {
+        public void execute() {
 			EntityManager em = getInstance().em;
 			Query namedQuery = em.createNamedQuery(contextName);
 

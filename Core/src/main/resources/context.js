@@ -1,7 +1,6 @@
 importPackage(Packages.il.ac.bgu.cs.bp.bpjs.context);
 
 var CTX = ContextService;
-var CTX_instance = CTX.getInstance();
 
 function subscribe(subscribeId, ctxName, func) { //TODO: Add  parameter "boolean applyToCurrentInstances" ?
     bp.registerBThread(subscribeId + "ListenerBT", function() {
@@ -19,7 +18,7 @@ function subscribe(subscribeId, ctxName, func) { //TODO: Add  parameter "boolean
 }
 
 function subscribeWithParameters(subscribeId, ctxName, ctxUniqueName, parameters, func) { //TODO: Add  parameter "boolean applyToCurrentInstances" ?
-    CTX_instance.registerParameterizedContextQuery(ctxName, ctxUniqueName, parameters);
+    CTX.registerParameterizedContextQuery(ctxName, ctxUniqueName, parameters);
     return subscribe(subscribeId, ctxUniqueName, func);
 }
 
@@ -30,7 +29,7 @@ CTX.subscribeWithParameters = subscribeWithParameters;
 bp.registerBThread("ContextReporterBT", function() {
     while (true) {
         // Trigger new context events
-        var events = CTX_instance.getContextEvents();
+        var events = CTX.getContextEvents();
         for (var i = 0, len = events.length; i < len; i++) {
             bp.sync({ request: events[i] });
         }

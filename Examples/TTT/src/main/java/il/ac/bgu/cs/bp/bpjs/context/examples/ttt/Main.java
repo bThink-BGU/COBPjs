@@ -13,7 +13,7 @@ public class Main {
 		System.out.println(">>>>>>>>>>>>>>>>>> TTT Blockly example <<<<<<<<<<<<<<<<<<<");
 
 		ContextService contextService = ContextService.getInstance();
-		contextService.initFromResources(persistenceUnit, dbPopulationScript, "program.js", "runtime_assertions.js");
+		contextService.initFromResources(persistenceUnit, dbPopulationScript, "program.js", "assertions.js");
 		contextService.run();
 		BProgram bprog = contextService.getBProgram();
 
@@ -23,9 +23,9 @@ public class Main {
 				.stream().collect(Collectors.toMap(Cell::getId, Function.identity()))
 		.values().forEach(cell -> bprog.enqueueExternalEvent(new BEvent("Click",cell)));
 
-		/*Thread.sleep(5000);
+		Thread.sleep(5000);
 		contextService.close();
-		contextService.initFromResources(persistenceUnit, dbPopulationScript, "program.js");
+		/*contextService.initFromResources(persistenceUnit, dbPopulationScript, "program.js");
 		contextService.run();*/
 	}
 

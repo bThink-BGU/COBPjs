@@ -1,7 +1,7 @@
 function registerAllCellsQueries() {
     for (var i = 0; i < 3; i++) {
         for (var j = 0; j < 3; j++) {
-            CTX_instance.registerParameterizedContextQuery("SpecificCell", "Cell[" + i + "," + j + "]", {
+            CTX.registerParameterizedContextQuery("SpecificCell", "Cell[" + i + "," + j + "]", {
                 "i": i,
                 "j": j
             });
@@ -44,6 +44,6 @@ bp.registerBThread("PopulateDB", function() {
 
     bp.sync({ request: CTX.InsertEvent(cells) });
     bp.sync({ request: CTX.InsertEvent(triples) });
-
+    bp.log.info("Population ended");
     bp.sync({ request: bp.Event("Context Population Ended") });
 });
