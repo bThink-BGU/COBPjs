@@ -11,7 +11,7 @@ public class Verifier {
     public static void main(String[] args) throws Exception {
         ContextService contextService = ContextService.getInstance();
         contextService.enableVerificationMode();
-        String[] programs = new String[]{"context.js","db_population.js", "program.js", "assertions.js"};
+        String[] programs = new String[]{"context.js","db_population.js", "program.js", "assertions.js", "verification.js"};
         contextService.initFromResources("ContextDB", programs);
         BProgram program = contextService.getBProgram();
         DfsBProgramVerifier vrf = new DfsBProgramVerifier();           // ... and a verifier

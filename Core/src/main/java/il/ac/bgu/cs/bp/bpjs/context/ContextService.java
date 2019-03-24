@@ -2,14 +2,11 @@ package il.ac.bgu.cs.bp.bpjs.context;
 
 import java.io.ObjectStreamException;
 import java.io.Serializable;
-import java.sql.Connection;
-import java.sql.SQLException;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import javax.persistence.*;
-import javax.persistence.metamodel.EntityType;
 import javax.persistence.metamodel.IdentifiableType;
 import javax.persistence.metamodel.ManagedType;
 
@@ -24,7 +21,6 @@ import il.ac.bgu.cs.bp.bpjs.model.BProgram;
 import il.ac.bgu.cs.bp.bpjs.model.ResourceBProgram;
 import il.ac.bgu.cs.bp.bpjs.model.eventsets.EventSet;
 import org.hibernate.Session;
-import org.hibernate.jdbc.Work;
 import org.mozilla.javascript.NativeFunction;
 import org.mozilla.javascript.NativeObject;
 
@@ -39,12 +35,13 @@ public class ContextService implements Serializable {
     private transient ExecutorService pool;
     private transient BProgram bprog;
     private transient BProgramRunner rnr;
-	private transient List<CtxType> contextTypes;
+	private transient Map<String, CtxType> contextTypes;
     private transient Multimap<Class<?>, NamedQuery> namedQueries;
-    private Multimap<String, ?> activeContexts;
-    private BEvent[] contextEvents;
-	private String dbDump = null;
-	private boolean verificationMode = false;
+	private transient boolean verificationMode = false;
+	private Multimap<String, ?> activeContexts;
+//	private Map<String, CtxType> contextTypes;
+	private BEvent[] contextEvents;
+	private List<String> dbDump = new LinkedList<>();
 
 	private ContextService() { }
 
@@ -66,26 +63,26 @@ public class ContextService implements Serializable {
 	}
 
 	private static class CtxType {
-		String name;
-		TypedQuery query;
-		Class cls;
+		final String name;
+		final TypedQuery query;
+		final Class cls;
+
+		public CtxType(String name, TypedQuery query, Class cls){
+			this.name = name;
+			this.query = query;
+			this.cls = cls;
+		}
 	}
 
 	private Object readResolve() throws ObjectStreamException {
-		uniqInstance.contextEvents = contextEvents;
-		uniqInstance.contextTypes = contextTypes;
-		uniqInstance.namedQueries = namedQueries;
 		uniqInstance.activeContexts = activeContexts;
-		
-		if(dbDump!=null) {
-            System.out.println(dbDump);
-		    uniqInstance.em.getTransaction().begin();
-            for(EntityType<?> e : uniqInstance.em.getMetamodel().getEntities()){
-                uniqInstance.em.createQuery("Delete from "+e.getName()+" e").executeUpdate();
-            }
-            uniqInstance.em.createNativeQuery(dbDump).executeUpdate();
-            uniqInstance.em.getTransaction().commit();
-		}
+		uniqInstance.contextEvents = contextEvents;
+
+		uniqInstance.em.getTransaction().begin();
+		uniqInstance.em.getMetamodel().getEntities()
+				.forEach(e -> uniqInstance.em.createQuery("Delete from "+e.getName()+" e").executeUpdate());
+		dbDump.forEach(s -> uniqInstance.em.createNativeQuery(s).executeUpdate());
+		uniqInstance.em.getTransaction().commit();
 		return uniqInstance;
 	}
 
@@ -93,17 +90,10 @@ public class ContextService implements Serializable {
 	    /*Properties p = new Properties();
 	    p.putAll(emf.getProperties());
 	    dbDump = Db2Sql.dumpDB(p);*/
+	    dbDump = new LinkedList<>();
         Session session = em.unwrap(Session.class);
         session.doWork(connection -> {
-			StringBuffer sb = new StringBuffer();
-			for(EntityType<?> e : em.getMetamodel().getEntities()){
-				Db2Sql.dumpTable(connection,sb,e.getName());
-			}
-			if(sb.length() > 0) {
-				dbDump = sb.toString();
-			} else {
-				dbDump = null;
-			}
+			em.getMetamodel().getEntities().forEach(e -> dbDump.addAll(Db2Sql.dumpTable(connection,e.getName())));
 		});
 //        System.out.println(dbDump);
 		return this;
@@ -169,7 +159,7 @@ public class ContextService implements Serializable {
 
 	private void init(String persistenceUnit) {
 	    close();
-		contextTypes = new LinkedList<>();
+		contextTypes = Maps.newHashMap();
         pool = Executors.newCachedThreadPool();
         emf = Persistence.createEntityManagerFactory(persistenceUnit);
         em = emf.createEntityManager();
@@ -210,7 +200,22 @@ public class ContextService implements Serializable {
 	// Produce contextName update events to be triggered after each update event
 	private void updateContexts() {
 		Set<BEvent> events = new HashSet<>();
-		contextTypes.forEach(ctxType -> {
+		activeContexts.keys().forEach(name -> {
+			// Remember the list of contexts that we already reported of
+			List<?> knownContexts = new LinkedList<>(activeContexts.get(name));
+			// Update the list of contexts
+			activeContexts.replaceValues(name, contextTypes.get(name).query.getResultList());
+			// Filter the contexts that we didn't yet report of
+			List<?> newContexts = new LinkedList<>(activeContexts.get(name));
+			//noinspection SuspiciousMethodCalls
+			newContexts.removeAll(knownContexts);
+			// Compute the contexts that where just removed
+			newContexts.stream().map(obj -> new NewContextEvent(name, obj)).forEach(events::add);
+			//noinspection SuspiciousMethodCalls
+			knownContexts.removeAll(activeContexts.get(name));
+			knownContexts.stream().map(obj -> new ContextEndedEvent(name, obj)).forEach(events::add);
+		});
+		/*contextTypes.forEach(ctxType -> {
 			// Remember the list of contexts that we already reported of
 			List<?> knownContexts = new LinkedList<>(activeContexts.get(ctxType.name));
 			// Update the list of contexts
@@ -224,7 +229,7 @@ public class ContextService implements Serializable {
 			//noinspection SuspiciousMethodCalls
 			knownContexts.removeAll(activeContexts.get(ctxType.name));
 			knownContexts.stream().map(obj -> new ContextEndedEvent(ctxType.name, obj)).forEach(events::add);
-		});
+		});*/
 		contextEvents = events.toArray(new BEvent[0]);
 	}
 
@@ -240,14 +245,8 @@ public class ContextService implements Serializable {
 
     @SuppressWarnings("WeakerAccess")
 	public <T> List<T> getContextInstances(String type) {
-		for (CtxType ct : contextTypes) {
-			if (ct.name.equals(type)) {
-				@SuppressWarnings("unchecked")
-				List<T> l =  (List<T>) activeContexts.get(ct.name);
-				return l;
-			}
-		}
-		return null;
+		List<T> a = (List<T>)activeContexts.get(type);
+		return a;
 	}
 
 	private static Multimap<Class<?>, NamedQuery> findAllNamedQueries(EntityManagerFactory emf) {
@@ -273,11 +272,8 @@ public class ContextService implements Serializable {
 	}
 
 	private void registerContextQuery(String name, TypedQuery<?> query, Class<?> cls) {
-		CtxType newType = new CtxType();
-		newType.name = name;
-		newType.cls = cls;
-		newType.query = query;
-		contextTypes.add(newType);
+		contextTypes.put(name, new CtxType(name, query, cls));
+		activeContexts.put(name, null);
 		updateContexts();
 	}
 

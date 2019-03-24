@@ -44,6 +44,6 @@ bp.registerBThread("PopulateDB", function() {
 
     bp.sync({ request: CTX.InsertEvent(cells) });
     bp.sync({ request: CTX.InsertEvent(triples) });
-    bp.log.info("Population ended");
+    // bp.log.info("Population ended");
     bp.sync({ request: bp.Event("Context Population Ended") });
 });

@@ -4,7 +4,7 @@ CTX.subscribe("assert twice", "Cell", function(c){
     bp.ASSERT(false,"cell marked twice");
 });
 
-bp.registerBThread("Center", function() {
+bp.registerBThread("Assert X Win", function() {
     bp.sync({waitFor: bp.Event('XWin')});
     bp.ASSERT(false, "X won");
 });

@@ -6,6 +6,7 @@
 
 package il.ac.bgu.cs.bp.bpjs.context;
 
+import java.util.*;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.sql.Connection;
@@ -15,7 +16,10 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Properties;
+import java.util.stream.Collectors;
 
 /**
  * This class connects to a database and dumps all the tables and contents out to stdout in the form of
@@ -146,7 +150,8 @@ public class Db2Sql {
 
                         // Right, we have a table, so we can go and dump it
                         result.append("\n\n-- Data for "+tableName+"\n");
-                        dumpTable(dbConn, result, tableName);
+                        result.append(dumpTable(dbConn, tableName).stream().collect(Collectors.joining("\n")));
+                        result.append("\n");
                     }
                 } while (rs.next());
                 rs.close();
@@ -160,7 +165,8 @@ public class Db2Sql {
     }
 
     /** dump this particular table to the string buffer */
-    public static void dumpTable(Connection dbConn, StringBuffer result, String tableName) {
+    public static List<String> dumpTable(Connection dbConn, String tableName) {
+        List<String> result = new LinkedList<>();
         try {
             // First we output the create table stuff
             PreparedStatement stmt = dbConn.prepareStatement("SELECT * FROM "+tableName);
@@ -171,27 +177,30 @@ public class Db2Sql {
             // Now we can output the actual data
 //            result.append("\n\n-- Data for "+tableName+"\n");
             while (rs.next()) {
-                result.append("INSERT INTO "+tableName+" VALUES (");
+                StringBuilder sb = new StringBuilder();
+                sb.append("INSERT INTO "+tableName+" VALUES (");
                 for (int i=0; i<columnCount; i++) {
                     if (i > 0) {
-                        result.append(", ");
+                        sb.append(", ");
                     }
                     Object value = rs.getObject(i+1);
                     if (value == null) {
-                        result.append("NULL");
+                        sb.append("NULL");
                     } else {
                         String outputValue = value.toString();
                         outputValue = outputValue.replaceAll("'","\\'");
-                        result.append("'"+outputValue+"'");
+                        sb.append("'"+outputValue+"'");
                     }
                 }
-                result.append(");\n");
+                sb.append(");");
+                result.add(sb.toString());
             }
             rs.close();
             stmt.close();
         } catch (SQLException e) {
             System.err.println("Unable to dump table "+tableName+" because: "+e);
         }
+        return result;
     }
 
     /** Main method takes arguments for connection to JDBC etc. */

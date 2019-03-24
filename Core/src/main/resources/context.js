@@ -1,6 +1,7 @@
 importPackage(Packages.il.ac.bgu.cs.bp.bpjs.context);
 
 var CTX = ContextService;
+var CTX_instance = ContextService.getInstance(); // DO NOT REMOVE: Here for verification
 
 function subscribe(subscribeId, ctxName, func) { //TODO: Add  parameter "boolean applyToCurrentInstances" ?
     bp.registerBThread(subscribeId + "ListenerBT", function() {
