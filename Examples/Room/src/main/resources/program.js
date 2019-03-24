@@ -57,7 +57,16 @@ CTX.subscribe("OfficeBehaviors","Office",function (office) {
     });
 });
 
-CTX.subscribe("DisableLightsOffDuringAnEmergency","Emergency",function (emergency) {
+CTX.subscribe("DisableLightsOffDuringAnEmergency1","Emergency",function (emergency) {
     bp.sync({block: SmartLight.AnyTurnLightOffEvent(),
         interrupt: CTX.ContextEndedEvent("Emergency", emergency)});
+});
+
+CTX.subscribe("DisableLightsOffDuringAnEmergency2","Emergency",function (emergency) {
+    CTX.subscribe("RoomDuringEmergency","Room", function(room) {
+        bp.sync({
+            block: room.getSmartLight().offEvent(),
+            interrupt: CTX.ContextEndedEvent("Emergency", emergency)
+        });
+    });
 });
