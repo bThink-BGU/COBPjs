@@ -18,12 +18,12 @@ public class Main {
 		BProgram bprog = contextService.getBProgram();
 
 		// Simulation of external events
-		Thread.sleep(1000);
+		Thread.sleep(2000);
 		contextService.<Cell>getContextInstances("Cell")
 				.stream().collect(Collectors.toMap(Cell::getId, Function.identity()))
 		.values().forEach(cell -> bprog.enqueueExternalEvent(new BEvent("Click",cell)));
 
-		Thread.sleep(10000);
+		Thread.sleep(6000);
 		contextService.close();
 	}
 

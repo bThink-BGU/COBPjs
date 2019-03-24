@@ -1,11 +1,12 @@
 package il.ac.bgu.cs.bp.bpjs.context;
 
-import java.io.ObjectStreamException;
-import java.io.Serializable;
+import java.io.*;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicInteger;
 
+import javax.annotation.Nullable;
 import javax.persistence.*;
 import javax.persistence.metamodel.IdentifiableType;
 import javax.persistence.metamodel.ManagedType;
@@ -25,7 +26,8 @@ import org.mozilla.javascript.NativeFunction;
 import org.mozilla.javascript.NativeObject;
 
 public class ContextService implements Serializable {
-    private static ContextService uniqInstance = new ContextService();
+    private static AtomicInteger counter = new AtomicInteger(0);
+    private static final ContextService uniqInstance = new ContextService();
 	@SuppressWarnings("unused")
 	public static NativeFunction subscribe;
 	@SuppressWarnings("unused")
@@ -35,11 +37,9 @@ public class ContextService implements Serializable {
     private transient ExecutorService pool;
     private transient BProgram bprog;
     private transient BProgramRunner rnr;
-	private transient Map<String, CtxType> contextTypes;
     private transient Multimap<Class<?>, NamedQuery> namedQueries;
 	private transient boolean verificationMode = false;
-	private Multimap<String, ?> activeContexts;
-//	private Map<String, CtxType> contextTypes;
+	private List<CtxType> contextTypes;
 	private BEvent[] contextEvents;
 	private List<String> dbDump = new LinkedList<>();
 
@@ -62,21 +62,76 @@ public class ContextService implements Serializable {
 		return uniqInstance.getContextInstances(type);
 	}
 
-	private static class CtxType {
-		final String name;
-		final TypedQuery query;
-		final Class cls;
+	private static class CtxType implements Serializable {
+        transient TypedQuery query;
+        final String queryName;
+        final String uniqueId;
+        final Class cls;
+        final Map<String,?> parameters;
+        List<?> activeContexts = new LinkedList<>();
 
-		public CtxType(String name, TypedQuery query, Class cls){
-			this.name = name;
-			this.query = query;
+		public CtxType(String queryName, String uniqueId, Class cls, @Nullable Map<String,?> parameters){
+			this.queryName = queryName;
+			this.uniqueId = uniqueId;
 			this.cls = cls;
-		}
+            this.parameters = parameters;
+            this.query = createQuery(queryName, cls, parameters);
+        }
+
+        private void readObject(ObjectInputStream aInputStream) throws ClassNotFoundException, IOException {
+            // perform the default de-serialization first
+            aInputStream.defaultReadObject();
+
+            query = createQuery(queryName, cls, parameters);
+        }
+
+        /*private Object readResolve() throws ObjectStreamException {
+		    query = createQuery(queryName, cls, parameters);
+		    return this;
+        }*/
+
+        private static TypedQuery createQuery(String name, Class cls, @Nullable Map<String,?> params) {
+            TypedQuery q = uniqInstance.em.createNamedQuery(name, cls);
+            if(params != null) {
+                params.forEach((key, val) -> {
+                    Object v = val;
+                    if (v instanceof Number) {
+                        Number number = (Number) v;
+                        String typeName = q.getParameter(key).getParameterType().getName();
+                        switch (typeName) {
+                            case "java.lang.Integer":
+                                v = number.intValue();
+                                break;
+                            case "java.lang.Long":
+                                v = number.longValue();
+                                break;
+                            case "java.lang.Byte":
+                                v = number.byteValue();
+                                break;
+                            case "java.lang.Short":
+                                v = number.shortValue();
+                                break;
+                            case "java.lang.Float":
+                                v = number.floatValue();
+                                break;
+                        }
+                    }
+                    q.setParameter(key, v);
+                });
+            }
+            return q;
+        }
+	}
+
+	public Object clone() throws CloneNotSupportedException {
+		throw new CloneNotSupportedException();
 	}
 
 	private Object readResolve() throws ObjectStreamException {
-		uniqInstance.activeContexts = activeContexts;
+        int c = counter.incrementAndGet();
+
 		uniqInstance.contextEvents = contextEvents;
+		uniqInstance.contextTypes = contextTypes;
 
 		uniqInstance.em.getTransaction().begin();
 		uniqInstance.em.getMetamodel().getEntities()
@@ -86,17 +141,18 @@ public class ContextService implements Serializable {
 		return uniqInstance;
 	}
 
-	private Object writeReplace() throws ObjectStreamException {
-	    /*Properties p = new Properties();
-	    p.putAll(emf.getProperties());
-	    dbDump = Db2Sql.dumpDB(p);*/
+    private void writeObject(ObjectOutputStream out) throws IOException {
+//    private Object writeReplace() throws ObjectStreamException {
 	    dbDump = new LinkedList<>();
+	    if(this!=uniqInstance){
+            System.out.println("counter is "+counter.get());
+        }
         Session session = em.unwrap(Session.class);
         session.doWork(connection -> {
-			em.getMetamodel().getEntities().forEach(e -> dbDump.addAll(Db2Sql.dumpTable(connection,e.getName())));
+			em.getMetamodel().getEntities().forEach(e -> dbDump.addAll(Db2Sql.dumpTable(connection, e.getName())));
 		});
-//        System.out.println(dbDump);
-		return this;
+//		return this;
+        out.defaultWriteObject();
 	}
 
 	private void persistObjects(Object ... objects) {
@@ -159,21 +215,19 @@ public class ContextService implements Serializable {
 
 	private void init(String persistenceUnit) {
 	    close();
-		contextTypes = Maps.newHashMap();
+		contextTypes = new LinkedList<>();
         pool = Executors.newCachedThreadPool();
         emf = Persistence.createEntityManagerFactory(persistenceUnit);
         em = emf.createEntityManager();
         namedQueries = findAllNamedQueries(emf);
-        activeContexts = ArrayListMultimap.create();
         namedQueries.forEach((aClass, namedQuery) -> {
 			try {
 				TypedQuery<?> q = em.createNamedQuery(namedQuery.name(), aClass);
 				Set<Parameter<?>> parameters = q.getParameters();
 				if (parameters == null || parameters.isEmpty()) {
-					registerContextQuery(namedQuery.name(), em.createNamedQuery(namedQuery.name(), aClass), aClass);
+					registerContextQuery(namedQuery.name(), namedQuery.name(), aClass, null);
 				}
-			} catch (Exception ignored) {
-			}
+			} catch (Exception ignored) { }
 		});
 
 		ContextualEventSelectionStrategy eventSelectionStrategy = new PrioritizedBSyncEventSelectionStrategy();
@@ -200,36 +254,21 @@ public class ContextService implements Serializable {
 	// Produce contextName update events to be triggered after each update event
 	private void updateContexts() {
 		Set<BEvent> events = new HashSet<>();
-		activeContexts.keys().forEach(name -> {
-			// Remember the list of contexts that we already reported of
-			List<?> knownContexts = new LinkedList<>(activeContexts.get(name));
-			// Update the list of contexts
-			activeContexts.replaceValues(name, contextTypes.get(name).query.getResultList());
-			// Filter the contexts that we didn't yet report of
-			List<?> newContexts = new LinkedList<>(activeContexts.get(name));
-			//noinspection SuspiciousMethodCalls
-			newContexts.removeAll(knownContexts);
-			// Compute the contexts that where just removed
-			newContexts.stream().map(obj -> new NewContextEvent(name, obj)).forEach(events::add);
-			//noinspection SuspiciousMethodCalls
-			knownContexts.removeAll(activeContexts.get(name));
-			knownContexts.stream().map(obj -> new ContextEndedEvent(name, obj)).forEach(events::add);
-		});
-		/*contextTypes.forEach(ctxType -> {
-			// Remember the list of contexts that we already reported of
-			List<?> knownContexts = new LinkedList<>(activeContexts.get(ctxType.name));
-			// Update the list of contexts
-            activeContexts.replaceValues(ctxType.name, ctxType.query.getResultList());
-			// Filter the contexts that we didn't yet report of
-			List<?> newContexts = new LinkedList<>(activeContexts.get(ctxType.name));
-			//noinspection SuspiciousMethodCalls
-			newContexts.removeAll(knownContexts);
-			// Compute the contexts that where just removed
-			newContexts.stream().map(obj -> new NewContextEvent(ctxType.name, obj)).forEach(events::add);
-			//noinspection SuspiciousMethodCalls
-			knownContexts.removeAll(activeContexts.get(ctxType.name));
-			knownContexts.stream().map(obj -> new ContextEndedEvent(ctxType.name, obj)).forEach(events::add);
-		});*/
+        contextTypes.forEach(ctxType -> {
+            // Remember the list of contexts that we already reported of
+            List<?> knownContexts = new LinkedList<>(ctxType.activeContexts);
+            // Update the list of contexts
+            ctxType.activeContexts = ctxType.query.getResultList();
+            // Filter the contexts that we didn't yet report of
+            List<?> newContexts = new LinkedList<>(ctxType.activeContexts);
+            //noinspection SuspiciousMethodCalls
+            newContexts.removeAll(knownContexts);
+            // Compute the contexts that where just removed
+            newContexts.stream().map(obj -> new NewContextEvent(ctxType.uniqueId, obj)).forEach(events::add);
+            //noinspection SuspiciousMethodCalls
+            knownContexts.removeAll(ctxType.activeContexts);
+            knownContexts.stream().map(obj -> new ContextEndedEvent(ctxType.uniqueId, obj)).forEach(events::add);
+        });
 		contextEvents = events.toArray(new BEvent[0]);
 	}
 
@@ -245,8 +284,14 @@ public class ContextService implements Serializable {
 
     @SuppressWarnings("WeakerAccess")
 	public <T> List<T> getContextInstances(String type) {
-		List<T> a = (List<T>)activeContexts.get(type);
-		return a;
+        for (CtxType ct : contextTypes) {
+            if (ct.uniqueId.equals(type)) {
+                @SuppressWarnings("unchecked")
+                List<T> l =  (List<T>) ct.activeContexts;
+                return l;
+            }
+        }
+        return null;
 	}
 
 	private static Multimap<Class<?>, NamedQuery> findAllNamedQueries(EntityManagerFactory emf) {
@@ -271,9 +316,8 @@ public class ContextService implements Serializable {
 		return ImmutableMultimap.copyOf(namedQueries);
 	}
 
-	private void registerContextQuery(String name, TypedQuery<?> query, Class<?> cls) {
-		contextTypes.put(name, new CtxType(name, query, cls));
-		activeContexts.put(name, null);
+	private void registerContextQuery(String queryName, String uniqueId, Class<?> cls, @Nullable Map<String, ?> parameters) {
+		contextTypes.add(new CtxType(queryName, uniqueId, cls, parameters));
 		updateContexts();
 	}
 
@@ -283,41 +327,14 @@ public class ContextService implements Serializable {
 
 	@SuppressWarnings("unused")
 	private void innerRegisterParameterizedContextQuery(String queryName, String uniqueId, NativeObject params) {
-		namedQueries.forEach((aClass, namedQuery) -> {
-			if(namedQuery.name().equals(queryName)) {
-				TypedQuery<?> q = em.createNamedQuery(queryName, aClass);
-				//noinspection unchecked
-				((Map<String,?>) params).forEach((key, val) -> {
-					Object v = val;
-					if(v instanceof Number) {
-						Number number= (Number) v;
-						String typeName = q.getParameter(key).getParameterType().getName();
-						switch (typeName){
-							case "java.lang.Integer":
-								v = number.intValue();
-								break;
-							case "java.lang.Long":
-								v = number.longValue();
-								break;
-							case "java.lang.Byte":
-								v = number.byteValue();
-								break;
-							case "java.lang.Short":
-								v = number.shortValue();
-								break;
-							case "java.lang.Float":
-								v = number.floatValue();
-								break;
-						}
-					}
-					q.setParameter(key, v);
-				});
-				registerContextQuery(uniqueId, q, aClass);
-			}
-		});
-	}
+        namedQueries.forEach((aClass, namedQuery) -> {
+            if (namedQuery.name().equals(queryName)) {
+                registerContextQuery(queryName, uniqueId, aClass, params);
+            }
+        });
+    }
 
-	@SuppressWarnings("unused")
+    @SuppressWarnings("unused")
 	public void close() {
         try {
             pool.shutdownNow();
