@@ -32,16 +32,45 @@ public class ContextService implements Serializable {
 	public static NativeFunction subscribe;
 	@SuppressWarnings("unused")
 	public static NativeFunction subscribeWithParameters;
-    private transient EntityManagerFactory emf;
-    private transient EntityManager em;
-    private transient ExecutorService pool;
-    private transient BProgram bprog;
-    private transient BProgramRunner rnr;
-    private transient Multimap<Class<?>, NamedQuery> namedQueries;
-	private transient boolean verificationMode = false;
+    private EntityManagerFactory emf;
+    private EntityManager em;
+    private ExecutorService pool;
+    private BProgram bprog;
+    private BProgramRunner rnr;
+    private Multimap<Class<?>, NamedQuery> namedQueries;
+	private boolean verificationMode = false;
 	private List<CtxType> contextTypes;
 	private BEvent[] contextEvents;
-	private List<String> dbDump = new LinkedList<>();
+
+	private static class ContextServiceProxy implements Serializable {
+		private List<CtxType> contextTypes;
+		private BEvent[] contextEvents;
+		private List<String> dbDump = new LinkedList<>();
+
+		private ContextServiceProxy() { }
+
+		public ContextServiceProxy(ContextService cs) {
+			this.contextTypes = cs.contextTypes;
+			this.contextEvents = cs.contextEvents;
+			this.dbDump = new LinkedList<>();
+			Session session = cs.em.unwrap(Session.class);
+			session.doWork(connection -> {
+				cs.em.getMetamodel().getEntities().forEach(e -> dbDump.addAll(Db2Sql.dumpTable(connection, e.getName())));
+			});
+		}
+
+		private Object readResolve() throws ObjectStreamException {
+			uniqInstance.contextEvents = contextEvents;
+			uniqInstance.contextTypes = contextTypes;
+
+			uniqInstance.em.getTransaction().begin();
+			uniqInstance.em.getMetamodel().getEntities()
+					.forEach(e -> uniqInstance.em.createQuery("Delete from "+e.getName()+" e").executeUpdate());
+			dbDump.forEach(s -> uniqInstance.em.createNativeQuery(s).executeUpdate());
+			uniqInstance.em.getTransaction().commit();
+			return uniqInstance;
+		}
+	}
 
 	private ContextService() { }
 
@@ -127,35 +156,8 @@ public class ContextService implements Serializable {
 		throw new CloneNotSupportedException();
 	}
 
-	private Object readResolve() throws ObjectStreamException {
-        int c = counter.incrementAndGet();
-
-		uniqInstance.contextEvents = contextEvents;
-		uniqInstance.contextTypes = contextTypes;
-
-		uniqInstance.em.getTransaction().begin();
-		uniqInstance.em.getMetamodel().getEntities()
-				.forEach(e -> uniqInstance.em.createQuery("Delete from "+e.getName()+" e").executeUpdate());
-		dbDump.forEach(s -> uniqInstance.em.createNativeQuery(s).executeUpdate());
-		uniqInstance.em.getTransaction().commit();
-		return uniqInstance;
-	}
-
-//    private void writeObject(ObjectOutputStream out) throws IOException {
     private Object writeReplace() throws ObjectStreamException {
-	    dbDump = new LinkedList<>();
-        Session session = uniqInstance.em.unwrap(Session.class);
-        session.doWork(connection -> {
-            uniqInstance.em.getMetamodel().getEntities().forEach(e -> dbDump.addAll(Db2Sql.dumpTable(connection, e.getName())));
-		});
-        if(this!=uniqInstance){
-            System.out.println("counter is "+counter.get());
-            uniqInstance.dbDump = dbDump;
-            uniqInstance.contextEvents = contextEvents;
-            uniqInstance.contextTypes = contextTypes;
-        }
-		return uniqInstance;
-//        out.defaultWriteObject();
+		return new ContextServiceProxy(this);
 	}
 
 	private void persistObjects(Object ... objects) {
