@@ -13,18 +13,23 @@ public class Verifier {
     public static void main(String[] args) throws Exception {
         ContextService contextService = ContextService.getInstance();
         contextService.enableVerificationMode();
-        String[] programs = new String[]{"context.js","db_population.js", "program.js", "assertions.js", "verification.js"};
-        contextService.initFromResources("ContextDB", programs);
-        BProgram program = contextService.getBProgram();
-        DfsBProgramVerifier vrf = new DfsBProgramVerifier();           // ... and a verifier
-        vrf.setProgressListener(new PrintDfsVerifierListener());  // add a listener to print progress
-//        vrf.setDebugMode(true);
-        vrf.addInspection(ExecutionTraceInspections.FAILED_ASSERTIONS);
-        VerificationResult res = vrf.verify(program);                  // this might take a while
-        contextService.close();
 
-        if(res.isViolationFound()) {
-            System.out.println(res.getViolation());
+        try {
+            String[] programs = new String[]{"context.js", "db_population.js", "program.js", "assertions.js", "verification.js"};
+            contextService.initFromResources("ContextDB", programs);
+            BProgram program = contextService.getBProgram();
+            DfsBProgramVerifier vrf = new DfsBProgramVerifier();           // ... and a verifier
+            vrf.setProgressListener(new PrintDfsVerifierListener());  // add a listener to print progress
+//        vrf.setDebugMode(true);
+            vrf.addInspection(ExecutionTraceInspections.FAILED_ASSERTIONS);
+            VerificationResult res = vrf.verify(program);                  // this might take a while
+
+
+            if (res.isViolationFound()) {
+                System.out.println(res.getViolation());
+            }
+        } finally {
+            contextService.close();
         }
 
         /*
