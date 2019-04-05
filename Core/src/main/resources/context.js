@@ -36,7 +36,7 @@ bp.registerBThread("ContextReporterBT", function() {
         }
 
         // Wait for next update
-        bp.sync({ waitFor:CTX.AnyUpdateContextDBEvent() });
+        bp.sync({ waitFor:CTX.AnyContextCommandEvent() });
     }
 });
 

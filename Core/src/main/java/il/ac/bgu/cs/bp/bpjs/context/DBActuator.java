@@ -8,11 +8,8 @@ public class DBActuator extends BProgramRunnerListenerAdapter {
 	@Override
 	public void eventSelected(BProgram bp, BEvent theEvent) {
 		// Actuator for context update
-		if (theEvent instanceof ContextService.UpdateEvent) {
-			ContextService.UpdateEvent updateEvent = (ContextService.UpdateEvent) theEvent;
-			updateEvent.execute();
-		} else if (theEvent instanceof ContextService.InsertEvent) {
-			((ContextService.InsertEvent) theEvent).execute();
+		if (theEvent instanceof ContextService.CommandEvent) {
+			((ContextService.CommandEvent) theEvent).execute();
 		}
 	}
 }

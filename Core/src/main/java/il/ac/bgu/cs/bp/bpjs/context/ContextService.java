@@ -163,12 +163,9 @@ public class ContextService implements Serializable {
 	private void persistObjects(Object ... objects) {
 		if(objects == null)
 			return;
-        em.getTransaction().begin();
 		for (Object o: objects) {
             em.merge(o);
 		}
-        em.getTransaction().commit();
-		updateContexts();
 	}
 
 	public void enableTicker() {
@@ -371,10 +368,45 @@ public class ContextService implements Serializable {
 			this.contextName = contextName;
 			this.ctx = ctx;
 		}
+
 	}
 
 	@SuppressWarnings("WeakerAccess")
-	public static class InsertEvent extends BEvent {
+	public static abstract class CommandEvent extends BEvent {
+		public CommandEvent(String name) {
+			super(name);
+		}
+
+		public final void execute() {
+			EntityManager em = getInstance().em;
+			em.getTransaction().begin();
+			innerExecution(em);
+			em.getTransaction().commit();
+			getInstance().updateContexts();
+		}
+
+		protected abstract void innerExecution(EntityManager em);
+	}
+
+	@SuppressWarnings("unused")
+	public static final class Transaction extends CommandEvent {
+		public final CommandEvent[] commands;
+
+		public Transaction(CommandEvent ... commands) {
+			super("Transaction [ " + Arrays.toString(commands) +" ]");
+			this.commands = commands;
+		}
+
+		@Override
+		protected void innerExecution(EntityManager em) {
+			for (CommandEvent e : commands) {
+				e.innerExecution(em);
+			}
+		}
+	}
+
+	@SuppressWarnings("WeakerAccess")
+	public static class InsertEvent extends CommandEvent {
 		public final Object[] persistObjects;
 
 		public InsertEvent(Object ... persistObjects) {
@@ -382,13 +414,14 @@ public class ContextService implements Serializable {
 			this.persistObjects = persistObjects;
 		}
 
-		public void execute() {
+		@Override
+		protected void innerExecution(EntityManager em) {
 			getInstance().persistObjects(persistObjects);
 		}
 	}
 
 	@SuppressWarnings("WeakerAccess")
-	public static class UpdateEvent extends BEvent {
+	public static class UpdateEvent extends CommandEvent {
 		public final String contextName;
 		public final Map<String, Object> parameters;
 
@@ -403,19 +436,13 @@ public class ContextService implements Serializable {
 			this(contextName, new HashMap<>());
 		}
 
-        public void execute() {
-			EntityManager em = getInstance().em;
+		@Override
+		protected void innerExecution(EntityManager em) {
 			Query namedQuery = em.createNamedQuery(contextName);
-
 			for (Map.Entry<String, Object> e : parameters.entrySet()) {
 				namedQuery.setParameter(e.getKey(), e.getValue());
 			}
-
-			em.getTransaction().begin();
 			namedQuery.executeUpdate();
-			em.getTransaction().commit();
-
-			getInstance().updateContexts();
 		}
 	}
 
@@ -459,26 +486,11 @@ public class ContextService implements Serializable {
 	}
 
     @SuppressWarnings({"WeakerAccess","unused"})
-	public static class AnyUpdateContextDBEvent implements EventSet {
-		public final String contextName;
-
-		public AnyUpdateContextDBEvent() {
-			super();
-			contextName = null;
-		}
-
-		public AnyUpdateContextDBEvent(String contextName) {
-			super();
-			this.contextName = contextName;
-		}
-
+	public static class AnyContextCommandEvent implements EventSet {
 		@Override
 		public boolean contains(BEvent event) {
-			if(contextName != null) {
-				return (event instanceof UpdateEvent && ((UpdateEvent) event).contextName.equals(contextName)) || (event instanceof InsertEvent);
-			} else {
-				return (event instanceof UpdateEvent) || (event instanceof InsertEvent);
-			}
+			boolean b = event instanceof CommandEvent;
+			return b;
 		}
 	}
 
