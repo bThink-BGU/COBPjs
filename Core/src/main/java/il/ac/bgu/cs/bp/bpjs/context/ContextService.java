@@ -39,6 +39,7 @@ public class ContextService implements Serializable {
     private BProgramRunner rnr;
     private Multimap<Class<?>, NamedQuery> namedQueries;
 	private boolean verificationMode = false;
+	private boolean alwaysUpdateEntities = false;
 	private List<CtxType> contextTypes;
 	private BEvent[] contextEvents;
 
@@ -156,6 +157,10 @@ public class ContextService implements Serializable {
 		throw new CloneNotSupportedException();
 	}
 
+	public void alwaysUpdateEntities() {
+		this.alwaysUpdateEntities = true;
+	}
+
     private Object writeReplace() throws ObjectStreamException {
 		return new ContextServiceProxy(this);
 	}
@@ -261,7 +266,14 @@ public class ContextService implements Serializable {
             List<?> knownContexts = new LinkedList<>(ctxType.activeContexts);
             // Update the list of contexts
             ctxType.activeContexts = ctxType.query.getResultList();
-            // Filter the contexts that we didn't yet report of
+
+            //region GERA - remove this when you fix the bug
+			if(alwaysUpdateEntities) {
+				ctxType.activeContexts.forEach(c -> em.refresh(c));
+			}
+			//endregion
+
+			// Filter the contexts that we didn't yet report of
             List<?> newContexts = new LinkedList<>(ctxType.activeContexts);
             //noinspection SuspiciousMethodCalls
             newContexts.removeAll(knownContexts);
