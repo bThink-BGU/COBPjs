@@ -401,11 +401,11 @@ public class ContextService implements Serializable {
 	}
 
 	@SuppressWarnings("unused")
-	public static final class Transaction extends CommandEvent {
-		public final CommandEvent[] commands;
+	public static final class TransactionEvent extends CommandEvent {
+		private final CommandEvent[] commands;
 
-		public Transaction(CommandEvent ... commands) {
-			super("Transaction [ " + Arrays.toString(commands) +" ]");
+		public TransactionEvent(CommandEvent ... commands) {
+			super("TransactionEvent [ " + Arrays.toString(commands) +" ]");
 			this.commands = commands;
 		}
 

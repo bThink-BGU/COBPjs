@@ -16,6 +16,7 @@
 		<core.version>0.1.0</core.version>
 		<examples.ttt.version>0.1.0</examples.ttt.version>
 		<examples.room.version>0.1.0</examples.room.version>
+		<examples.chess.version>0.1.0</examples.chess.version>
 	</properties>
 
 	<dependencyManagement>
