@@ -1,7 +1,7 @@
 package il.ac.bgu.cs.bp.bpjs.context.examples.chess;
 
 import il.ac.bgu.cs.bp.bpjs.context.examples.chess.events.Move;
-import il.ac.bgu.cs.bp.bpjs.context.examples.chess.schema.piece.Piece;
+import il.ac.bgu.cs.bp.bpjs.context.examples.chess.schema.Cell;
 
 public class MoveTranslator {
     private static int ChartoNumber(char c) {
@@ -20,8 +20,10 @@ public class MoveTranslator {
         return "" + ChartoNumber(move.charAt(0))+ (Character.getNumericValue(move.charAt(1)) - 1) + ChartoNumber(move.charAt(2))+ (Character.getNumericValue(move.charAt(3)) - 1);
     }
 
-    public static Move StringToMoveTranslate(String move, Piece p) {
-//        return "" + ChartoNumber(move.charAt(0))+ (Character.getNumericValue(move.charAt(1)) - 1) + ChartoNumber(move.charAt(2))+ (Character.getNumericValue(move.charAt(3)) - 1);
-        return  null;
+    public static Move StringToMove(String move) {
+        String translated = MoveTranslate(move);
+        Cell source = new Cell(translated.charAt(0) - 48, translated.charAt(1) - 48);
+        Cell target = new Cell(translated.charAt(2) - 48, translated.charAt(3) - 48);
+        return new Move(source, target);
     }
 }

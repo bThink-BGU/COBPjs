@@ -4,7 +4,7 @@ var CTX = ContextService;
 var CTX_instance = ContextService.getInstance(); // DO NOT REMOVE: Here for verification
 
 function subscribe(subscribeId, ctxName, func) { //TODO: Add  parameter "boolean applyToCurrentInstances" ?
-    bp.registerBThread(subscribeId + "ListenerBT", function() {
+    bp.registerBThread(subscribeId + "_ListenerBT", function() {
         while (true) {
             // Wrapping body with a function to avoid "Referencing mutable variable from closure"
             (function () {

@@ -2,7 +2,8 @@ package il.ac.bgu.cs.bp.bpjs.context.examples.chess.schema;
 
 import javax.persistence.*;
 
-@MappedSuperclass
+//@MappedSuperclass
+/*
 public abstract class Strategy extends BasicEntity {
     protected Strategy() {
         super();
@@ -10,4 +11,4 @@ public abstract class Strategy extends BasicEntity {
     protected Strategy(String id) {
         super(id);
     }
-}
+}*/

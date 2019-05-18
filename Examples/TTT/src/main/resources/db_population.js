@@ -42,7 +42,7 @@ bp.registerBThread("PopulateDB", function() {
     // flattening board - for debugging
     cells = [].concat.apply([], board);
 
-    bp.sync({ request: CTX.Transaction(
+    bp.sync({ request: CTX.TransactionEvent(
             CTX.InsertEvent(cells), CTX.InsertEvent(triples)
         )});
     // bp.log.info("Population ended");

@@ -1,6 +1,7 @@
-package il.ac.bgu.cs.bp.bpjs.context.examples.chess.schema.piece;
+package il.ac.bgu.cs.bp.bpjs.context.examples.chess.schema;
 
 import il.ac.bgu.cs.bp.bpjs.context.examples.chess.schema.BasicEntity;
+import il.ac.bgu.cs.bp.bpjs.context.examples.chess.schema.Color;
 
 import javax.persistence.*;
 
@@ -8,9 +9,6 @@ import javax.persistence.*;
 @NamedQueries(value = {
         @NamedQuery(name = "Piece", query = "SELECT p FROM Piece p"),
         @NamedQuery(name = "PieceOfType", query = "SELECT p FROM Piece p WHERE p.type =:type"),
-        @NamedQuery(name = "PieceOfId", query = "SELECT p FROM Piece p WHERE p.id =:id"),
-        @NamedQuery(name = "SpecificPiece", query = "SELECT p FROM Piece p WHERE p =:piece"),
-        @NamedQuery(name = "DeletePiece", query = "DELETE FROM Piece p Where p=:p"),
 })
 public class Piece extends BasicEntity {
     public Piece() {
@@ -30,5 +28,18 @@ public class Piece extends BasicEntity {
         this.type = type;
     }
 
+    public enum Type {
+        King(1),
+        Queen(1),
+        Pawn(8),
+        Rook(2),
+        Bishop(2),
+        Knight(2);
+
+        public final int Count;
+        Type(int count) {
+            this.Count = count;
+        }
+    }
 }
 

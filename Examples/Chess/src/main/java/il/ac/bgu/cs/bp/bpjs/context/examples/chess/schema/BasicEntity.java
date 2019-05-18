@@ -2,12 +2,13 @@ package il.ac.bgu.cs.bp.bpjs.context.examples.chess.schema;
 
 import javax.persistence.Id;
 import javax.persistence.MappedSuperclass;
+import java.io.Serializable;
 
 @MappedSuperclass
 @SuppressWarnings("WeakerAccess")
-public abstract class BasicEntity {
+public abstract class BasicEntity implements Serializable{
     @Id
-    public final String id;
+    private final String id;
 
     protected BasicEntity() {
         id = "";
@@ -27,6 +28,10 @@ public abstract class BasicEntity {
         int result = 1;
         result = prime * result + ((id == null) ? 0 : id.hashCode());
         return result;
+    }
+
+    public String getId() {
+        return id;
     }
 
     @Override

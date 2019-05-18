@@ -1,9 +1,7 @@
 package il.ac.bgu.cs.bp.bpjs.context.examples.chess;
 
-import il.ac.bgu.cs.bp.bpjs.context.examples.chess.schema.Cell;
-import il.ac.bgu.cs.bp.bpjs.context.examples.chess.schema.piece.Color;
-import il.ac.bgu.cs.bp.bpjs.context.examples.chess.schema.piece.Piece;
-import il.ac.bgu.cs.bp.bpjs.context.examples.chess.schema.piece.Type;
+import il.ac.bgu.cs.bp.bpjs.context.examples.chess.schema.Color;
+import il.ac.bgu.cs.bp.bpjs.context.examples.chess.schema.Piece;
 import il.ac.bgu.cs.bp.bpjs.context.ContextService;
 import il.ac.bgu.cs.bp.bpjs.execution.listeners.BProgramRunnerListenerAdapter;
 import il.ac.bgu.cs.bp.bpjs.execution.listeners.PrintBProgramRunnerListener;
@@ -17,7 +15,6 @@ import java.util.Scanner;
 
 import static il.ac.bgu.cs.bp.bpjs.context.examples.chess.MoveTranslator.MoveTranslate;
 
-
 public class UCI extends BProgramRunnerListenerAdapter implements Runnable {
     private InputStream in;
     private PrintStream out;
@@ -29,7 +26,7 @@ public class UCI extends BProgramRunnerListenerAdapter implements Runnable {
     private BlackEventsListener blackEventsListener;
 
     private static final String ENGINENAME = "BPChess";
-    private static final String AUTHOR = "Ronit and Banuel";
+    private static final String AUTHOR = "Achiya Elyasaf";
 
 
     public UCI(InputStream in, PrintStream out, PrintWriter chessLog) {
@@ -73,8 +70,7 @@ public class UCI extends BProgramRunnerListenerAdapter implements Runnable {
             else if ("ucinewgame".equals(line)) newGame();
             else if ("stop".equals(line)) newGame();
             else if (line.startsWith("position")) newPosition(line);
-            else if (line.startsWith("go"))
-                bprog.enqueueExternalEvent(new BEvent("My Turn"));
+            else if (line.startsWith("go")) bprog.enqueueExternalEvent(new BEvent("My Turn"));
             else if ("quit".equals(line)) {
                 quit();
                 return;
@@ -130,127 +126,96 @@ public class UCI extends BProgramRunnerListenerAdapter implements Runnable {
             input = input.substring(4);
             String fenBoard = input.substring(0, input.indexOf(" w"));
             splitFen(fenBoard);
-            if (input.contains("moves")) {
-                bprog.enqueueExternalEvent(new BEvent("color", "black"));
-                blackEventsListener.setColor(Color.Black);
-            } else {
-                bprog.enqueueExternalEvent(new BEvent("color", "white"));
-                blackEventsListener.setColor(Color.White);
-            }
+            Color color = input.contains("moves") ? Color.Black : Color.White;
+            bprog.enqueueExternalEvent(new BEvent("Color", Color.Black));
+            blackEventsListener.setColor(Color.Black);
             bprog.enqueueExternalEvent(new BEvent("init_end"));
         }
 
         if (input.contains("moves")) {
             input = input.substring(input.length() - 5, input.length() - 1);
             if (input.length() > 0) {
-                bprog.enqueueExternalEvent(new BEvent("input-" + MoveTranslate(input)));
+                bprog.enqueueExternalEvent(MoveTranslator.StringToMove(MoveTranslate(input)));
             }
         }
     }
 
     private void splitFen(String fen) {
         String[] lines = fen.split("/");
-        int bRooks = 1;
-        int wRooks = 1;
-        int bKnights = 1;
-        int wKnights = 1;
-        int bBishops = 1;
-        int wBishops = 1;
-        int bPawns = 1;
-        int wPawns = 1;
+        int bRooks = 1, wRooks = 1, bKnights = 1, wKnights = 1, bBishops = 1, wBishops = 1, bPawns = 1, wPawns = 1;
         for (int i = 0; i < lines.length; i++) {
             String line = lines[i];
             for (int j = 0; j < line.length(); j++) {
                 int x = 0;
                 int y = 7;
                 String piece = "";
-                Piece p;
+                Piece p = null;
                 if (line.charAt(j) == 'r') {
                     x = getRow(line, j);
                     y = y - i;
-                    p = new Piece(Color.Black, Type.Rook, bRooks);
-                    bRooks++;
-                    insert(p, x, y);
+                    p = new Piece(Color.Black, Piece.Type.Rook, bRooks++);
                 } else if (line.charAt(j) == 'R') {
                     x = getRow(line, j);
                     y = y - i;
-                    p = new Piece(Color.White, Type.Rook, wRooks);
-                    wRooks++;
-                    insert(p, x, y);
+                    p = new Piece(Color.White, Piece.Type.Rook, wRooks++);
                 } else if (line.charAt(j) == 'n') {
                     x = getRow(line, j);
                     y = y - i;
-                    p = new Piece(Color.Black, Type.Knight, bKnights);
-                    bKnights++;
-                    insert(p, x, y);
+                    p = new Piece(Color.Black, Piece.Type.Knight, bKnights++);
                 } else if (line.charAt(j) == 'N') {
                     x = getRow(line, j);
                     y = y - i;
-                    p = new Piece(Color.White, Type.Knight, wKnights);
-                    wKnights++;
-                    insert(p, x, y);
+                    p = new Piece(Color.White, Piece.Type.Knight, wKnights++);
                 }else if (line.charAt(j) == 'b') {
                     x = getRow(line, j);
                     y = y - i;
-                    p = new Piece(Color.Black, Type.Bishop, bBishops);
-                    bBishops++;
-                    insert(p, x, y);
+                    p = new Piece(Color.Black, Piece.Type.Bishop, bBishops++);
                 }
                 else if (line.charAt(j) == 'B') {
                     x = getRow(line, j);
                     y = y - i;
-                    p = new Piece(Color.White, Type.Bishop, wBishops);
-                    wBishops++;
-                    insert(p, x, y);
+                    p = new Piece(Color.White, Piece.Type.Bishop, wBishops++);
                 }
                 else if (line.charAt(j) == 'p') {
                     x = getRow(line, j);
                     y = y - i;
-                    p = new Piece(Color.Black, Type.Pawn, bPawns);
-                    bPawns++;
-                    insert(p, x, y);
+                    p = new Piece(Color.Black, Piece.Type.Pawn, bPawns++);
                 }
                 else if (line.charAt(j) == 'P') {
                     x = getRow(line, j);
                     y = y - i;
-                    p = new Piece(Color.White, Type.Pawn, wPawns);
-                    wPawns++;
-                    insert(p, x, y);
+                    p = new Piece(Color.White, Piece.Type.Pawn, wPawns++);
                 }
                 else if (line.charAt(j) == 'q') {
                     x = getRow(line, j);
                     y = y - i;
-                    p = new Piece(Color.Black, Type.Queen, 1);
-                    insert(p, x, y);
+                    p = new Piece(Color.Black, Piece.Type.Queen, 1);
                 } else if (line.charAt(j) == 'Q') {
                     x = getRow(line, j);
                     y = y - i;
-                    p = new Piece(Color.White, Type.Queen, 1);
-                    insert(p, x, y);
+                    p = new Piece(Color.White, Piece.Type.Queen, 1);
                 } else if (line.charAt(j) == 'k') {
                     x = getRow(line, j);
                     y = y - i;
-                    p = new Piece(Color.Black, Type.King, 1);
-                    insert(p, x, y);
+                    p = new Piece(Color.Black, Piece.Type.King, 1);
                 } else if (line.charAt(j) == 'K') {
                     x = getRow(line, j);
                     y = y - i;
-                    p = new Piece(Color.White, Type.King, 1);
-                    insert(p, x, y);
+                    p = new Piece(Color.White, Piece.Type.King, 1);
                 } else if (!Character.isDigit(line.charAt(j))) {
                     throw new UnsupportedOperationException("Need to support other types of pieces");
                 }
-
-
+                insert(p, x, y);
             }
         }
     }
 
     private void insert(Piece p, int x, int y) {
         Map<String, Object> parameters = new HashMap<>();
-        parameters.put("piece", p);
-        parameters.put("cell", new Cell(x, y, p));
-        bprog.enqueueExternalEvent(new ContextService.UpdateEvent("UpdateCell", parameters));
+        parameters.put("Piece", p);
+        parameters.put("Row", x);
+        parameters.put("Col", y);
+        bprog.enqueueExternalEvent(new BEvent("AddPiece", parameters));
     }
 
     private int getRow(String line, int index) {

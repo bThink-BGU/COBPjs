@@ -6,7 +6,7 @@ import il.ac.bgu.cs.bp.bpjs.model.BEvent;
 public class GameEnded extends BEvent {
     enum GameResult {Draw,White,Black}
 
-    public GameResult result;
+    public final GameResult result;
 
     public GameEnded(GameResult result) {
         this.result = result;
@@ -15,26 +15,5 @@ public class GameEnded extends BEvent {
     @Override
     public String toString() {
         return "Game ended. Winner = " + result.toString();
-    }
-
-    /*
-     * @see java.lang.Object#equals(java.lang.Object)
-     */
-    @Override
-    public boolean equals(Object obj) {
-        if (this == obj) {
-            return true;
-        }
-        if (obj == null) {
-            return false;
-        }
-        if (!getClass().isInstance(obj)) {
-            return false;
-        }
-        GameEnded other = (GameEnded) obj;
-        if (result != other.result) {
-            return false;
-        }
-        return true;
     }
 }

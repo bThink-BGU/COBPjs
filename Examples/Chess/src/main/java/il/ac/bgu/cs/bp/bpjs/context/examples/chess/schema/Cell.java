@@ -1,7 +1,5 @@
 package il.ac.bgu.cs.bp.bpjs.context.examples.chess.schema;
 
-import il.ac.bgu.cs.bp.bpjs.context.examples.chess.schema.piece.Piece;
-
 import javax.persistence.*;
 
 @Entity
@@ -9,25 +7,20 @@ import javax.persistence.*;
         @NamedQuery(name = "Cell", query = "SELECT c FROM Cell c"),
         @NamedQuery(name = "NonEmptyCell", query = "SELECT c FROM Cell c WHERE not(c.piece is null)"),
         @NamedQuery(name = "EmptyCell", query = "SELECT c FROM Cell c WHERE c.piece is null"),
-        @NamedQuery(name = "SpecificCell", query = "SELECT c FROM Cell c WHERE c.i=:i AND c.j=:j"),
-        @NamedQuery(name = "CellWithPiece", query = "SELECT c FROM Cell c WHERE c.piece=:p"),
-        @NamedQuery(name = "UpdateCell", query = "Update Cell c set c.piece=:piece where c=:cell"),
-        @NamedQuery(name = "CellWithColor", query = "SELECT c FROM Cell c WHERE c.piece.color=:color"),
-        @NamedQuery(name = "CellWithType", query = "SELECT c FROM Cell c WHERE c.piece.type=:type"),
-//        @NamedQuery(name = "DeleteCell", query = "DELETE FROM Cell c Where c=:cell"),
+        @NamedQuery(name = "SetPiece", query = "Update Cell c set c.piece=:piece where c=:cell"),
 })
 
 public class Cell extends BasicEntity {
+    @ManyToOne(fetch = FetchType.LAZY)
+    private Game game;
+
     @Column
     public final int i;
     @Column
     public final int j;
-    @OneToOne
+    @OneToOne(cascade = CascadeType.ALL,orphanRemoval = true)
     public Piece piece;
 
-    public void setPiece (Piece p){
-        this.piece = p;
-    }
     protected Cell() {
         this(0, 0, null);
     }

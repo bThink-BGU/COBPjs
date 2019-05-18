@@ -33,13 +33,11 @@ public class ContextService implements Serializable {
 	@SuppressWarnings("unused")
 	public static NativeFunction subscribeWithParameters;
     private EntityManagerFactory emf;
-    private EntityManager em;
     private ExecutorService pool;
     private BProgram bprog;
     private BProgramRunner rnr;
     private Multimap<Class<?>, NamedQuery> namedQueries;
 	private boolean verificationMode = false;
-	private boolean alwaysUpdateEntities = false;
 	private List<CtxType> contextTypes;
 	private BEvent[] contextEvents;
 
@@ -54,9 +52,10 @@ public class ContextService implements Serializable {
 			this.contextTypes = cs.contextTypes;
 			this.contextEvents = cs.contextEvents;
 			this.dbDump = new LinkedList<>();
-			Session session = cs.em.unwrap(Session.class);
+			EntityManager em = cs.createEntityManager();
+			Session session = em.unwrap(Session.class);
 			session.doWork(connection -> {
-				cs.em.getMetamodel().getEntities().forEach(e -> dbDump.addAll(Db2Sql.dumpTable(connection, e.getName())));
+				em.getMetamodel().getEntities().forEach(e -> dbDump.addAll(Db2Sql.dumpTable(connection, e.getName())));
 			});
 		}
 
@@ -64,11 +63,12 @@ public class ContextService implements Serializable {
 			uniqInstance.contextEvents = contextEvents;
 			uniqInstance.contextTypes = contextTypes;
 
-			uniqInstance.em.getTransaction().begin();
-			uniqInstance.em.getMetamodel().getEntities()
-					.forEach(e -> uniqInstance.em.createQuery("Delete from "+e.getName()+" e").executeUpdate());
-			dbDump.forEach(s -> uniqInstance.em.createNativeQuery(s).executeUpdate());
-			uniqInstance.em.getTransaction().commit();
+			EntityManager em = uniqInstance.createEntityManager();
+			em.getTransaction().begin();
+			em.getMetamodel().getEntities()
+					.forEach(e -> em.createQuery("Delete from "+e.getName()+" e").executeUpdate());
+			dbDump.forEach(s -> em.createNativeQuery(s).executeUpdate());
+			em.getTransaction().commit();
 			return uniqInstance;
 		}
 	}
@@ -88,8 +88,14 @@ public class ContextService implements Serializable {
 	}
 
 	@SuppressWarnings("unused")
-	public static <T> List<T> getContextsOfType(String type) {
+	public static List<?> getContextsOfType(String type) {
 		return uniqInstance.getContextInstances(type);
+	}
+
+	private EntityManager createEntityManager() {
+		EntityManager em = emf.createEntityManager();
+		em.setFlushMode(FlushModeType.COMMIT);
+		return em;
 	}
 
 	private static class CtxType implements Serializable {
@@ -121,7 +127,7 @@ public class ContextService implements Serializable {
         }*/
 
         private static TypedQuery createQuery(String name, Class cls, @Nullable Map<String,?> params) {
-            TypedQuery q = uniqInstance.em.createNamedQuery(name, cls);
+            TypedQuery q = uniqInstance.createEntityManager().createNamedQuery(name, cls);
             if(params != null) {
                 params.forEach((key, val) -> {
                     Object v = val;
@@ -157,20 +163,8 @@ public class ContextService implements Serializable {
 		throw new CloneNotSupportedException();
 	}
 
-	public void alwaysUpdateEntities() {
-		this.alwaysUpdateEntities = true;
-	}
-
     private Object writeReplace() throws ObjectStreamException {
 		return new ContextServiceProxy(this);
-	}
-
-	private void persistObjects(Object ... objects) {
-		if(objects == null)
-			return;
-		for (Object o: objects) {
-            em.merge(o);
-		}
 	}
 
 	public void enableTicker() {
@@ -224,12 +218,13 @@ public class ContextService implements Serializable {
 	    close();
 		contextTypes = new LinkedList<>();
         pool = Executors.newCachedThreadPool();
-        emf = Persistence.createEntityManagerFactory(persistenceUnit);
-        em = emf.createEntityManager();
+        Properties properties = new Properties();
+        properties.put("javax.persistence.sharedCache.mode", "ENABLE_SELECTIVE");
+        emf = Persistence.createEntityManagerFactory(persistenceUnit, properties);
         namedQueries = findAllNamedQueries(emf);
         namedQueries.forEach((aClass, namedQuery) -> {
 			try {
-				TypedQuery<?> q = em.createNamedQuery(namedQuery.name(), aClass);
+				TypedQuery<?> q = createEntityManager().createNamedQuery(namedQuery.name(), aClass);
 				Set<Parameter<?>> parameters = q.getParameters();
 				if (parameters == null || parameters.isEmpty()) {
 					registerContextQuery(namedQuery.name(), namedQuery.name(), aClass, null);
@@ -260,18 +255,12 @@ public class ContextService implements Serializable {
 
 	// Produce contextName update events to be triggered after each update event
 	private void updateContexts() {
-		Set<BEvent> events = new HashSet<>();
+		Set<ContextInstanceEvent> events = new HashSet<>();
         contextTypes.forEach(ctxType -> {
             // Remember the list of contexts that we already reported of
             List<?> knownContexts = new LinkedList<>(ctxType.activeContexts);
             // Update the list of contexts
             ctxType.activeContexts = ctxType.query.getResultList();
-
-            //region GERA - remove this when you fix the bug
-			if(alwaysUpdateEntities) {
-				ctxType.activeContexts.forEach(c -> em.refresh(c));
-			}
-			//endregion
 
 			// Filter the contexts that we didn't yet report of
             List<?> newContexts = new LinkedList<>(ctxType.activeContexts);
@@ -283,9 +272,18 @@ public class ContextService implements Serializable {
             knownContexts.removeAll(ctxType.activeContexts);
             knownContexts.stream().map(obj -> new ContextEndedEvent(ctxType.uniqueId, obj)).forEach(events::add);
         });
-		contextEvents = events.toArray(new BEvent[0]);
+        contextEvents = events.toArray(new BEvent[0]);
 	}
 
+	/*private void innerRefreshContextState(Class ctx){
+		EntityManager em = createEntityManager();
+		em.refresh(ctx);
+		em.detach(ctx);
+	}
+
+	public static void refreshContextState(Class ctx){
+		getInstance().innerRefreshContextState(ctx);
+	}*/
 
     public static BEvent[] getContextEvents() {
         return getInstance().innerGetContextEvents();
@@ -297,12 +295,10 @@ public class ContextService implements Serializable {
 	}
 
     @SuppressWarnings("WeakerAccess")
-	public <T> List<T> getContextInstances(String type) {
+	public List<?> getContextInstances(String type) {
         for (CtxType ct : contextTypes) {
             if (ct.uniqueId.equals(type)) {
-                @SuppressWarnings("unchecked")
-                List<T> l =  (List<T>) ct.activeContexts;
-                return l;
+				return ct.activeContexts;
             }
         }
         return null;
@@ -352,33 +348,34 @@ public class ContextService implements Serializable {
 	public void close() {
         try {
             pool.shutdownNow();
-            em.close();
             emf.close();
         } catch (Exception e) { }
     }
 
 	//region Internal Events
-	@SuppressWarnings("WeakerAccess")
-	public static class NewContextEvent extends BEvent {
-		public final String contextName;
-		public final Object ctx;
+    @SuppressWarnings("WeakerAccess")
+    public static abstract class ContextInstanceEvent extends BEvent {
+        public final String contextName;
+        public final Object ctx;
 
+        public ContextInstanceEvent(String eventType, String contextName, Object ctx) {
+            super(eventType +"(" + contextName + "," + ctx + ")");
+            this.contextName = contextName;
+            this.ctx = ctx;
+        }
+    }
+
+	@SuppressWarnings("WeakerAccess")
+	public static class NewContextEvent extends ContextInstanceEvent {
 		public NewContextEvent(String contextName, Object ctx) {
-			super("NewContextEvent(" + contextName + "," + ctx + ")");
-			this.contextName = contextName;
-			this.ctx = ctx;
+			super("NewContextEvent", contextName, ctx);
 		}
 	}
 
 	@SuppressWarnings("WeakerAccess")
-	public static class ContextEndedEvent extends BEvent {
-		public String contextName;
-		public Object ctx;
-
+	public static class ContextEndedEvent extends ContextInstanceEvent {
 		public ContextEndedEvent(String contextName, Object ctx) {
-			super("ContextEndedEvent(" + contextName + "," + ctx + ")");
-			this.contextName = contextName;
-			this.ctx = ctx;
+            super("ContextEndedEvent", contextName, ctx);
 		}
 
 	}
@@ -390,7 +387,7 @@ public class ContextService implements Serializable {
 		}
 
 		public final void execute() {
-			EntityManager em = getInstance().em;
+			EntityManager em = getInstance().createEntityManager();
 			em.getTransaction().begin();
 			innerExecution(em);
 			em.getTransaction().commit();
@@ -428,7 +425,16 @@ public class ContextService implements Serializable {
 
 		@Override
 		protected void innerExecution(EntityManager em) {
-			getInstance().persistObjects(persistObjects);
+			persistObjects(em, persistObjects);
+		}
+
+		private void persistObjects(EntityManager em, Object ... objects) {
+			if(objects == null)
+				return;
+			for (Object o: objects) {
+				em.merge(o);
+//            em.detach(o);
+			}
 		}
 	}
 

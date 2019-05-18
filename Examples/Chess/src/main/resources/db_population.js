@@ -1,20 +1,53 @@
+importPackage(Packages.il.ac.bgu.cs.bp.bpjs.context.examples.chess.schema);
+importPackage(Packages.il.ac.bgu.cs.bp.bpjs.context.examples.chess.events);
+importPackage(Packages.il.ac.bgu.cs.bp.bpjs.Chess.context);
+
 var size = 8;
 
-function createCells() {
+var addPieceEventSet = bp.EventSet("AddPieceEventSet", function(e) {
+    bp.log.info("addPieceEventSet: " + e);
+    return e.name.equals("AddPiece");
+});
+
+var setColorEventSet = bp.EventSet("SetColorEventSet", function(e) {
+    bp.log.info("addPieceEventSet: " + e);
+    return e.name.equals("Color");
+});
+
+bp.registerBThread("Create Board", function() {
     var cells = [], i, j;
     for (i = 0; i < size; i++) {
         for (j = 0; j < size; j++) {
-            CTX_instance.registerParameterizedContextQuery("SpecificCell", "Cell(" + i + "," + j + ")", {
-                "i": i,
-                "j": j
-            });
             cells.push(new Cell(i, j));
         }
     }
-    return cells;
-}
+    bp.sync({ request: CTX.InsertEvent(new Game(cells)) });
+});
 
-function createPieces() {
+CTX.subscribe("Set Color", "GameStateInit", function (game) {
+    var myColor = bp.sync({waitFor: setColorEventSet}).data;
+    bp.sync({ request: CTX.UpdateEvent("ChangeMyColor", { "color": myColor , "game":game }) });
+});
+
+CTX.subscribe("Place Pieces", "GameStateInit", function (game) {
+    while(true) {
+        var e = bp.sync({waitFor: addPieceEventSet, interrupt: CTX.ContextEndedEvent("GameStateInit", game) });
+        var g = CTX.getContextsOfType("GameStateInit").get(0);
+        bp.log.info("1: " + g.Board(0,0));
+        bp.sync({ request: CTX.UpdateEvent(
+            "SetPiece", { "cell": game.Board(e.data.get("Row"), e.data.get("Col")), "Piece": e.data.get("Piece")}) });
+        bp.log.info("2: " + g.Board(0,0));
+        g = CTX.getContextsOfType("GameStateInit").get(0);
+        bp.log.info("3: " + g.Board(0,0));
+    }
+});
+
+CTX.subscribe("Start Game", "GameStateInit", function (game) {
+        bp.sync({waitFor: bp.Event("init_end") });
+        bp.sync({ request: CTX.UpdateEvent("GameStatePlaying", {"game":game})});
+});
+
+function addAllPieces(game) {
     var types = Type.values();
     var colors = Color.values();
     var pieces = [];
@@ -51,10 +84,11 @@ function createPieces() {
     return pieces;
 }
 
+/*
 bp.registerBThread("PopulateDB", function() {
     var cells = createCells();
     var pieces = createPieces();
     bp.sync({ request: CTX.InsertEvent(cells) });
     bp.sync({ request: CTX.InsertEvent(pieces) });
     bp.sync({ request: bp.Event("Context Population Ended") });
-});
+});*/

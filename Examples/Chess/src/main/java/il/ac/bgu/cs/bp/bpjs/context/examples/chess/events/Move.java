@@ -2,20 +2,19 @@ package il.ac.bgu.cs.bp.bpjs.context.examples.chess.events;
 
 import il.ac.bgu.cs.bp.bpjs.context.examples.chess.MoveTranslator;
 import il.ac.bgu.cs.bp.bpjs.context.examples.chess.schema.Cell;
-import il.ac.bgu.cs.bp.bpjs.context.examples.chess.schema.piece.Color;
-import il.ac.bgu.cs.bp.bpjs.context.examples.chess.schema.piece.Piece;
+import il.ac.bgu.cs.bp.bpjs.context.examples.chess.schema.Color;
+import il.ac.bgu.cs.bp.bpjs.context.examples.chess.schema.Piece;
 import il.ac.bgu.cs.bp.bpjs.model.BEvent;
 import il.ac.bgu.cs.bp.bpjs.model.eventsets.EventSet;
 
 public class Move extends BEvent {
     public final Cell source;
     public final Cell target;
-    public final Piece piece;
 
-    public Move(Cell source, Cell target, Piece piece){
+    public Move(Cell source, Cell target) {
+        super();
         this.source = source;
         this.target = target;
-        this.piece = piece;
     }
 
     /*
@@ -33,13 +32,13 @@ public class Move extends BEvent {
             return false;
         }
         Move other = (Move) obj;
-        return source.equals(other.source) && target.equals(other.target) && piece.equals(other.piece);
+        return source.equals(other.source) && target.equals(other.target);
     }
 
     @Override
     public String toString() {
         String move= MoveTranslator.MoveToString(this);
-        return "Move(" +move.charAt(0)+move.charAt(1)+")->("+move.charAt(2)+move.charAt(3)+"),"+ piece ;
+        return "Move(" +move.charAt(0)+move.charAt(1)+")->("+move.charAt(2)+move.charAt(3)+")";
     }
 
     public static class AnyMoveEventSet implements EventSet {
@@ -52,15 +51,22 @@ public class Move extends BEvent {
     public static class SamePlaceMoveEventSet implements EventSet {
         @Override
         public boolean contains(BEvent bEvent) {
-            //TODO: change to equals
-            return bEvent instanceof Move && ((Move)bEvent).source.i==((Move)bEvent).target.i && ((Move)bEvent).source.j==((Move)bEvent).target.j;
+            if(!(bEvent instanceof Move)){
+                return false;
+            }
+            Move move = (Move)bEvent;
+            return move.source.equals(move.target);
         }
     }
 
     public static class OutOfBoardMoveEventSet implements EventSet {
         @Override
         public boolean contains(BEvent bEvent) {
-            return bEvent instanceof Move && (((Move)bEvent).target.i<0 || ((Move)bEvent).target.i>7 || ((Move)bEvent).target.j<0 || ((Move)bEvent).target.j>7);
+            if(!(bEvent instanceof Move)){
+                return false;
+            }
+            Move move = (Move)bEvent;
+            return move.target.i < 0 || move.target.i > 7 || move.target.j < 0 || move.target.j > 7;
         }
     }
 
@@ -73,7 +79,7 @@ public class Move extends BEvent {
 
         @Override
         public boolean contains(BEvent bEvent) {
-            return bEvent instanceof Move && ((Move)bEvent).piece.equals(p);
+            return bEvent instanceof Move && ((Move)bEvent).source.piece.equals(p);
         }
     }
 
@@ -86,7 +92,7 @@ public class Move extends BEvent {
 
         @Override
         public boolean contains(BEvent bEvent) {
-            return bEvent instanceof Move && ((Move)bEvent).piece.color.equals(c);
+            return bEvent instanceof Move && ((Move)bEvent).source.piece.color.equals(c);
         }
     }
 
@@ -116,20 +122,15 @@ public class Move extends BEvent {
         }
     }
     public static class SpecificMoveEventSet implements EventSet {
-        private final Piece p;
-        private final int i;
-        private final int j;
+        private final Cell target;
 
-
-        public SpecificMoveEventSet(Piece p, int i, int j) {
-            this.p = p;
-            this.i = i;
-            this.j = j;
+        public SpecificMoveEventSet(Cell target) {
+            this.target = target;
         }
 
         @Override
         public boolean contains(BEvent bEvent) {
-            return bEvent instanceof Move && ((Move)bEvent).piece.equals(p) && ((Move)bEvent).target.i==i && ((Move)bEvent).target.j==j;
+            return ((Move)bEvent).target.equals(target);
         }
     }
 }
