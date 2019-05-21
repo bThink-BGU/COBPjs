@@ -12,11 +12,11 @@ import java.util.List;
         @NamedQuery(name = "GameStatePlaying", query = "SELECT g FROM Game g WHERE g.state='PLAYING'"),
         @NamedQuery(name = "GameStateGameOver", query = "SELECT g FROM Game g WHERE g.state='GAME_OVER'"),
 }) public class Game extends BasicEntity {
-    @OneToMany(cascade = CascadeType.ALL, mappedBy = "game", orphanRemoval = true)
+    @OneToMany(cascade = CascadeType.ALL, mappedBy = "game", orphanRemoval = true, fetch = FetchType.EAGER)
     private final List<Cell> board;
 
     @Enumerated(EnumType.STRING)
-    public final GameState state = GameState.INIT;
+    public final State state = State.INIT;
 
     @Enumerated(EnumType.STRING)
     private final Color myColor;
@@ -27,10 +27,16 @@ import java.util.List;
         this.board = null;
     }
 
-    public Game(Cell[] board) {
+    private Game(Cell[] board) {
         super("Game");
         myColor = Color.White;
         this.board = Arrays.asList(board);
+    }
+
+    public static Game create(Cell[] board) {
+        Game game = new Game(board);
+        game.board.forEach(cell -> cell.setGame(game));
+        return game;
     }
 
     public Color MyColor() {
@@ -45,7 +51,7 @@ import java.util.List;
         return board.get(8*i + j);
     }
 
-    public enum GameState {
+    public enum State {
         INIT,
         PLAYING,
         GAME_OVER

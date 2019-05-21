@@ -1,6 +1,7 @@
 package il.ac.bgu.cs.bp.bpjs.context;
 
 import java.io.*;
+import java.lang.reflect.Type;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -38,11 +39,11 @@ public class ContextService implements Serializable {
     private BProgramRunner rnr;
     private Multimap<Class<?>, NamedQuery> namedQueries;
 	private boolean verificationMode = false;
-	private List<CtxType> contextTypes;
+	private List<CtxType<?>> contextTypes;
 	private BEvent[] contextEvents;
 
 	private static class ContextServiceProxy implements Serializable {
-		private List<CtxType> contextTypes;
+		private List<CtxType<?>> contextTypes;
 		private BEvent[] contextEvents;
 		private List<String> dbDump = new LinkedList<>();
 
@@ -88,8 +89,8 @@ public class ContextService implements Serializable {
 	}
 
 	@SuppressWarnings("unused")
-	public static List<?> getContextsOfType(String type) {
-		return uniqInstance.getContextInstances(type);
+	public static <T> List<T> getContextInstances(String contextName, Class<T> contextClass) {
+		return uniqInstance.innerGetContextInstances(contextName, contextClass);
 	}
 
 	private EntityManager createEntityManager() {
@@ -98,38 +99,34 @@ public class ContextService implements Serializable {
 		return em;
 	}
 
-	private static class CtxType implements Serializable {
-        transient TypedQuery query;
+	private static class CtxType<T> implements Serializable {
+//        transient TypedQuery query;
         final String queryName;
         final String uniqueId;
-        final Class cls;
+        final Class<T> cls;
         final Map<String,?> parameters;
-        List<?> activeContexts = new LinkedList<>();
+        List<T> activeContexts = new LinkedList<>();
 
-		public CtxType(String queryName, String uniqueId, Class cls, @Nullable Map<String,?> parameters){
+		public CtxType(String queryName, String uniqueId, Class<T> cls, @Nullable Map<String,?> parameters){
 			this.queryName = queryName;
 			this.uniqueId = uniqueId;
 			this.cls = cls;
             this.parameters = parameters;
-            this.query = createQuery(queryName, cls, parameters);
+//            this.query = createQuery(queryName, cls, parameters);
         }
 
         private void readObject(ObjectInputStream aInputStream) throws ClassNotFoundException, IOException {
             // perform the default de-serialization first
             aInputStream.defaultReadObject();
 
-            query = createQuery(queryName, cls, parameters);
+//            query = createQuery(queryName, cls, parameters);
         }
 
-        /*private Object readResolve() throws ObjectStreamException {
-		    query = createQuery(queryName, cls, parameters);
-		    return this;
-        }*/
-
-        private static TypedQuery createQuery(String name, Class cls, @Nullable Map<String,?> params) {
-            TypedQuery q = uniqInstance.createEntityManager().createNamedQuery(name, cls);
-            if(params != null) {
-                params.forEach((key, val) -> {
+		private TypedQuery createQuery() {
+            TypedQuery q = uniqInstance.createEntityManager().createNamedQuery(queryName, cls);
+			q.setHint("javax.persistence.cache.retrieveMode", CacheRetrieveMode.BYPASS);
+			if(parameters != null) {
+                parameters.forEach((key, val) -> {
                     Object v = val;
                     if (v instanceof Number) {
                         Number number = (Number) v;
@@ -218,9 +215,9 @@ public class ContextService implements Serializable {
 	    close();
 		contextTypes = new LinkedList<>();
         pool = Executors.newCachedThreadPool();
-        Properties properties = new Properties();
-        properties.put("javax.persistence.sharedCache.mode", "ENABLE_SELECTIVE");
-        emf = Persistence.createEntityManagerFactory(persistenceUnit, properties);
+		emf = Persistence.createEntityManagerFactory(
+				persistenceUnit,
+				ImmutableMap.builderWithExpectedSize(1).put("javax.persistence.sharedCache.mode", "NONE").build());
         namedQueries = findAllNamedQueries(emf);
         namedQueries.forEach((aClass, namedQuery) -> {
 			try {
@@ -260,7 +257,7 @@ public class ContextService implements Serializable {
             // Remember the list of contexts that we already reported of
             List<?> knownContexts = new LinkedList<>(ctxType.activeContexts);
             // Update the list of contexts
-            ctxType.activeContexts = ctxType.query.getResultList();
+            ctxType.activeContexts = ctxType.createQuery().getResultList();
 
 			// Filter the contexts that we didn't yet report of
             List<?> newContexts = new LinkedList<>(ctxType.activeContexts);
@@ -275,16 +272,6 @@ public class ContextService implements Serializable {
         contextEvents = events.toArray(new BEvent[0]);
 	}
 
-	/*private void innerRefreshContextState(Class ctx){
-		EntityManager em = createEntityManager();
-		em.refresh(ctx);
-		em.detach(ctx);
-	}
-
-	public static void refreshContextState(Class ctx){
-		getInstance().innerRefreshContextState(ctx);
-	}*/
-
     public static BEvent[] getContextEvents() {
         return getInstance().innerGetContextEvents();
     }
@@ -295,9 +282,9 @@ public class ContextService implements Serializable {
 	}
 
     @SuppressWarnings("WeakerAccess")
-	public List<?> getContextInstances(String type) {
+	private <T> List<T> innerGetContextInstances(String contextName, Class<T> contextClass) {
         for (CtxType ct : contextTypes) {
-            if (ct.uniqueId.equals(type)) {
+            if (ct.uniqueId.equals(contextName)) {
 				return ct.activeContexts;
             }
         }
@@ -326,8 +313,8 @@ public class ContextService implements Serializable {
 		return ImmutableMultimap.copyOf(namedQueries);
 	}
 
-	private void registerContextQuery(String queryName, String uniqueId, Class<?> cls, @Nullable Map<String, ?> parameters) {
-		contextTypes.add(new CtxType(queryName, uniqueId, cls, parameters));
+	private <T> void registerContextQuery(String queryName, String uniqueId, Class<T> cls, @Nullable Map<String, ?> parameters) {
+		contextTypes.add(new CtxType<>(queryName, uniqueId, cls, parameters));
 		updateContexts();
 	}
 
@@ -433,7 +420,6 @@ public class ContextService implements Serializable {
 				return;
 			for (Object o: objects) {
 				em.merge(o);
-//            em.detach(o);
 			}
 		}
 	}

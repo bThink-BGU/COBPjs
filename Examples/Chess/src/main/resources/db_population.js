@@ -5,12 +5,10 @@ importPackage(Packages.il.ac.bgu.cs.bp.bpjs.Chess.context);
 var size = 8;
 
 var addPieceEventSet = bp.EventSet("AddPieceEventSet", function(e) {
-    bp.log.info("addPieceEventSet: " + e);
     return e.name.equals("AddPiece");
 });
 
 var setColorEventSet = bp.EventSet("SetColorEventSet", function(e) {
-    bp.log.info("addPieceEventSet: " + e);
     return e.name.equals("Color");
 });
 
@@ -21,7 +19,7 @@ bp.registerBThread("Create Board", function() {
             cells.push(new Cell(i, j));
         }
     }
-    bp.sync({ request: CTX.InsertEvent(new Game(cells)) });
+    bp.sync({ request: CTX.InsertEvent(Game.create(cells)) });
 });
 
 CTX.subscribe("Set Color", "GameStateInit", function (game) {
@@ -32,19 +30,25 @@ CTX.subscribe("Set Color", "GameStateInit", function (game) {
 CTX.subscribe("Place Pieces", "GameStateInit", function (game) {
     while(true) {
         var e = bp.sync({waitFor: addPieceEventSet, interrupt: CTX.ContextEndedEvent("GameStateInit", game) });
-        var g = CTX.getContextsOfType("GameStateInit").get(0);
-        bp.log.info("1: " + g.Board(0,0));
-        bp.sync({ request: CTX.UpdateEvent(
-            "SetPiece", { "cell": game.Board(e.data.get("Row"), e.data.get("Col")), "Piece": e.data.get("Piece")}) });
-        bp.log.info("2: " + g.Board(0,0));
-        g = CTX.getContextsOfType("GameStateInit").get(0);
-        bp.log.info("3: " + g.Board(0,0));
+        var piece = e.data.get("Piece");
+        bp.registerBThread("AddPiece_" + piece, function() {
+            bp.sync({
+                request:
+                    CTX.TransactionEvent(
+                        CTX.InsertEvent(piece),
+                        CTX.UpdateEvent("SetPiece", {
+                            "cell": game.Board(e.data.get("Row"), e.data.get("Col")),
+                            "piece": piece
+                        })
+                    )
+            });
+        });
     }
 });
 
 CTX.subscribe("Start Game", "GameStateInit", function (game) {
         bp.sync({waitFor: bp.Event("init_end") });
-        bp.sync({ request: CTX.UpdateEvent("GameStatePlaying", {"game":game})});
+        bp.sync({ request: CTX.UpdateEvent("ChangeGameState", {"game":game, "state": Game.State.PLAYING })});
 });
 
 function addAllPieces(game) {

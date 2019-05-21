@@ -160,7 +160,7 @@
     <modules>
         <module>Room</module>
         <module>TTT</module>
-	<module>Chess</module>
+	    <module>Chess</module>
     </modules>
 
 </project>

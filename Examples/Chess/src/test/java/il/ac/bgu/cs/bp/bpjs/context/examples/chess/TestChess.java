@@ -26,7 +26,7 @@ public class TestChess {
         parameters.put("Piece", new Piece(Color.Black, Piece.Type.Rook, 1));
         parameters.put("Row", 0);
         parameters.put("Col", 0);
-        bprog.enqueueExternalEvent( new BEvent("AddPiece", Color.Black));
+        bprog.enqueueExternalEvent( new BEvent("AddPiece", parameters));
         bprog.enqueueExternalEvent( new BEvent("init_end"));
 
         //ContextService.close();

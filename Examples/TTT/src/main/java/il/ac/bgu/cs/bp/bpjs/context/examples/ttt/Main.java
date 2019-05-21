@@ -1,6 +1,7 @@
 package il.ac.bgu.cs.bp.bpjs.context.examples.ttt;
 
 import il.ac.bgu.cs.bp.bpjs.context.ContextService;
+import il.ac.bgu.cs.bp.bpjs.context.examples.ttt.schema.Cell;
 import il.ac.bgu.cs.bp.bpjs.model.BEvent;
 import il.ac.bgu.cs.bp.bpjs.model.BProgram;
 
@@ -15,7 +16,7 @@ public class Main {
 
 		// Simulation of external events
 		Thread.sleep(2000);
-		contextService.getContextInstances("Cell")
+		contextService.getContextInstances("Cell", Cell.class)
 				.forEach(cell -> bprog.enqueueExternalEvent(new BEvent("Click",cell)));
 
 		Thread.sleep(6000);

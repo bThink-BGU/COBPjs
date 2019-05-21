@@ -16,11 +16,11 @@ public class Cell extends BasicEntity {
 
     @Column
     public final int i;
+
     @Column
     public final int j;
     @OneToOne(cascade = CascadeType.ALL,orphanRemoval = true)
     public Piece piece;
-
     protected Cell() {
         this(0, 0, null);
     }
@@ -34,6 +34,10 @@ public class Cell extends BasicEntity {
         this.i = i;
         this.j = j;
         this.piece = p;
+    }
+
+    void setGame(Game game) {
+        this.game = game;
     }
 
     @Override

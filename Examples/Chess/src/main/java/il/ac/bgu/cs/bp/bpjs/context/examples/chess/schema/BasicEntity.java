@@ -1,5 +1,7 @@
 package il.ac.bgu.cs.bp.bpjs.context.examples.chess.schema;
 
+import il.ac.bgu.cs.bp.bpjs.context.ContextService;
+
 import javax.persistence.Id;
 import javax.persistence.MappedSuperclass;
 import java.io.Serializable;

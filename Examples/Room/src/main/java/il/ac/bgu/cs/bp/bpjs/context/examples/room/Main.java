@@ -21,8 +21,8 @@ public class Main {
 
 		// Simulation of external events
 		Thread.sleep(1000);
-		Map<String, Room> rooms = contextService.<Room>getContextsOfType("Room")
-				.stream().collect(Collectors.toMap(Room::getId, Function.identity()));
+		Map<String, Room> rooms = ContextService.getContextInstances("Room", Room.class).stream()
+				.collect(Collectors.toMap(Room::getId, Function.identity()));
 
 		bprog.enqueueExternalEvent((rooms.get("37/123").getMotionDetector()).startedEvent());
 		Thread.sleep(1000);
