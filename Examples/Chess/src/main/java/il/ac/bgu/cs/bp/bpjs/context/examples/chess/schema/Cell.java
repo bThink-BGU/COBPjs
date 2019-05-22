@@ -42,7 +42,7 @@ public class Cell extends BasicEntity {
 
     @Override
     public String toString() {
-        String ans="Cell(" + (char) ('a' + i)  + (j+1) + "):";
+        String ans="Cell(" + (char)('a' + j)  + (8 - i) + "):";
         if(piece == null){
             return ans+"Empty";
         }

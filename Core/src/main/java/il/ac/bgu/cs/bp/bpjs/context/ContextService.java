@@ -93,6 +93,11 @@ public class ContextService implements Serializable {
 		return uniqInstance.innerGetContextInstances(contextName, contextClass);
 	}
 
+	@SuppressWarnings("unused")
+	public static <T> List<T> getContextInstances(String contextName) {
+		return uniqInstance.innerGetContextInstances(contextName, null);
+	}
+
 	private EntityManager createEntityManager() {
 		EntityManager em = emf.createEntityManager();
 		em.setFlushMode(FlushModeType.COMMIT);
