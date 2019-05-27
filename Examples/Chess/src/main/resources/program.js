@@ -1,6 +1,8 @@
 
 //#region HELP FUNCTIONS
-
+function getUpdatedGame() {
+    return CTX.getContextInstances("GameStatePlaying").get(0)
+}
 //#endregion HELP FUNCTIONS
 
 //#region GameRules
@@ -11,12 +13,16 @@ CTX.subscribe("MoveTheEnemy","GameStatePlaying", function(game) {
                 return e.name.equals("EnemyMove")
             })
         });
-        var updatedGame = CTX.getContextInstances("GameStatePlaying").get(0);
+        var updatedGame = getUpdatedGame();
         var source = game.Board(e.data[0], e.data[1]);
         var target = game.Board(e.data[2], e.data[3]);
         bp.sync({request: Move(source, target)});
     }
 });
+
+/*CTX.subscribe("chessmove","GameStatePlaying", function(game) {
+    bp.sync({waitFor: Move.AnyMoveEventSet(), superBlock: chessonmycolor, interrupt: CTX.ContextEndedEvent("GameStatePlaying", game)});
+});*/
 
 CTX.subscribe("EnforceTurns","GameStatePlaying", function(game) {
     while (true) {
@@ -29,9 +35,9 @@ CTX.subscribe("UpdateBoardOnMove","GameStatePlaying", function(game) {
         while (true) {
             var move = bp.sync({waitFor: Move.AnyMoveEventSet(), interrupt: CTX.ContextEndedEvent("GameStatePlaying", game)});
 
-            var transaction = [CTX.UpdateEvent(
-                "SetPiece", {"cell": move.source, "piece": null}),
-                CTX.UpdateEvent("SetPiece", {"cell": move.target, "piece": move.piece})];
+            var transaction = [
+                CTX.UpdateEvent("SetPiece", {"cell": move.source, "piece": null}),
+                CTX.UpdateEvent("SetPiece", {"cell": move.target, "piece": move.source.piece})];
             if (move.target.piece != null) {
                 transaction.push(CTX.UpdateEvent("DeletePiece", {"p": piece}));
             }
@@ -54,58 +60,52 @@ CTX.subscribe("block out of board moves","GameStatePlaying", function(game) {
 //#endregion GameRules
 
 //#region Pieces moves
-function movesInFourDirections(start, game) {
-    var cells = [];
+function whileLegalMove(start, game, maxDepth, cells, iFunc, jFunc) {
+    var i = iFunc(start.i);
+    var j = jFunc(start.j);
+    var counter = 0;
+    while(i < 8 && i>=0 && j < 8 && j >=0 && counter < maxDepth) {
+        var c = game.Board(i, j);
+        if (c.piece != null) {
+            if (c.piece.color.equals(game.OpponentColor())) {
+                cells.push(c);
+            }
+            return;
+        } else {
+            cells.push(c);
+        }
+        i = iFunc(i);
+        j = jFunc(j);
+        counter++;
+    }
+}
+
+function cellsInStraightLines(start, game, maxDepth, cells) {
     //right
-    for (var i = start.i + 1; i < size; i++) {
-        var c = game.Board(i, start.j);
-        if (c.piece != null) {
-            if (c.piece.color.equals(game.OpponentColor())) {
-                cells.push(c);
-            }
-            break;
-        }
-        cells.push(c);
-    }
+    whileLegalMove(start, game, maxDepth, cells, function(i) { return i;}, function(j) { return j+1;});
+
     //left
-    for (var i = start.i - 1; i >= 0; i--) {
-        var c = game.Board(i, start.j);
-        if (c.piece != null) {
-            if (c.piece.color.equals(game.OpponentColor())) {
-                cells.push(c);
-            }
-            break;
-        }
-        cells.push(c);
+    whileLegalMove(start, game, maxDepth, cells, function(i) { return i;}, function(j) { return j-1;});
 
-    }
     //up
-    for (var j = start.j + 1; j < size; j++) {
-        var c = game.Board(start.i, j);
+    whileLegalMove(start, game, maxDepth, cells, function(i) { return i-1;}, function(j) { return j;});
 
-        if (c.piece != null) {
-            if (c.piece.color.equals(game.OpponentColor())) {
-                cells.push(c);
-            }
-            break;
-        }
-        cells.push(c);
-    }
     //down
-    for (var j = start.j - 1; j >= 0; j--) {
-        var c = game.Board(start.i, j);
-        if (c.piece != null) {
-            if (c.piece.color.equals(game.OpponentColor())) {
-                cells.push(c);
-            }
-            break;
-        }
-        cells.push(c);
-    }
+    whileLegalMove(start, game, maxDepth, cells, function(i) { return i+1;}, function(j) { return j;});
+}
 
-    return cells.map(function (c) {
-        return new Move(start, c);
-    });
+function cellsInDiagonals(start, game, maxDepth, cells) {
+    //down + right
+    whileLegalMove(start, game, maxDepth, cells, function(i) { return i+1;}, function(j) { return j+1;});
+
+    //down + left
+    whileLegalMove(start, game, maxDepth, cells, function(i) { return i+1;}, function(j) { return j-1;});
+
+    //up + right
+    whileLegalMove(start, game, maxDepth, cells, function(i) { return i-1;}, function(j) { return j+1;});
+
+    //up + left
+    whileLegalMove(start, game, maxDepth, cells, function(i) { return i-1;}, function(j) { return j-1;});
 }
 
 CTX.subscribe("Pieces Moves","GameStatePlaying", function(game) {
@@ -113,10 +113,16 @@ CTX.subscribe("Pieces Moves","GameStatePlaying", function(game) {
         if (rook.color.equals(game.OpponentColor())) {
             return;
         }
-        while (true) {
-            var cell = game.BoardWithPiece(rook);
+        game = getUpdatedGame();
+        while(true) {
+            var cell = CTX.getContextInstances("CellWithPiece_"+rook.getId()).get(0);
+            var cells = [];
+            cellsInStraightLines(cell, updatedGame, 8, cells);
+            var possibleMoves = cells.map(function (c) {
+                return new Move(start, c);
+            });
             bp.sync({
-                request: movesInFourDirections(cell),
+                request: possibleMoves,
                 waitFor: Move.AnyMoveEventSet(),
                 interrupt: CTX.ContextEndedEvent("Rook", rook)
             });
@@ -128,24 +134,17 @@ CTX.subscribe("Pieces Moves","GameStatePlaying", function(game) {
             return;
         }
         while (true) {
-            var cell = game.BoardWithPiece(king);
-            var cells = [
-                game.Board(cell.i - 1, cell.j),
-                game.Board(cell.i - 1, cell.j + 1),
-                game.Board(cell.i, cell.j + 1),
-                game.Board(cell.i + 1, cell.j + 1),
-                game.Board(cell.i + 1, cell.j),
-                game.Board(cell.i + 1, cell.j - 1),
-                game.Board(cell.i, cell.j - 1),
-                game.Board(cell.i - 1, cell.j - 1)
-            ];
-            var moves = cells.map(function (c) {
+            var cell = CTX.getContextInstances("CellWithPiece_"+rook.getId()).get(0);
+            var updatedGame = getUpdatedGame();
+            var cells = [];
+            cellsInStraightLines(cell, updatedGame, 1, cells);
+            var possibleMoves = cells.map(function (c) {
                 return new Move(start, c);
             });
             bp.sync({
-                request: moves,
+                request: possibleMoves,
                 waitFor: Move.AnyMoveEventSet(),
-                interrupt: CTX.ContextEndedEvent("King", king)
+                interrupt: CTX.ContextEndedEvent("Rook", rook)
             });
         }
     });
@@ -153,7 +152,7 @@ CTX.subscribe("Pieces Moves","GameStatePlaying", function(game) {
 //#endregion Pieces moves
 
 //#region KingBehaviors
-CTX.subscribe("DetectChessWhilePlaying","GameStatePlaying", function(game) {
+/*CTX.subscribe("DetectChessWhilePlaying","GameStatePlaying", function(game) {
     CTX.subscribe("DetectChess", "King", function (king) {
         if (king.color.equals(Color.Black)) {
             blackKing = king;
@@ -177,7 +176,7 @@ CTX.subscribe("DetectChessWhilePlaying","GameStatePlaying", function(game) {
             bp.sync({waitFor: bp.Event("EnginePlayed")});
         }
     });
-});
+});*/
 //#endregion KingBehaviors
 
 

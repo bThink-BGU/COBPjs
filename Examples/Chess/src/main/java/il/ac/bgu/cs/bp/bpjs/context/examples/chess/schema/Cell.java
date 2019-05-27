@@ -8,6 +8,7 @@ import javax.persistence.*;
         @NamedQuery(name = "NonEmptyCell", query = "SELECT c FROM Cell c WHERE not(c.piece is null)"),
         @NamedQuery(name = "EmptyCell", query = "SELECT c FROM Cell c WHERE c.piece is null"),
         @NamedQuery(name = "SetPiece", query = "Update Cell c set c.piece=:piece where c=:cell"),
+        @NamedQuery(name = "CellWithPiece", query = "Select c FROM Cell c Where c.piece=:piece"),
 })
 
 public class Cell extends BasicEntity {

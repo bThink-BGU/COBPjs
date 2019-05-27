@@ -7,7 +7,7 @@ import il.ac.bgu.cs.bp.bpjs.model.BProgram;
 
 public class Main {
 	void run(String dbPopulationScript, String persistenceUnit) throws InterruptedException {
-		System.out.println(">>>>>>>>>>>>>>>>>> TTT Blockly example <<<<<<<<<<<<<<<<<<<");
+		System.out.println(">>>>>>>>>>>>>>>>>> TTT example <<<<<<<<<<<<<<<<<<<");
 
 		ContextService contextService = ContextService.getInstance();
 		contextService.initFromResources(persistenceUnit, dbPopulationScript, "program.js", "assertions.js");

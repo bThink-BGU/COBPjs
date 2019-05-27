@@ -219,7 +219,7 @@ public class ContextService implements Serializable {
 	private void init(String persistenceUnit) {
 	    close();
 		contextTypes = new LinkedList<>();
-        pool = Executors.newCachedThreadPool();
+        pool = Executors.newFixedThreadPool(2);
 		emf = Persistence.createEntityManagerFactory(
 				persistenceUnit,
 				ImmutableMap.builderWithExpectedSize(1).put("javax.persistence.sharedCache.mode", "NONE").build());
@@ -351,7 +351,7 @@ public class ContextService implements Serializable {
         public final Object ctx;
 
         public ContextInstanceEvent(String eventType, String contextName, Object ctx) {
-            super(eventType +"(" + contextName + "," + ctx + ")");
+            super(eventType +"(" + contextName + "," + ctx + ")"); //TODO change to get id
             this.contextName = contextName;
             this.ctx = ctx;
         }
@@ -480,10 +480,10 @@ public class ContextService implements Serializable {
 
 	//region Internal EventSets
 	@SuppressWarnings({"WeakerAccess","unused"})
-	public static class AnyNewContextEvent implements EventSet {
+	public static class AnyNewContextEventSet implements EventSet {
 		public final String contextName;
 
-		public AnyNewContextEvent(String contextName) {
+		public AnyNewContextEventSet(String contextName) {
 			super();
 			this.contextName = contextName;
 		}
@@ -493,6 +493,22 @@ public class ContextService implements Serializable {
 			return (event instanceof NewContextEvent) && ((NewContextEvent) event).contextName.equals(contextName);
 		}
 	}
+
+	@SuppressWarnings({"WeakerAccess","unused"})
+	public static class AnyContextEndedEventSet implements EventSet {
+		public final String contextName;
+
+		public AnyContextEndedEventSet(String contextName) {
+			super();
+			this.contextName = contextName;
+		}
+
+		@Override
+		public boolean contains(BEvent event) {
+			return (event instanceof ContextEndedEvent) && ((ContextEndedEvent) event).contextName.equals(contextName);
+		}
+	}
+
 
     @SuppressWarnings({"WeakerAccess","unused"})
 	public static class AnyContextCommandEvent implements EventSet {

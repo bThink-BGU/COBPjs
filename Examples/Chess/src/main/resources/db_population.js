@@ -31,17 +31,16 @@ CTX.subscribe("Place Pieces", "GameStateInit", function (game) {
     while(true) {
         var e = bp.sync({waitFor: addPieceEventSet, interrupt: CTX.ContextEndedEvent("GameStateInit", game) });
         var piece = e.data.get("Piece");
-        bp.registerBThread("AddPiece_" + piece, function() {
-            bp.sync({
-                request:
-                    CTX.TransactionEvent(
-                        CTX.InsertEvent(piece),
-                        CTX.UpdateEvent("SetPiece", {
-                            "cell": game.Board(e.data.get("Row"), e.data.get("Col")),
-                            "piece": piece
-                        })
-                    )
-            });
+        CTX.registerParameterizedContextQuery("CellWithPiece", "CellWithPiece_"+piece.getId(), {"piece":piece});
+        bp.sync({
+            request:
+                CTX.TransactionEvent(
+                    CTX.InsertEvent(piece),
+                    CTX.UpdateEvent("SetPiece", {
+                        "cell": game.Board(e.data.get("Row"), e.data.get("Col")),
+                        "piece": piece
+                    })
+                )
         });
     }
 });

@@ -15,21 +15,32 @@ public class TestChess {
 
         ContextService contextService = ContextService.getInstance();
         contextService.initFromResources(persistenceUnit,
-                dbPopulationScript, "test_population_data.js");
+                dbPopulationScript, "program.js", "test_population_data.js");
         contextService.run();
         BProgram bprog = contextService.getBProgram();
 
         // Simulation of external events
-        Thread.sleep(1000);
         bprog.enqueueExternalEvent(new BEvent("Color", Color.Black));
-        Map<String, Object> parameters = new HashMap<>();
-        parameters.put("Piece", new Piece(Color.Black, Piece.Type.Rook, 1));
-        parameters.put("Row", 0);
-        parameters.put("Col", 0);
-        bprog.enqueueExternalEvent( new BEvent("AddPiece", parameters));
+        bprog.enqueueExternalEvent( new BEvent("AddPiece", new HashMap<String, Object>(){{
+            put("Piece", new Piece(Color.Black, Piece.Type.Rook, 1));
+            put("Row", 0);
+            put("Col", 0);
+        }}));
+        bprog.enqueueExternalEvent( new BEvent("AddPiece", new HashMap<String, Object>(){{
+            put("Piece", new Piece(Color.Black, Piece.Type.King, 1));
+            put("Row", 0);
+            put("Col", 1);
+        }}));
+        bprog.enqueueExternalEvent( new BEvent("AddPiece", new HashMap<String, Object>(){{
+            put("Piece", new Piece(Color.White, Piece.Type.King, 1));
+            put("Row", 3);
+            put("Col", 6);
+        }}));
         bprog.enqueueExternalEvent( new BEvent("init_end"));
-
-        //ContextService.close();
+        Thread.sleep(2000);
+        bprog.enqueueExternalEvent(new BEvent("EnemyMove", new int[]{3,6,3,7}));
+        Thread.sleep(2000);
+        contextService.close();
     }
 
 

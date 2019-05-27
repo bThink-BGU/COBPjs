@@ -11,7 +11,8 @@ import java.util.List;
         @NamedQuery(name = "GameStateInit", query = "SELECT g FROM Game g WHERE g.state='INIT'"),
         @NamedQuery(name = "GameStatePlaying", query = "SELECT g FROM Game g WHERE g.state='PLAYING'"),
         @NamedQuery(name = "GameStateGameOver", query = "SELECT g FROM Game g WHERE g.state='GAME_OVER'"),
-}) public class Game extends BasicEntity {
+})
+public class Game extends BasicEntity {
     @OneToMany(cascade = CascadeType.ALL, mappedBy = "game", orphanRemoval = true, fetch = FetchType.EAGER)
     private final List<Cell> board;
 
@@ -49,6 +50,10 @@ import java.util.List;
 
     public Cell Board(int i, int j) {
         return board.get(8*i + j);
+    }
+
+    public Cell Board(Cell c) {
+        return Board(c.i, c.j);
     }
 
     public enum State {
