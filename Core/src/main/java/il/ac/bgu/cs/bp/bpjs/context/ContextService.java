@@ -480,10 +480,10 @@ public class ContextService implements Serializable {
 
 	//region Internal EventSets
 	@SuppressWarnings({"WeakerAccess","unused"})
-	public static class AnyNewContextEventSet implements EventSet {
+	public static class AnyNewContextEvent implements EventSet {
 		public final String contextName;
 
-		public AnyNewContextEventSet(String contextName) {
+		public AnyNewContextEvent(String contextName) {
 			super();
 			this.contextName = contextName;
 		}
@@ -495,10 +495,10 @@ public class ContextService implements Serializable {
 	}
 
 	@SuppressWarnings({"WeakerAccess","unused"})
-	public static class AnyContextEndedEventSet implements EventSet {
+	public static class AnyContextEndedEvent implements EventSet {
 		public final String contextName;
 
-		public AnyContextEndedEventSet(String contextName) {
+		public AnyContextEndedEvent(String contextName) {
 			super();
 			this.contextName = contextName;
 		}
