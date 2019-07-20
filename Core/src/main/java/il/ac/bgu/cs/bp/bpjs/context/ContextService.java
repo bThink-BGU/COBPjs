@@ -2,6 +2,7 @@ package il.ac.bgu.cs.bp.bpjs.context;
 
 import java.io.*;
 import java.util.*;
+import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -31,22 +32,21 @@ public class ContextService implements Serializable {
 	@SuppressWarnings("unused")
 	public static NativeFunction subscribeWithParameters;
 	private EntityManagerFactory emf;
-	private List<EntityManagerCreateHook> entityManagerCreateHooks = new LinkedList<>();
+	private final Collection<EntityManagerCreateHook> entityManagerCreateHooks = new ConcurrentLinkedDeque<>();
 	private ExecutorService pool;
 	private BProgram bprog;
 	private BProgramRunner rnr;
 	private Multimap<Class<?>, NamedQuery> namedQueries;
 	private boolean verificationMode = false;
-	private List<CtxType<?>> contextTypes;
+	private Collection<CtxType<?>> contextTypes;
 	private BEvent[] contextEvents;
 
 	private static class ContextServiceProxy implements Serializable {
-		private List<CtxType<?>> contextTypes;
+		private Collection<CtxType<?>> contextTypes;
 		private BEvent[] contextEvents;
 		private List<String> dbDump = new LinkedList<>();
 
-		private ContextServiceProxy() {
-		}
+		private ContextServiceProxy() { }
 
 		public ContextServiceProxy(ContextService cs) {
 			this.contextTypes = cs.contextTypes;
@@ -228,7 +228,7 @@ public class ContextService implements Serializable {
 
 	private void init(String persistenceUnit) {
 		close();
-		contextTypes = new LinkedList<>();
+		contextTypes = new ConcurrentLinkedDeque<>();
 		pool = Executors.newFixedThreadPool(2);
 		emf = Persistence.createEntityManagerFactory(persistenceUnit, ImmutableMap
 				.builderWithExpectedSize(1).put("javax.persistence.sharedCache.mode", "NONE").build());
@@ -267,7 +267,7 @@ public class ContextService implements Serializable {
 	}
 
 	// Produce contextName update events to be triggered after each update event
-	private void updateContexts() {
+	private synchronized void updateContexts() {
 		Set<ContextInstanceEvent> events = new HashSet<>();
 		contextTypes.forEach(ctxType -> {
 			// Remember the list of contexts that we already reported of

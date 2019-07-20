@@ -11,8 +11,6 @@ buildNumber.properties
 # Avoid ignoring Maven wrapper jar file (.jar files are usually ignored)
 !/.mvn/wrapper/maven-wrapper.jar
 
-**/*.log
-
 # Eclipse
 .classpath
 .project
@@ -23,8 +21,15 @@ buildNumber.properties
 *.iml
 *.iws
 
+# vscode
+.vscode
+
 # Mac
 .DS_Store
 
-*.db
-*.db-journal
+# BP
+**/*.db
+**/*.db-journal
+
+# General
+**/*.log
