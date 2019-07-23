@@ -8,10 +8,14 @@ function subscribe(subscribeId, ctxName, func) { //TODO: Add  parameter "boolean
         while (true) {
             // Wrapping body with a function to avoid "Referencing mutable variable from closure"
             (function () {
-                var ctx = bp.sync({ waitFor:CTX.AnyNewContextEvent(ctxName), interrupt:CTX.UnsubscribeEvent(subscribeId) }).ctx;
-                bp.registerBThread("handler '" + subscribeId + "' for a new context of type '" + ctxName + "', and value '"+ ctx +"'", function() {
-                    func(ctx);
-                });
+                var e = bp.sync({ waitFor:CTX.AnyNewContextEvent(ctxName), interrupt:CTX.UnsubscribeEvent(subscribeId) });
+                var ctxInstances = e.newContexts(ctxName);
+                for (var index = 0; index < ctxInstances.length; index++) {
+                    const element = ctxInstances[index];
+                    bp.registerBThread("handler '" + subscribeId + "_/" + index + "' for a new context of type '" + ctxName + "', and value '"+ element.ctx +"'", function() {
+                        func(element.ctx);
+                    });
+                }             
             })();
         }
     });
@@ -29,14 +33,12 @@ CTX.subscribeWithParameters = subscribeWithParameters;
 // Highest priority
 bp.registerBThread("ContextReporterBT", function() {
     while (true) {
-        // Trigger new context events
-        var events = CTX.getContextEvents();
-        for (var i = 0, len = events.length; i < len; i++) {
-            bp.sync({ request: events[i] });
-        }
-
         // Wait for next update
         bp.sync({ waitFor:CTX.AnyContextCommandEvent() });
+
+        // Trigger new context events
+        var events = CTX.getContextEvents();
+        bp.sync({ request: events });
     }
 });
 

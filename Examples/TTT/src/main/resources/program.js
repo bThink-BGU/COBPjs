@@ -8,7 +8,7 @@ function createEvent(name, c) {
 }
 
 function getCell(i,j){
-    return CTX.getContextsOfType("Cell["+i+","+j+"]").get(0);
+    return CTX.getContextInstances("Cell["+i+","+j+"]").get(0);
 }
 //#endregion HELP FUNCTIONS
 

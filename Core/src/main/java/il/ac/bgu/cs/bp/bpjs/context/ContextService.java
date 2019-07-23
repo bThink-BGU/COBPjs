@@ -39,11 +39,11 @@ public class ContextService implements Serializable {
 	private Multimap<Class<?>, NamedQuery> namedQueries;
 	private boolean verificationMode = false;
 	private Collection<CtxType<?>> contextTypes;
-	private BEvent[] contextEvents;
+	private ContextInternalEvent contextEvents;
 
 	private static class ContextServiceProxy implements Serializable {
 		private Collection<CtxType<?>> contextTypes;
-		private BEvent[] contextEvents;
+		private ContextInternalEvent contextEvents;
 		private List<String> dbDump = new LinkedList<>();
 
 		private ContextServiceProxy() { }
@@ -268,7 +268,7 @@ public class ContextService implements Serializable {
 
 	// Produce contextName update events to be triggered after each update event
 	private synchronized void updateContexts() {
-		Set<ContextInstanceEvent> events = new HashSet<>();
+		Set<ContextInternalEventData> events = new HashSet<>();
 		contextTypes.forEach(ctxType -> {
 			// Remember the list of contexts that we already reported of
 			List<?> knownContexts = new LinkedList<>(ctxType.activeContexts);
@@ -280,22 +280,22 @@ public class ContextService implements Serializable {
 			// noinspection SuspiciousMethodCalls
 			newContexts.removeAll(knownContexts);
 			// Compute the contexts that where just removed
-			newContexts.stream().map(obj -> new NewContextEvent(ctxType.uniqueId, obj))
+			newContexts.stream().map(obj -> new ContextInternalEventData(ContextEventTypes.NEW, ctxType.uniqueId, obj))
 					.forEach(events::add);
 			// noinspection SuspiciousMethodCalls
 			knownContexts.removeAll(ctxType.activeContexts);
-			knownContexts.stream().map(obj -> new ContextEndedEvent(ctxType.uniqueId, obj))
+			knownContexts.stream().map(obj -> new ContextInternalEventData(ContextEventTypes.ENDED, ctxType.uniqueId, obj))
 					.forEach(events::add);
 		});
-		contextEvents = events.toArray(new BEvent[0]);
+		contextEvents = new ContextInternalEvent(events);
 	}
 
-	public static BEvent[] getContextEvents() {
+	public static ContextInternalEvent getContextEvents() {
 		return getInstance().innerGetContextEvents();
 	}
 
 	// Produce contextName update events to be triggered after each update event
-	private BEvent[] innerGetContextEvents() {
+	private ContextInternalEvent innerGetContextEvents() {
 		return contextEvents;
 	}
 
@@ -362,31 +362,95 @@ public class ContextService implements Serializable {
 	}
 
 	// region Internal Events
+  public static class ContextInternalEvent extends BEvent {
+		private static final long serialVersionUID = 3165975196124148981L;
+		private static final AtomicInteger counter = new AtomicInteger(0);
+		public final Set<ContextInternalEventData> events;
+		
+		private ContextInternalEvent(Set<ContextInternalEventData> events) {
+			super("ContextInternalEvent_" + counter.incrementAndGet());
+			this.events = events;
+		}
+
+		public ContextInternalEventData[] newContexts(String contextName) {
+			return events.stream()
+					.filter(e -> (e.type.equals(ContextEventTypes.NEW) && e.contextName.equals(contextName)))
+					.toArray(ContextInternalEventData[]::new);
+		}
+
+		public ContextInternalEventData[] endedContexts(String contextName) {
+			return events.stream()
+					.filter(e -> (e.type.equals(ContextEventTypes.ENDED) && e.contextName.equals(contextName)))
+					.toArray(ContextInternalEventData[]::new);
+		}
+
+		@Override
+		public int hashCode() {
+			return events.hashCode();
+		}
+
+		@Override
+		public String toString() {
+			return "ContextInternalEvent_" + events.toString();
+		}
+
+		@Override
+    public boolean equals(Object obj) {
+			if (this == obj) {
+				return true;
+		}
+		if (obj == null) {
+				return false;
+		}
+		if (!getClass().isInstance(obj)) {
+				return false;
+		}
+		ContextInternalEvent other = (ContextInternalEvent) obj;
+			return events.equals(other.events);
+		}
+	}
+
 	@SuppressWarnings("WeakerAccess")
-	public static abstract class ContextInstanceEvent extends BEvent {
+	public static class ContextInternalEventData implements Serializable {
+		private static final long serialVersionUID = 8036020413270769137L;
+		public final ContextEventTypes type;
 		public final String contextName;
 		public final Object ctx;
 
-		public ContextInstanceEvent(String eventType, String contextName, Object ctx) {
-			super(eventType + "(" + contextName + "," + ctx + ")"); // TODO change to get id
+		private ContextInternalEventData(ContextEventTypes type, String contextName, Object ctx) {
+			this.type = type;
 			this.contextName = contextName;
 			this.ctx = ctx;
 		}
-	}
 
-	@SuppressWarnings("WeakerAccess")
-	public static class NewContextEvent extends ContextInstanceEvent {
-		public NewContextEvent(String contextName, Object ctx) {
-			super("NewContextEvent", contextName, ctx);
-		}
-	}
-
-	@SuppressWarnings("WeakerAccess")
-	public static class ContextEndedEvent extends ContextInstanceEvent {
-		public ContextEndedEvent(String contextName, Object ctx) {
-			super("ContextEndedEvent", contextName, ctx);
+		@Override
+		public int hashCode() {
+			return Objects.hash(type, contextName, ctx);
 		}
 
+		@Override
+		public String toString() {
+			return String.format("{\"type\":%s , \"name\":%s , \"ctx\":%s}", type.toString(), contextName,
+					ctx.toString());
+		}
+
+		/*
+     * @see java.lang.Object#equals(java.lang.Object)
+     */
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null) {
+            return false;
+        }
+        if (!getClass().isInstance(obj)) {
+            return false;
+        }
+        ContextInternalEventData other = (ContextInternalEventData) obj;
+        return type.equals(other.type) && contextName.equals(other.contextName) && ctx.equals(other.ctx);
+    }
 	}
 
 	@SuppressWarnings("WeakerAccess")
@@ -500,33 +564,53 @@ public class ContextService implements Serializable {
 	// region Internal EventSets
 	@SuppressWarnings({"WeakerAccess", "unused"})
 	public static class AnyNewContextEvent implements EventSet {
-		public final String contextName;
+		private static final long serialVersionUID = -8858955086405859047L;
+    public final String contextName;
+		public final Object ctx;
 
 		public AnyNewContextEvent(String contextName) {
+			this(contextName, null);
+		}
+
+		public AnyNewContextEvent(String contextName, Object ctx) {
 			super();
 			this.contextName = contextName;
+			this.ctx = ctx;
 		}
 
 		@Override
 		public boolean contains(BEvent event) {
-			return (event instanceof NewContextEvent)
-					&& ((NewContextEvent) event).contextName.equals(contextName);
+			if (!(event instanceof ContextInternalEvent))
+				return false;
+			ContextInternalEvent internal = (ContextInternalEvent) event;
+			return internal.events.stream().anyMatch(e -> (e.type == ContextEventTypes.NEW
+					&& e.contextName.equals(contextName) && Objects.equals(e.ctx, ctx)));
 		}
 	}
 
 	@SuppressWarnings({"WeakerAccess", "unused"})
 	public static class AnyContextEndedEvent implements EventSet {
-		public final String contextName;
+		private static final long serialVersionUID = 5402960437353425951L;
+    public final String contextName;
+		public final Object ctx;
 
 		public AnyContextEndedEvent(String contextName) {
+			this(contextName,null);
+		}
+
+		public AnyContextEndedEvent(String contextName, Object context) {
 			super();
 			this.contextName = contextName;
+			this.ctx = context;
 		}
 
 		@Override
 		public boolean contains(BEvent event) {
-			return (event instanceof ContextEndedEvent)
-					&& ((ContextEndedEvent) event).contextName.equals(contextName);
+			if (!(event instanceof ContextInternalEvent))
+				return false;
+			ContextInternalEvent internal = (ContextInternalEvent) event;
+			return internal.events.stream().anyMatch(e -> (e.type == ContextEventTypes.ENDED
+					&& e.contextName.equals(contextName) && Objects.equals(e.ctx, ctx)));
 		}
 	}
 
@@ -546,6 +630,10 @@ public class ContextService implements Serializable {
 		public boolean contains(BEvent event) {
 			return event instanceof TickEvent;
 		}
+	}
+
+	public enum ContextEventTypes {
+		NEW, ENDED
 	}
 	// endregion
 }

@@ -37,7 +37,7 @@ CTX.subscribe("DelayRoomAsEmpty","Room",function (room) {
 CTX.subscribe("TurnLightsOnInNonemptyRooms","NonEmptyRoom",function (room) {
     bp.sync({
         request: room.getSmartLight().onEvent(),
-        interrupt: CTX.ContextEndedEvent("NonEmptyRoom", room)
+        interrupt: CTX.AnyContextEndedEvent("NonEmptyRoom", room)
     });
 });
 CTX.subscribe("TurnLightsOffInEmptyRooms","Room",function (room) {
@@ -59,14 +59,14 @@ CTX.subscribe("OfficeBehaviors","Office",function (office) {
 
 CTX.subscribe("DisableLightsOffDuringAnEmergency1","Emergency",function (emergency) {
     bp.sync({block: SmartLight.AnyTurnLightOffEvent(),
-        interrupt: CTX.ContextEndedEvent("Emergency", emergency)});
+        interrupt: CTX.AnyContextEndedEvent("Emergency", emergency)});
 });
 
 CTX.subscribe("DisableLightsOffDuringAnEmergency2","Emergency",function (emergency) {
     CTX.subscribe("RoomDuringEmergency","Room", function(room) {
         bp.sync({
             block: room.getSmartLight().offEvent(),
-            interrupt: CTX.ContextEndedEvent("Emergency", emergency)
+            interrupt: CTX.AnyContextEndedEvent("Emergency", emergency)
         });
     });
 });
