@@ -33,7 +33,6 @@ var EndGame = bp.EventSet("EndGame", function(e) {
 CTX.subscribe("ClickHandler","Cell", function(c) {
     // while (true) {
     bp.sync({ waitFor: createEvent("Click", c) });
-    bp.log.info("Here "+ c);
     bp.sync({ request: createEvent("X", c) });
     // }
 });
