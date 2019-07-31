@@ -33,6 +33,7 @@ var EndGame = bp.EventSet("EndGame", function(e) {
 CTX.subscribe("ClickHandler","Cell", function(c) {
     // while (true) {
     bp.sync({ waitFor: createEvent("Click", c) });
+    bp.log.info("Here "+ c);
     bp.sync({ request: createEvent("X", c) });
     // }
 });
@@ -68,7 +69,7 @@ bp.registerBThread("EnforceMoveAfterNonEmptyCell", function() {
     while (true) {
         var e = bp.sync({ waitFor: move });
         bp.sync({
-            waitFor: CTX.NewContextEvent("NonEmptyCell", e.data),
+            waitFor: CTX.AnyNewContextEvent("NonEmptyCell", e.data),
             block: move
         });
 }

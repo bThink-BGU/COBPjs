@@ -280,11 +280,11 @@ public class ContextService implements Serializable {
 			// noinspection SuspiciousMethodCalls
 			newContexts.removeAll(knownContexts);
 			// Compute the contexts that where just removed
-			newContexts.stream().map(obj -> new ContextInternalEventData(ContextEventTypes.NEW, ctxType.uniqueId, obj))
+			newContexts.stream().map(obj -> new ContextInternalEventData(ContextEventType.NEW, ctxType.uniqueId, obj))
 					.forEach(events::add);
 			// noinspection SuspiciousMethodCalls
 			knownContexts.removeAll(ctxType.activeContexts);
-			knownContexts.stream().map(obj -> new ContextInternalEventData(ContextEventTypes.ENDED, ctxType.uniqueId, obj))
+			knownContexts.stream().map(obj -> new ContextInternalEventData(ContextEventType.ENDED, ctxType.uniqueId, obj))
 					.forEach(events::add);
 		});
 		contextEvents = new ContextInternalEvent(events);
@@ -373,15 +373,17 @@ public class ContextService implements Serializable {
 		}
 
 		public ContextInternalEventData[] newContexts(String contextName) {
-			return events.stream()
-					.filter(e -> (e.type.equals(ContextEventTypes.NEW) && e.contextName.equals(contextName)))
+			ContextInternalEventData[] array = events.stream()
+					.filter(e -> (e.type.equals(ContextEventType.NEW) && e.contextName.equals(contextName)))
 					.toArray(ContextInternalEventData[]::new);
+			return array;
 		}
 
 		public ContextInternalEventData[] endedContexts(String contextName) {
-			return events.stream()
-					.filter(e -> (e.type.equals(ContextEventTypes.ENDED) && e.contextName.equals(contextName)))
+			ContextInternalEventData[] array = events.stream()
+					.filter(e -> (e.type.equals(ContextEventType.ENDED) && e.contextName.equals(contextName)))
 					.toArray(ContextInternalEventData[]::new);
+			return array;
 		}
 
 		@Override
@@ -413,11 +415,11 @@ public class ContextService implements Serializable {
 	@SuppressWarnings("WeakerAccess")
 	public static class ContextInternalEventData implements Serializable {
 		private static final long serialVersionUID = 8036020413270769137L;
-		public final ContextEventTypes type;
+		public final ContextEventType type;
 		public final String contextName;
 		public final Object ctx;
 
-		private ContextInternalEventData(ContextEventTypes type, String contextName, Object ctx) {
+		private ContextInternalEventData(ContextEventType type, String contextName, Object ctx) {
 			this.type = type;
 			this.contextName = contextName;
 			this.ctx = ctx;
@@ -583,8 +585,10 @@ public class ContextService implements Serializable {
 			if (!(event instanceof ContextInternalEvent))
 				return false;
 			ContextInternalEvent internal = (ContextInternalEvent) event;
-			return internal.events.stream().anyMatch(e -> (e.type == ContextEventTypes.NEW
-					&& e.contextName.equals(contextName) && Objects.equals(e.ctx, ctx)));
+			return internal.events.stream().anyMatch(e -> (
+				e.type.equals(ContextEventType.NEW)
+					&& e.contextName.equals(contextName) && (ctx == null || ctx.equals(e.ctx))
+			));
 		}
 	}
 
@@ -609,8 +613,8 @@ public class ContextService implements Serializable {
 			if (!(event instanceof ContextInternalEvent))
 				return false;
 			ContextInternalEvent internal = (ContextInternalEvent) event;
-			return internal.events.stream().anyMatch(e -> (e.type == ContextEventTypes.ENDED
-					&& e.contextName.equals(contextName) && Objects.equals(e.ctx, ctx)));
+			return internal.events.stream().anyMatch(e -> (e.type == ContextEventType.ENDED
+					&& e.contextName.equals(contextName) && (ctx == null || ctx.equals(e.ctx))));
 		}
 	}
 
@@ -632,7 +636,7 @@ public class ContextService implements Serializable {
 		}
 	}
 
-	public enum ContextEventTypes {
+	public enum ContextEventType {
 		NEW, ENDED
 	}
 	// endregion

@@ -11,7 +11,9 @@ function subscribe(subscribeId, ctxName, func) { //TODO: Add  parameter "boolean
                 var e = bp.sync({ waitFor:CTX.AnyNewContextEvent(ctxName), interrupt:CTX.UnsubscribeEvent(subscribeId) });
                 var ctxInstances = e.newContexts(ctxName);
                 for (var index = 0; index < ctxInstances.length; index++) {
-                    const element = ctxInstances[index];
+                    let element = ctxInstances[index];
+                    bp.log.info(element);
+                    // bp.log.info(ctxInstances[index]);
                     bp.registerBThread("handler '" + subscribeId + "_/" + index + "' for a new context of type '" + ctxName + "', and value '"+ element.ctx +"'", function() {
                         func(element.ctx);
                     });
