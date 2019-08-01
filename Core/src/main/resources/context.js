@@ -38,7 +38,8 @@ bp.registerBThread("ContextReporterBT", function() {
 
         // Trigger new context events
         var events = CTX.getContextEvents();
-        bp.sync({ request: events });
+        if(events.length > 0)
+            bp.sync({ request: events });
     }
 });
 
