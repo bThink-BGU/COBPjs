@@ -6,7 +6,6 @@
 
 package il.ac.bgu.cs.bp.bpjs.context;
 
-import java.util.*;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.sql.Connection;

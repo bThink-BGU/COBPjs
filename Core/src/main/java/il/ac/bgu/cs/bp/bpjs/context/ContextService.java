@@ -112,6 +112,8 @@ public class ContextService implements Serializable {
 	}
 
 	private static class CtxType<T> implements Serializable {
+		private static final long serialVersionUID = -1633878308592722931L;
+
 		// transient TypedQuery query;
 		final String queryName;
 		final String uniqueId;
@@ -136,37 +138,45 @@ public class ContextService implements Serializable {
 			// query = createQuery(queryName, cls, parameters);
 		}
 
-		private TypedQuery createQuery() {
-			TypedQuery q = uniqInstance.createEntityManager().createNamedQuery(queryName, cls);
+		private TypedQuery<T> createQuery() {
+			TypedQuery<T> q = uniqInstance.createEntityManager().createNamedQuery(queryName, cls);
 			q.setHint("javax.persistence.cache.retrieveMode", CacheRetrieveMode.BYPASS);
-			if (parameters != null) {
-				parameters.forEach((key, val) -> {
-					Object v = val;
-					if (v instanceof Number) {
-						Number number = (Number) v;
-						String typeName = q.getParameter(key).getParameterType().getName();
-						switch (typeName) {
-							case "java.lang.Integer":
-								v = number.intValue();
-								break;
-							case "java.lang.Long":
-								v = number.longValue();
-								break;
-							case "java.lang.Byte":
-								v = number.byteValue();
-								break;
-							case "java.lang.Short":
-								v = number.shortValue();
-								break;
-							case "java.lang.Float":
-								v = number.floatValue();
-								break;
-						}
-					}
-					q.setParameter(key, v);
-				});
-			}
+			ContextService.setParameters(q, parameters);
 			return q;
+		}
+
+		private void updateActive() {
+			this.activeContexts = this.createQuery().getResultList();
+		}
+	}
+
+	private static void setParameters(Query q, Map<String, ?> parameters) {
+		if (parameters != null) {
+			parameters.forEach((key, val) -> {
+				Object v = val;
+				if (v instanceof Number) {
+					Number number = (Number) v;
+					String typeName = q.getParameter(key).getParameterType().getName();
+					switch (typeName) {
+						case "java.lang.Integer":
+							v = number.intValue();
+							break;
+						case "java.lang.Long":
+							v = number.longValue();
+							break;
+						case "java.lang.Byte":
+							v = number.byteValue();
+							break;
+						case "java.lang.Short":
+							v = number.shortValue();
+							break;
+						case "java.lang.Float":
+							v = number.floatValue();
+							break;
+					}
+				}
+				q.setParameter(key, v);
+			});
 		}
 	}
 
@@ -273,7 +283,7 @@ public class ContextService implements Serializable {
 			// Remember the list of contexts that we already reported of
 			List<?> knownContexts = new LinkedList<>(ctxType.activeContexts);
 			// Update the list of contexts
-			ctxType.activeContexts = ctxType.createQuery().getResultList();
+			ctxType.updateActive();
 
 			// Filter the contexts that we didn't yet report of
 			List<?> newContexts = new LinkedList<>(ctxType.activeContexts);
@@ -530,11 +540,9 @@ public class ContextService implements Serializable {
 
 		@Override
 		protected void innerExecution(EntityManager em) {
-			Query namedQuery = em.createNamedQuery(contextName);
-			for (Map.Entry<String, Object> e : parameters.entrySet()) {
-				namedQuery.setParameter(e.getKey(), e.getValue());
-			}
-			namedQuery.executeUpdate();
+			Query q = em.createNamedQuery(contextName);
+			ContextService.setParameters(q, parameters);
+			q.executeUpdate();
 		}
 	}
 
