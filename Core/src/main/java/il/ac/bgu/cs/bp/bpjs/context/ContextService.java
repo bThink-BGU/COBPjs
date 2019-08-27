@@ -484,7 +484,7 @@ public class ContextService implements Serializable {
 
 	@SuppressWarnings("unused")
 	public static final class TransactionEvent extends CommandEvent {
-		private final CommandEvent[] commands;
+		public final CommandEvent[] commands;
 
 		public TransactionEvent(CommandEvent... commands) {
 			super("TransactionEvent [ " + Arrays.toString(commands) + " ]");
