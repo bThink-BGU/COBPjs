@@ -1,50 +1,17 @@
-function registerAllCellsQueries() {
-    for (var i = 0; i < 3; i++) {
-        for (var j = 0; j < 3; j++) {
-            CTX.registerParameterizedContextQuery("SpecificCell", "Cell[" + i + "," + j + "]", {
-                "i": i,
-                "j": j
-            });
-        }
-    }
-}
-
-registerAllCellsQueries();
-
 bp.registerBThread("PopulateDB", function() {
-    var board = [], triples = [], diag1 = [], diag2 = [],
-        row, col, i, j, cell, cells;
+    var boardSize = 16;
+    var cells = [];
+    var livingCells = [{"i":1,"j":0}, {"i":1,"j":1}, {"i":1,"j":2}];
 
-    for(i=0; i<3; i++){
-        row = [];
-        for(j=0; j<3; j++){
-            cell = new Cell(i,j);
-            row.push(cell);
+    for(let i = 0; i < boardSize; i++) {
+        for(let j = 0; j < boardSize; j++) {
+            cells.push(new Cell(i, j, false));
         }
-        board.push(row);
     }
 
-    for(i=0; i<3; i++) {
-        diag1.push(board[i][i]);
-        diag2.push(board[i][2-i]);
-        row = [];
-        col = [];
-        for (j = 0; j < 3; j++) {
-            row.push(board[i][j]);
-            col.push(board[j][i]);
-        }
-        triples.push(new Triple("row_"+i, row));
-        triples.push(new Triple("col_"+i, col));
-    }
-    triples.push(new Triple("diag_1", diag1));
-    triples.push(new Triple("diag_2", diag2));
+    bp.sync({ request: CTX.InsertEvent(cells) });
 
-    // flattening board - for debugging
-    cells = [].concat.apply([], board);
+    bp.sync({ request: livingCells.map(cell => CTX.UpdateEvent("Spawn", cell)) });
 
-    bp.sync({ request: CTX.TransactionEvent(
-            CTX.InsertEvent(cells), CTX.InsertEvent(triples)
-        )});
-    // bp.log.info("Population ended");
-    bp.sync({ request: bp.Event("Context Population Ended") });
+    bp.sync({ request: CTX.InsertEvent(new GameOfLife(0, 100, boardSize)) });
 });

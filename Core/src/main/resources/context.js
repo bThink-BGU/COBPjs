@@ -12,7 +12,7 @@ function subscribe(subscribeId, ctxName, func) { //TODO: Add  parameter "boolean
                 var ctxInstances = e.newContexts(ctxName);
                 for (var index = 0; index < ctxInstances.length; index++) {
                     let element = ctxInstances[index];
-                    bp.registerBThread("handler '" + subscribeId + "_/" + index + "' for a new context of type '" + ctxName + "', and value '"+ element.ctx +"'", function() {
+                    bp.registerBThread("handler '" + subscribeId + "_/" + CTX.counter.getAndIncrement() + "' for a new context of type '" + ctxName + "', and value '"+ element.ctx +"'", function() {
                         func(element.ctx);
                     });
                 }             
