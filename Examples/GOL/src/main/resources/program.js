@@ -38,7 +38,7 @@ CTX.subscribe("New Generation","Generation", function(gen) {
         }
     }
 
-    const rule4 = CTX.getContextInstances("More_Than_3_Neighbours");
+    const rule4 = CTX.getContextInstances("3_Neighbours");
     for (let index = 0; index < rule4.size(); index++) {
         let cell = rule4.get(index);
         if (!cell.alive) {

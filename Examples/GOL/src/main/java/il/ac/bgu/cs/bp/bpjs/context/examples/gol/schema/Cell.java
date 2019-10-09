@@ -12,6 +12,7 @@ import javax.persistence.NamedQuery;
         @NamedQuery(name = "N_Neighbours", query = "SELECT c FROM Cell c WHERE "+Cell.countNeighbours+" = :n"),
         @NamedQuery(name = "Less_Than_2_Neighbours", query = "SELECT c FROM Cell c WHERE "+Cell.countNeighbours+" < 2"),
         @NamedQuery(name = "2_or_3_Neighbours", query = "SELECT c FROM Cell c WHERE "+Cell.countNeighbours+" = 2 OR "+Cell.countNeighbours+" = 3"),
+        @NamedQuery(name = "3_Neighbours", query = "SELECT c FROM Cell c WHERE "+Cell.countNeighbours+" = 3"),
         @NamedQuery(name = "More_Than_3_Neighbours", query = "SELECT c FROM Cell c WHERE "+Cell.countNeighbours+" > 3"),
         @NamedQuery(name = "Die", query = "UPDATE Cell SET alive = false WHERE i = :i AND j = :j"),
         @NamedQuery(name = "Spawn", query = "UPDATE Cell SET alive = true WHERE i = :i AND j = :j"),
