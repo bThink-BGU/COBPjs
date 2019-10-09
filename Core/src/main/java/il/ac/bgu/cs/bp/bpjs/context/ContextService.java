@@ -22,6 +22,7 @@ import il.ac.bgu.cs.bp.bpjs.model.BProgram;
 import il.ac.bgu.cs.bp.bpjs.model.ResourceBProgram;
 import il.ac.bgu.cs.bp.bpjs.model.eventsets.EventSet;
 import org.hibernate.Session;
+import org.jetbrains.annotations.NotNull;
 import org.mozilla.javascript.NativeFunction;
 import org.mozilla.javascript.NativeObject;
 
@@ -37,7 +38,7 @@ public class ContextService implements Serializable {
     private ExecutorService pool;
     private BProgram bprog;
     private BProgramRunner rnr;
-    private Multimap<Class<?>, NamedQuery> namedQueries;
+    private List<NamedQuery> namedQueries;
     private boolean verificationMode = false;
     private Collection<CtxType> contextTypes;
     private ContextInternalEvent contextEvents;
@@ -45,21 +46,16 @@ public class ContextService implements Serializable {
     private static class ContextServiceProxy implements Serializable {
         private Collection<CtxType> contextTypes;
         private ContextInternalEvent contextEvents;
-        private List<String> dbDump = new LinkedList<>();
+        private List<String> dbDump;
 
-        private ContextServiceProxy() {
-        }
-
-        public ContextServiceProxy(ContextService cs) {
+        ContextServiceProxy(@NotNull ContextService cs) {
             this.contextTypes = cs.contextTypes;
             this.contextEvents = cs.contextEvents;
             this.dbDump = new LinkedList<>();
             EntityManager em = cs.createEntityManager();
             Session session = em.unwrap(Session.class);
-            session.doWork(connection -> {
-                em.getMetamodel().getEntities()
-                        .forEach(e -> dbDump.addAll(Db2Sql.dumpTable(connection, e.getName())));
-            });
+            session.doWork(connection -> em.getMetamodel().getEntities()
+                    .forEach(e -> dbDump.addAll(Db2Sql.dumpTable(connection, e.getName()))));
         }
 
         private Object readResolve() throws ObjectStreamException {
@@ -114,15 +110,13 @@ public class ContextService implements Serializable {
         // transient TypedQuery query;
         final String queryName;
         final String uniqueId;
-        final Class<?> cls;
         final Map<String, ?> parameters;
         List<?> activeContexts = new LinkedList<>();
 
-        public CtxType(String queryName, String uniqueId, Class<?> cls,
-                       @Nullable Map<String, ?> parameters) {
+        CtxType(String queryName, String uniqueId,
+                @Nullable Map<String, ?> parameters) {
             this.queryName = queryName;
             this.uniqueId = uniqueId;
-            this.cls = cls;
             this.parameters = parameters;
         }
 
@@ -132,8 +126,8 @@ public class ContextService implements Serializable {
             aInputStream.defaultReadObject();
         }
 
-        private TypedQuery<?> createQuery() {
-            TypedQuery<?> q = uniqInstance.createEntityManager().createNamedQuery(queryName, cls);
+        private Query createQuery() {
+            Query q = uniqInstance.createEntityManager().createNamedQuery(queryName);
             q.setHint("javax.persistence.cache.retrieveMode", CacheRetrieveMode.BYPASS);
             ContextService.setParameters(q, parameters);
             return q;
@@ -205,7 +199,6 @@ public class ContextService implements Serializable {
         return bprog;
     }
 
-    @SuppressWarnings("WeakerAccess")
     public void addListener(BProgramRunnerListener listener) {
         if (rnr != null)
             rnr.addListener(listener);
@@ -235,14 +228,14 @@ public class ContextService implements Serializable {
         contextTypes = new ConcurrentLinkedDeque<>();
         pool = Executors.newFixedThreadPool(2);
         emf = Persistence.createEntityManagerFactory(persistenceUnit, ImmutableMap
-                .builderWithExpectedSize(1).put("javax.persistence.sharedCache.mode", "NONE").build());
+                .of("javax.persistence.sharedCache.mode", "NONE"));
         namedQueries = findAllNamedQueries(emf);
-        namedQueries.forEach((aClass, namedQuery) -> {
+        namedQueries.forEach(namedQuery -> {
             try {
-                TypedQuery<?> q = createEntityManager().createNamedQuery(namedQuery.name(), aClass);
+                Query q = createEntityManager().createQuery(namedQuery.query());
                 Set<Parameter<?>> parameters = q.getParameters();
                 if (parameters == null || parameters.isEmpty()) {
-                    registerContextQuery(namedQuery.name(), namedQuery.name(), aClass, null);
+                    registerContextQuery(namedQuery.name(), namedQuery.name(), null);
                 }
             } catch (Exception ignored) {
             }
@@ -309,8 +302,8 @@ public class ContextService implements Serializable {
         return null;
     }
 
-    private static Multimap<Class<?>, NamedQuery> findAllNamedQueries(EntityManagerFactory emf) {
-        Multimap<Class<?>, NamedQuery> namedQueries = ArrayListMultimap.create();
+    private static List<NamedQuery> findAllNamedQueries(EntityManagerFactory emf) {
+        List<NamedQuery> namedQueries = Lists.newArrayList();
         Set<ManagedType<?>> managedTypes = emf.getMetamodel().getManagedTypes();
         for (ManagedType<?> managedType : managedTypes) {
             if (managedType instanceof IdentifiableType) {
@@ -319,21 +312,20 @@ public class ContextService implements Serializable {
                 Class<?> javaClass = managedType.getJavaType();
                 NamedQueries namedQueriesList = javaClass.getAnnotation(NamedQueries.class);
                 if (namedQueriesList != null) {
-                    namedQueries.putAll(javaClass, Arrays.asList(namedQueriesList.value()));
+                    namedQueries.addAll(Arrays.asList(namedQueriesList.value()));
                 }
 
                 NamedQuery namedQuery = javaClass.getAnnotation(NamedQuery.class);
                 if (namedQuery != null) {
-                    namedQueries.put(javaClass, namedQuery);
+                    namedQueries.add(namedQuery);
                 }
             }
         }
-        return ImmutableMultimap.copyOf(namedQueries);
+        return ImmutableList.copyOf(namedQueries);
     }
 
-    private  void registerContextQuery(String queryName, String uniqueId, Class<?> cls,
-                                          @Nullable Map<String, ?> parameters) {
-        contextTypes.add(new CtxType(queryName, uniqueId, cls, parameters));
+    private  void registerContextQuery(String queryName, String uniqueId, @Nullable Map<String, ?> parameters) {
+        contextTypes.add(new CtxType(queryName, uniqueId, parameters));
         updateContexts();
     }
 
@@ -342,12 +334,11 @@ public class ContextService implements Serializable {
         getInstance().innerRegisterParameterizedContextQuery(queryName, uniqueId, params);
     }
 
-    @SuppressWarnings("unused")
     private void innerRegisterParameterizedContextQuery(String queryName, String uniqueId,
                                                         NativeObject params) {
-        namedQueries.forEach((aClass, namedQuery) -> {
+        namedQueries.forEach(namedQuery -> {
             if (namedQuery.name().equals(queryName)) {
-                registerContextQuery(queryName, uniqueId, aClass, params);
+                registerContextQuery(queryName, uniqueId, params);
             }
         });
     }
@@ -357,8 +348,7 @@ public class ContextService implements Serializable {
         try {
             pool.shutdownNow();
             emf.close();
-        } catch (Exception e) {
-        }
+        } catch (Exception ignored) {    }
     }
 
     // region Internal Events
@@ -373,17 +363,15 @@ public class ContextService implements Serializable {
         }
 
         public ContextInternalEventData[] newContexts(String contextName) {
-            ContextInternalEventData[] array = events.stream()
+            return events.stream()
                     .filter(e -> (e.type.equals(ContextEventType.NEW) && e.contextName.equals(contextName)))
                     .toArray(ContextInternalEventData[]::new);
-            return array;
         }
 
         public ContextInternalEventData[] endedContexts(String contextName) {
-            ContextInternalEventData[] array = events.stream()
+            return events.stream()
                     .filter(e -> (e.type.equals(ContextEventType.ENDED) && e.contextName.equals(contextName)))
                     .toArray(ContextInternalEventData[]::new);
-            return array;
         }
 
         @Override
@@ -412,7 +400,6 @@ public class ContextService implements Serializable {
         }
     }
 
-    @SuppressWarnings("WeakerAccess")
     public static class ContextInternalEventData implements Serializable {
         private static final long serialVersionUID = 8036020413270769137L;
         public final ContextEventType type;
@@ -455,7 +442,6 @@ public class ContextService implements Serializable {
         }
     }
 
-    @SuppressWarnings("WeakerAccess")
     public static abstract class CommandEvent extends BEvent {
         public CommandEvent(String name) {
             super(name);
@@ -489,7 +475,6 @@ public class ContextService implements Serializable {
         }
     }
 
-    @SuppressWarnings("WeakerAccess")
     public static class InsertEvent extends CommandEvent {
         public final Object[] persistObjects;
 
@@ -512,7 +497,6 @@ public class ContextService implements Serializable {
         }
     }
 
-    @SuppressWarnings("WeakerAccess")
     public static class UpdateEvent extends CommandEvent {
         public final String contextName;
         public final Map<String, Object> parameters;
@@ -546,7 +530,6 @@ public class ContextService implements Serializable {
         }
     }
 
-    @SuppressWarnings("WeakerAccess")
     public static class TickEvent extends BEvent {
         public final int tick;
 
@@ -563,7 +546,6 @@ public class ContextService implements Serializable {
     // endregion
 
     // region Internal EventSets
-    @SuppressWarnings({"WeakerAccess", "unused"})
     public static class AnyNewContextEvent implements EventSet {
         private static final long serialVersionUID = -8858955086405859047L;
         public final String contextName;
@@ -591,7 +573,6 @@ public class ContextService implements Serializable {
         }
     }
 
-    @SuppressWarnings({"WeakerAccess", "unused"})
     public static class AnyContextEndedEvent implements EventSet {
         private static final long serialVersionUID = 5402960437353425951L;
         public final String contextName;
@@ -618,12 +599,10 @@ public class ContextService implements Serializable {
     }
 
 
-    @SuppressWarnings({"WeakerAccess", "unused"})
     public static class AnyContextCommandEvent implements EventSet {
         @Override
         public boolean contains(BEvent event) {
-            boolean b = event instanceof CommandEvent;
-            return b;
+            return event instanceof CommandEvent;
         }
     }
 

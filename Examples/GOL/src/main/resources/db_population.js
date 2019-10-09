@@ -1,10 +1,10 @@
 bp.registerBThread("PopulateDB", function() {
-    var boardSize = 3;
-    var cells = [];
-    var livingCells = [{"i":1,"j":0}, {"i":1,"j":1}, {"i":1,"j":2}];
+    const boardSize = 3;
+    let cells = [];
+    const livingCells = [{"i": 1, "j": 0}, {"i": 1, "j": 1}, {"i": 1, "j": 2}];
 
-    for(var i = 0; i < boardSize; i++) {
-        for(var j = 0; j < boardSize; j++) {
+    for(let i = 0; i < boardSize; i++) {
+        for(let j = 0; j < boardSize; j++) {
             cells.push(new Cell(i, j, false));
         }
     }
