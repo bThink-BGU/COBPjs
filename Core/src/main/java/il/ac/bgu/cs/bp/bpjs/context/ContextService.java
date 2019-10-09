@@ -39,11 +39,11 @@ public class ContextService implements Serializable {
     private BProgramRunner rnr;
     private Multimap<Class<?>, NamedQuery> namedQueries;
     private boolean verificationMode = false;
-    private Collection<CtxType<?>> contextTypes;
+    private Collection<CtxType> contextTypes;
     private ContextInternalEvent contextEvents;
 
     private static class ContextServiceProxy implements Serializable {
-        private Collection<CtxType<?>> contextTypes;
+        private Collection<CtxType> contextTypes;
         private ContextInternalEvent contextEvents;
         private List<String> dbDump = new LinkedList<>();
 
@@ -93,13 +93,8 @@ public class ContextService implements Serializable {
     }
 
     @SuppressWarnings("unused")
-    public static <T> List<T> getContextInstances(String contextName, Class<T> contextClass) {
-        return uniqInstance.innerGetContextInstances(contextName, contextClass);
-    }
-
-    @SuppressWarnings("unused")
-    public static <T> List<T> getContextInstances(String contextName) {
-        return uniqInstance.innerGetContextInstances(contextName, null);
+    public static List<?> getContextInstances(String contextName) {
+        return uniqInstance.innerGetContextInstances(contextName);
     }
 
     private EntityManager createEntityManager() {
@@ -113,35 +108,32 @@ public class ContextService implements Serializable {
         entityManagerCreateHooks.add(hook);
     }
 
-    private static class CtxType<T> implements Serializable {
+    private static class CtxType implements Serializable {
         private static final long serialVersionUID = -1633878308592722931L;
 
         // transient TypedQuery query;
         final String queryName;
         final String uniqueId;
-        final Class<T> cls;
+        final Class<?> cls;
         final Map<String, ?> parameters;
-        List<T> activeContexts = new LinkedList<>();
+        List<?> activeContexts = new LinkedList<>();
 
-        public CtxType(String queryName, String uniqueId, Class<T> cls,
+        public CtxType(String queryName, String uniqueId, Class<?> cls,
                        @Nullable Map<String, ?> parameters) {
             this.queryName = queryName;
             this.uniqueId = uniqueId;
             this.cls = cls;
             this.parameters = parameters;
-            // this.query = createQuery(queryName, cls, parameters);
         }
 
         private void readObject(ObjectInputStream aInputStream)
                 throws ClassNotFoundException, IOException {
             // perform the default de-serialization first
             aInputStream.defaultReadObject();
-
-            // query = createQuery(queryName, cls, parameters);
         }
 
-        private TypedQuery<T> createQuery() {
-            TypedQuery<T> q = uniqInstance.createEntityManager().createNamedQuery(queryName, cls);
+        private TypedQuery<?> createQuery() {
+            TypedQuery<?> q = uniqInstance.createEntityManager().createNamedQuery(queryName, cls);
             q.setHint("javax.persistence.cache.retrieveMode", CacheRetrieveMode.BYPASS);
             ContextService.setParameters(q, parameters);
             return q;
@@ -308,8 +300,7 @@ public class ContextService implements Serializable {
         return contextEvents;
     }
 
-    @SuppressWarnings("WeakerAccess")
-    private <T> List<T> innerGetContextInstances(String contextName, Class<T> contextClass) {
+    private List<?> innerGetContextInstances(String contextName) {
         for (CtxType ct : contextTypes) {
             if (ct.uniqueId.equals(contextName)) {
                 return ct.activeContexts;
@@ -340,9 +331,9 @@ public class ContextService implements Serializable {
         return ImmutableMultimap.copyOf(namedQueries);
     }
 
-    private <T> void registerContextQuery(String queryName, String uniqueId, Class<T> cls,
+    private  void registerContextQuery(String queryName, String uniqueId, Class<?> cls,
                                           @Nullable Map<String, ?> parameters) {
-        contextTypes.add(new CtxType<>(queryName, uniqueId, cls, parameters));
+        contextTypes.add(new CtxType(queryName, uniqueId, cls, parameters));
         updateContexts();
     }
 

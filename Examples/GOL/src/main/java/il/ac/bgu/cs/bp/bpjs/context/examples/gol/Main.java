@@ -12,7 +12,7 @@ public class Main {
         System.out.println(">>>>>>>>>>>>>>>>>> Game-of-Life example <<<<<<<<<<<<<<<<<<<");
 
         ContextService contextService = ContextService.getInstance();
-        contextService.addEntityManagerCreateHook(em -> {
+        /*contextService.addEntityManagerCreateHook(em -> {
             Session session = em.unwrap(Session.class);
 
             session.doWork(connection -> Function.create(connection, "NGB", new Function() {
@@ -67,7 +67,7 @@ public class Main {
                     result(query);
                 }
             }));
-        });
+        });*/
         contextService.initFromResources(persistenceUnit, dbPopulationScript, "program.js");
         BProgram bprog = contextService.getBProgram();
         bprog.setWaitForExternalEvents(false);

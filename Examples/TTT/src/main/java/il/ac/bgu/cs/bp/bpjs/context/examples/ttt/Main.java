@@ -16,7 +16,7 @@ public class Main {
 
 		// Simulation of external events
 		Thread.sleep(3000);
-		ContextService.getContextInstances("Cell", Cell.class)
+		ContextService.getContextInstances("Cell")
 				.forEach(cell -> bprog.enqueueExternalEvent(new BEvent("Click",cell)));
 				
 		Thread.sleep(6000);

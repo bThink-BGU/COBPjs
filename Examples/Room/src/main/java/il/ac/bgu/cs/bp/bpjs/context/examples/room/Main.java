@@ -1,5 +1,6 @@
 package il.ac.bgu.cs.bp.bpjs.context.examples.room;
 
+import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -20,9 +21,10 @@ public class Main {
 		BProgram bprog = contextService.getBProgram();
 
 		// Simulation of external events
-		Thread.sleep(1000);
-		Map<String, Room> rooms = ContextService.getContextInstances("Room", Room.class).stream()
-				.collect(Collectors.toMap(Room::getId, Function.identity()));
+		Thread.sleep(2000);
+		@SuppressWarnings("unchecked")
+		Map<String, Room> rooms = ((List<Room>) ContextService.getContextInstances("Room")).stream()
+				.collect(Collectors.toMap(Room::getId,Function.identity()));
 
 		bprog.enqueueExternalEvent((rooms.get("37/123").getMotionDetector()).startedEvent());
 		Thread.sleep(1000);

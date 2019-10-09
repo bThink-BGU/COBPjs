@@ -2,6 +2,7 @@ importPackage(Packages.il.ac.bgu.cs.bp.bpjs.context);
 importPackage(Packages.il.ac.bgu.cs.bp.bpjs.context.examples.gol.schema);
 
 CTX.subscribe("New Generation","Generation", function(gen) {
+    bp.log.INFO("generation="+gen);
     CTX.subscribe("Rule 1", "Less_Than_2_Neighbours", function (cell) {
         if(cell.alive) {
             bp.sync({
@@ -39,5 +40,6 @@ CTX.subscribe("Increment Generation","GameOfLife", function(game) {
     var maxGen = game.maxGeneration;
     while(gen<maxGen) {
         bp.sync({request: CTX.UpdateEvent("IncrementGeneration")});
+        gen++;
     }
 });
