@@ -234,7 +234,8 @@ public class ContextService implements Serializable {
             try {
                 Query q = createEntityManager().createQuery(namedQuery.query());
                 Set<Parameter<?>> parameters = q.getParameters();
-                if (parameters == null || parameters.isEmpty()) {
+                if ((parameters == null || parameters.isEmpty()) &&
+                        namedQuery.query().trim().toLowerCase().startsWith("select")) {
                     registerContextQuery(namedQuery.name(), namedQuery.name(), null);
                 }
             } catch (Exception ignored) {

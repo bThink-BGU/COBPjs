@@ -3,14 +3,17 @@ importPackage(Packages.il.ac.bgu.cs.bp.bpjs.context);
 var CTX = ContextService;
 var CTX_instance = ContextService.getInstance(); // DO NOT REMOVE: Here for verification
 
-function subscribe(subscribeId, ctxName, func) { //TODO: Add  parameter "boolean applyToCurrentInstances" ?
+function subscribe(subscribeId, ctxName, func, applyToCurrentInstances) {
     bp.registerBThread(subscribeId + "_ListenerBT", function() {
         while (true) {
             // Wrapping body with a function to avoid "Referencing mutable variable from closure"
             (function () {
-                var e = bp.sync({ waitFor:CTX.AnyNewContextEvent(ctxName), interrupt:CTX.UnsubscribeEvent(subscribeId) });
-                var ctxInstances = e.newContexts(ctxName);
-                for (var index = 0; index < ctxInstances.length; index++) {
+                const e = bp.sync({
+                    waitFor: CTX.AnyNewContextEvent(ctxName),
+                    interrupt: CTX.UnsubscribeEvent(subscribeId)
+                });
+                const ctxInstances = e.newContexts(ctxName);
+                for (let index = 0; index < ctxInstances.length; index++) {
                     let element = ctxInstances[index];
                     bp.registerBThread("handler '" + subscribeId + "_/" + CTX.counter.getAndIncrement() + "' for a new context of type '" + ctxName + "', and value '"+ element.ctx +"'", function() {
                         func(element.ctx);
@@ -19,6 +22,19 @@ function subscribe(subscribeId, ctxName, func) { //TODO: Add  parameter "boolean
             })();
         }
     });
+    if(applyToCurrentInstances) {
+        //TODO make sure this is okay and no race condition.
+        const instances = CTX.getContextInstances(ctxName);
+        // bp.log.info("apply="+ctxInstances);
+        (function() {
+            for (let index = 0; index < instances.size(); index++) {
+                let element = instances.get(index);
+                bp.registerBThread("handler '" + subscribeId + "_/" + CTX.counter.getAndIncrement() + "' for a new context of type '" + ctxName + "', and value '"+ element +"'", function() {
+                    func(element);
+                });
+            }
+        })();
+    }
     return subscribeId;
 }
 

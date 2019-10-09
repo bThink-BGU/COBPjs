@@ -2,37 +2,54 @@ importPackage(Packages.il.ac.bgu.cs.bp.bpjs.context);
 importPackage(Packages.il.ac.bgu.cs.bp.bpjs.context.examples.gol.schema);
 
 CTX.subscribe("New Generation","Generation", function(gen) {
-    bp.log.INFO("generation="+gen);
-    CTX.subscribe("Rule 1", "Less_Than_2_Neighbours", function (cell) {
+    bp.log.info("generation="+gen);
+
+    const rule1 = CTX.getContextInstances("Less_Than_2_Neighbours");
+    for (let index = 0; index < rule1.size(); index++) {
+        let cell = rule1.get(index);
         if(cell.alive) {
-            bp.sync({
-                request: CTX.UpdateEvent("Die", {"i": cell.i, "j": cell.j}),
-                block: CTX.UpdateEvent("IncrementGeneration")
+            bp.registerBThread("Rule 1-" + CTX.counter.getAndIncrement() + " for " + cell, function () {
+                bp.sync({
+                    request: CTX.UpdateEvent("Die", {"i": cell.i, "j": cell.j}),
+                    block: CTX.UpdateEvent("IncrementGeneration")
+                });
             });
         }
-    });
+    }
 
-    CTX.subscribe("Rule 2", "2_or_3_Neighbours", function (cell) {
-        //do nothing
-    });
+    const rule2 = CTX.getContextInstances("2_or_3_Neighbours");
+    for (let index = 0; index < rule2.size(); index++) {
+        let cell = rule2.get(index);
+        /*bp.registerBThread("Rule 2-" + CTX.counter.getAndIncrement() +" for " + cell, function () {
 
-    CTX.subscribe("Rule 3", "More_Than_3_Neighbours", function (cell) {
+        });*/
+    }
+
+    const rule3 = CTX.getContextInstances("More_Than_3_Neighbours");
+    for (let index = 0; index < rule3.size(); index++) {
+        let cell = rule3.get(index);
         if(cell.alive) {
-            bp.sync({
-                request: CTX.UpdateEvent("Die", {"i": cell.i, "j": cell.j}),
-                block: CTX.UpdateEvent("IncrementGeneration")
+            bp.registerBThread("Rule 3-" + CTX.counter.getAndIncrement() + " for " + cell, function () {
+                bp.sync({
+                    request: CTX.UpdateEvent("Die", {"i": cell.i, "j": cell.j}),
+                    block: CTX.UpdateEvent("IncrementGeneration")
+                });
             });
         }
-    });
+    }
 
-    CTX.subscribe("Rule 4", "More_Than_3_Neighbours", function (cell) {
-        if(!cell.alive) {
-            bp.sync({
-                request: CTX.UpdateEvent("Spawn", {"i": cell.i, "j": cell.j}),
-                block: CTX.UpdateEvent("IncrementGeneration")
+    const rule4 = CTX.getContextInstances("More_Than_3_Neighbours");
+    for (let index = 0; index < rule4.size(); index++) {
+        let cell = rule4.get(index);
+        if (!cell.alive) {
+            bp.registerBThread("Rule 4-" + CTX.counter.getAndIncrement() + " for " + cell, function () {
+                bp.sync({
+                    request: CTX.UpdateEvent("Spawn", {"i": cell.i, "j": cell.j}),
+                    block: CTX.UpdateEvent("IncrementGeneration")
+                });
             });
         }
-    });
+    }
 });
 
 CTX.subscribe("Increment Generation","GameOfLife", function(game) {

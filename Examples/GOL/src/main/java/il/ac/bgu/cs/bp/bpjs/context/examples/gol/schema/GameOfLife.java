@@ -20,12 +20,12 @@ public class GameOfLife extends BasicEntity {
     public final int maxGeneration;
 
     public GameOfLife() {
-        this(0, 100, 16);
+        this(100, 16);
     }
 
-    public GameOfLife(int generation, int maxGeneration, int boardSize) {
+    public GameOfLife(int maxGeneration, int boardSize) {
         super("GameOfLife");
-        this.generation = generation;
+        this.generation = 0;
         this.boardSize = boardSize;
         this.maxGeneration = maxGeneration;
     }
