@@ -11,9 +11,11 @@ bp.registerBThread("PopulateDB", function() {
         }
     }
 
+    bp.sync({ request: bp.Event("board size", boardSize) }); // for gui
+
     bp.sync({ request: CTX.InsertEvent(cells) });
 
-    bp.sync({ request: CTX.TransactionEvent(row.map(cell => CTX.UpdateEvent("Spawn", cell))) });
+    bp.sync({ request: CTX.TransactionEvent(row.map(cell => CTX.UpdateEvent("Reproduce", cell))) });
 
     bp.sync({ request: CTX.InsertEvent(new GameOfLife(maxGenerations, boardSize)) });
 });

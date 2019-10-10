@@ -1,13 +1,20 @@
 package il.ac.bgu.cs.bp.bpjs.context.examples.gol;
 
 import il.ac.bgu.cs.bp.bpjs.context.ContextService;
+import il.ac.bgu.cs.bp.bpjs.context.ContextService.ContextInternalEvent;
+import il.ac.bgu.cs.bp.bpjs.context.examples.gol.gui.GameView;
+import il.ac.bgu.cs.bp.bpjs.execution.listeners.BProgramRunnerListenerAdapter;
+import il.ac.bgu.cs.bp.bpjs.model.BEvent;
 import il.ac.bgu.cs.bp.bpjs.model.BProgram;
 import org.hibernate.Session;
 import org.sqlite.Function;
 
 import java.sql.SQLException;
+import java.util.Map;
 
 public class Main {
+    private static GameView ui;
+
     void run(String dbPopulationScript, String persistenceUnit) throws InterruptedException {
         System.out.println(">>>>>>>>>>>>>>>>>> Game-of-Life example <<<<<<<<<<<<<<<<<<<");
 
@@ -71,6 +78,34 @@ public class Main {
         contextService.initFromResources(persistenceUnit, dbPopulationScript, "program.js");
         BProgram bprog = contextService.getBProgram();
         bprog.setWaitForExternalEvents(false);
+        contextService.addListener(new BProgramRunnerListenerAdapter() {
+            private ContextService.AnyNewContextEvent generationEvent = new ContextService.AnyNewContextEvent("Generation");
+            private AnyDieEvent dieEvents = new AnyDieEvent();
+            private AnyReproduceEvent reproduceEvents = new AnyReproduceEvent();
+
+            @Override
+            public void eventSelected(BProgram bp, BEvent e) {
+                if(e.name.equals("board size")) {
+                    ui = new GameView(((Double)e.maybeData).intValue());
+
+                }
+                if(generationEvent.contains(e)) {
+                    ContextInternalEvent internal = (ContextInternalEvent) e;
+                    int gen = (int) internal.events.stream().filter(ev -> (
+                            ev.type.equals(ContextService.ContextEventType.NEW)
+                                    && ev.contextName.equals("Generation"))).findFirst().get().ctx;
+                    ui.setGeneration(gen);
+                }
+                if(dieEvents.contains(e)) {
+                    Map params = ((ContextService.UpdateEvent)e).parameters;
+                    ui.setCell((int)params.get("i"),(int)params.get("j"),null);
+                }
+                if(reproduceEvents.contains(e)) {
+                    Map params = ((ContextService.UpdateEvent)e).parameters;
+                    ui.setCell((int)params.get("i"),(int)params.get("j"),"");
+                }
+            }
+        });
         contextService.run();
 
         // Simulation of external events

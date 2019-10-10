@@ -15,7 +15,7 @@ import javax.persistence.NamedQuery;
         @NamedQuery(name = "3_Neighbours", query = "SELECT c FROM Cell c WHERE "+Cell.countNeighbours+" = 3"),
         @NamedQuery(name = "More_Than_3_Neighbours", query = "SELECT c FROM Cell c WHERE "+Cell.countNeighbours+" > 3"),
         @NamedQuery(name = "Die", query = "UPDATE Cell SET alive = false WHERE i = :i AND j = :j"),
-        @NamedQuery(name = "Spawn", query = "UPDATE Cell SET alive = true WHERE i = :i AND j = :j"),
+        @NamedQuery(name = "Reproduce", query = "UPDATE Cell SET alive = true WHERE i = :i AND j = :j"),
 })
 public class Cell extends BasicEntity {
     public static final String countNeighbours = "(SELECT COUNT(n) from Cell n WHERE (" +

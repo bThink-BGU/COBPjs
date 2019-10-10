@@ -44,7 +44,7 @@ CTX.subscribe("New Generation","Generation", function(gen) {
         if (!cell.alive) {
             bp.registerBThread("Rule 4-" + CTX.counter.getAndIncrement() + " for " + cell, function () {
                 bp.sync({
-                    request: CTX.UpdateEvent("Spawn", {"i": cell.i, "j": cell.j}),
+                    request: CTX.UpdateEvent("Reproduce", {"i": cell.i, "j": cell.j}),
                     block: CTX.UpdateEvent("IncrementGeneration")
                 });
             });
