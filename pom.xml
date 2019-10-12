@@ -11,7 +11,7 @@
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-		<java.version>1.8</java.version>
+		<java.version>1.9</java.version>
 
 		<core.version>0.1.0</core.version>
 		<examples.ttt.version>0.1.0</examples.ttt.version>

@@ -10,20 +10,20 @@ CTX.subscribe("New Generation","Generation", function(gen) {
         if(cell.alive) {
             bp.registerBThread("Rule 1-" + CTX.counter.getAndIncrement() + " for " + cell, function () {
                 bp.sync({
-                    request: CTX.UpdateEvent("Die", {"i": cell.i, "j": cell.j}),
+                    request: CTX.UpdateEvent("Die", {"cell": cell}),
                     block: CTX.UpdateEvent("IncrementGeneration")
                 });
             });
         }
     }
 
-    const rule2 = CTX.getContextInstances("2_or_3_Neighbours");
+    /*const rule2 = CTX.getContextInstances("2_or_3_Neighbours");
     for (let index = 0; index < rule2.size(); index++) {
         let cell = rule2.get(index);
-        /*bp.registerBThread("Rule 2-" + CTX.counter.getAndIncrement() +" for " + cell, function () {
+        /!*bp.registerBThread("Rule 2-" + CTX.counter.getAndIncrement() +" for " + cell, function () {
 
-        });*/
-    }
+        });*!/
+    }*/
 
     const rule3 = CTX.getContextInstances("More_Than_3_Neighbours");
     for (let index = 0; index < rule3.size(); index++) {
@@ -31,7 +31,7 @@ CTX.subscribe("New Generation","Generation", function(gen) {
         if(cell.alive) {
             bp.registerBThread("Rule 3-" + CTX.counter.getAndIncrement() + " for " + cell, function () {
                 bp.sync({
-                    request: CTX.UpdateEvent("Die", {"i": cell.i, "j": cell.j}),
+                    request: CTX.UpdateEvent("Die", {"cell": cell}),
                     block: CTX.UpdateEvent("IncrementGeneration")
                 });
             });
@@ -44,7 +44,7 @@ CTX.subscribe("New Generation","Generation", function(gen) {
         if (!cell.alive) {
             bp.registerBThread("Rule 4-" + CTX.counter.getAndIncrement() + " for " + cell, function () {
                 bp.sync({
-                    request: CTX.UpdateEvent("Reproduce", {"i": cell.i, "j": cell.j}),
+                    request: CTX.UpdateEvent("Reproduce", {"cell": cell}),
                     block: CTX.UpdateEvent("IncrementGeneration")
                 });
             });

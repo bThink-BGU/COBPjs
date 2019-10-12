@@ -7,15 +7,15 @@ import javax.persistence.NamedQuery;
 
 @Entity
 @NamedQueries(value = {
-        @NamedQuery(name = "Cell", query = "SELECT c FROM Cell c"),
+//        @NamedQuery(name = "Cell", query = "SELECT c FROM Cell c"),
 //        @NamedQuery(name = "NGB_8", query = "SELECT c FROM Cell c WHERE NGB_COUNT(c)=8"),
         @NamedQuery(name = "N_Neighbours", query = "SELECT c FROM Cell c WHERE "+Cell.countNeighbours+" = :n"),
         @NamedQuery(name = "Less_Than_2_Neighbours", query = "SELECT c FROM Cell c WHERE "+Cell.countNeighbours+" < 2"),
-        @NamedQuery(name = "2_or_3_Neighbours", query = "SELECT c FROM Cell c WHERE "+Cell.countNeighbours+" = 2 OR "+Cell.countNeighbours+" = 3"),
+//        @NamedQuery(name = "2_or_3_Neighbours", query = "SELECT c FROM Cell c WHERE "+Cell.countNeighbours+" = 2 OR "+Cell.countNeighbours+" = 3"),
         @NamedQuery(name = "3_Neighbours", query = "SELECT c FROM Cell c WHERE "+Cell.countNeighbours+" = 3"),
         @NamedQuery(name = "More_Than_3_Neighbours", query = "SELECT c FROM Cell c WHERE "+Cell.countNeighbours+" > 3"),
-        @NamedQuery(name = "Die", query = "UPDATE Cell SET alive = false WHERE i = :i AND j = :j"),
-        @NamedQuery(name = "Reproduce", query = "UPDATE Cell SET alive = true WHERE i = :i AND j = :j"),
+        @NamedQuery(name = "Die", query = "UPDATE Cell c SET alive = false WHERE c=:cell"),
+        @NamedQuery(name = "Reproduce", query = "UPDATE Cell c SET alive = true WHERE c=:cell"),
 })
 public class Cell extends BasicEntity {
     public static final String countNeighbours = "(SELECT COUNT(n) from Cell n WHERE (" +

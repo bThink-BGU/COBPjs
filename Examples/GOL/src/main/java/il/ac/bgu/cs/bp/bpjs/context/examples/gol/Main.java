@@ -1,16 +1,23 @@
 package il.ac.bgu.cs.bp.bpjs.context.examples.gol;
 
+import com.google.common.collect.Lists;
 import il.ac.bgu.cs.bp.bpjs.context.ContextService;
 import il.ac.bgu.cs.bp.bpjs.context.ContextService.ContextInternalEvent;
 import il.ac.bgu.cs.bp.bpjs.context.examples.gol.gui.GameView;
+import il.ac.bgu.cs.bp.bpjs.context.examples.gol.schema.Cell;
 import il.ac.bgu.cs.bp.bpjs.execution.listeners.BProgramRunnerListenerAdapter;
 import il.ac.bgu.cs.bp.bpjs.model.BEvent;
 import il.ac.bgu.cs.bp.bpjs.model.BProgram;
 import org.hibernate.Session;
 import org.sqlite.Function;
 
+import javax.swing.*;
+import java.lang.reflect.InvocationTargetException;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 
 public class Main {
     private static GameView ui;
@@ -77,32 +84,41 @@ public class Main {
         });*/
         contextService.initFromResources(persistenceUnit, dbPopulationScript, "program.js");
         BProgram bprog = contextService.getBProgram();
-        bprog.setWaitForExternalEvents(false);
         contextService.addListener(new BProgramRunnerListenerAdapter() {
             private ContextService.AnyNewContextEvent generationEvent = new ContextService.AnyNewContextEvent("Generation");
-            private AnyDieEvent dieEvents = new AnyDieEvent();
-            private AnyReproduceEvent reproduceEvents = new AnyReproduceEvent();
+            private AnyDieEvent dieEventSet = new AnyDieEvent();
+            private AnyReproduceEvent reproduceEventSet = new AnyReproduceEvent();
 
             @Override
             public void eventSelected(BProgram bp, BEvent e) {
                 if(e.name.equals("board size")) {
-                    ui = new GameView(((Double)e.maybeData).intValue());
-
+                    SwingUtilities.invokeLater(() -> ui = new GameView(((Double)e.maybeData).intValue(), bprog));
                 }
-                if(generationEvent.contains(e)) {
+                List<BEvent> events = Lists.newArrayList();
+                if(e instanceof ContextService.TransactionEvent) {
+                    events.addAll(Lists.newArrayList(((ContextService.TransactionEvent)e).commands));
+                } else {
+                    events.add(e);
+                }
+
+                if(e.name.equals("Pattern")) {
+                    ui.setPattern((String) e.maybeData);
+                } else if(generationEvent.contains(e)) {
                     ContextInternalEvent internal = (ContextInternalEvent) e;
                     int gen = (int) internal.events.stream().filter(ev -> (
                             ev.type.equals(ContextService.ContextEventType.NEW)
                                     && ev.contextName.equals("Generation"))).findFirst().get().ctx;
                     ui.setGeneration(gen);
-                }
-                if(dieEvents.contains(e)) {
-                    Map params = ((ContextService.UpdateEvent)e).parameters;
-                    ui.setCell((int)params.get("i"),(int)params.get("j"),null);
-                }
-                if(reproduceEvents.contains(e)) {
-                    Map params = ((ContextService.UpdateEvent)e).parameters;
-                    ui.setCell((int)params.get("i"),(int)params.get("j"),"");
+                } else {
+                    events.stream().filter(e1 -> dieEventSet.contains(e1)).forEach(e1 -> {
+                        Cell cell = (Cell) ((ContextService.UpdateEvent) e1).parameters.get("cell");
+                        ui.setCell(cell.i, cell.j, null);
+                    });
+
+                    events.stream().filter(e1 -> reproduceEventSet.contains(e1)).forEach(e1 -> {
+                        Cell cell = (Cell) ((ContextService.UpdateEvent) e1).parameters.get("cell");
+                        ui.setCell(cell.i, cell.j, "");
+                    });
                 }
             }
         });
