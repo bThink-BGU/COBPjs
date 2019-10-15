@@ -8,14 +8,15 @@ import javax.persistence.NamedQuery;
 @Entity
 @NamedQueries(value = {
     @NamedQuery(name = "GameOfLife", query = "SELECT g FROM GameOfLife g"),
-    @NamedQuery(name = "Generation", query = "SELECT g.generation FROM GameOfLife g"),
-    @NamedQuery(name = "IncrementGeneration", query = "UPDATE GameOfLife SET generation = generation + 1"),
+    @NamedQuery(name = "SetTick", query = "UPDATE GameOfLife SET tick = 1"),
+    @NamedQuery(name = "SetTack", query = "UPDATE GameOfLife SET tick = 0"),
+    @NamedQuery(name = "SetTock", query = "UPDATE GameOfLife SET tick = 0"),
 })
 public class GameOfLife extends BasicEntity {
     @Column
     public final int boardSize;
     @Column
-    public final int generation;
+    public final int tick;
     @Column
     public final int maxGeneration;
 
@@ -25,7 +26,7 @@ public class GameOfLife extends BasicEntity {
 
     public GameOfLife(int maxGeneration, int boardSize) {
         super("GameOfLife");
-        this.generation = 0;
+        this.tick = 0;
         this.boardSize = boardSize;
         this.maxGeneration = maxGeneration;
     }

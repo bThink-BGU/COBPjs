@@ -2,22 +2,14 @@ package il.ac.bgu.cs.bp.bpjs.context.examples.gol;
 
 import com.google.common.collect.Lists;
 import il.ac.bgu.cs.bp.bpjs.context.ContextService;
-import il.ac.bgu.cs.bp.bpjs.context.ContextService.ContextInternalEvent;
 import il.ac.bgu.cs.bp.bpjs.context.examples.gol.gui.GameView;
 import il.ac.bgu.cs.bp.bpjs.context.examples.gol.schema.Cell;
 import il.ac.bgu.cs.bp.bpjs.execution.listeners.BProgramRunnerListenerAdapter;
 import il.ac.bgu.cs.bp.bpjs.model.BEvent;
 import il.ac.bgu.cs.bp.bpjs.model.BProgram;
-import org.hibernate.Session;
-import org.sqlite.Function;
 
 import javax.swing.*;
-import java.lang.reflect.InvocationTargetException;
-import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-import java.util.stream.Stream;
 
 public class Main {
     private static GameView ui;
@@ -82,7 +74,7 @@ public class Main {
                 }
             }));
         });*/
-        contextService.initFromResources(persistenceUnit, dbPopulationScript, "program.js");
+        contextService.initFromResources(persistenceUnit, dbPopulationScript, "program-no-mating.js");
         BProgram bprog = contextService.getBProgram();
         contextService.addListener(new BProgramRunnerListenerAdapter() {
             private ContextService.AnyNewContextEvent generationEvent = new ContextService.AnyNewContextEvent("Generation");
@@ -101,14 +93,24 @@ public class Main {
                     events.add(e);
                 }
 
+                ContextService.UpdateEvent tickEvent = new ContextService.UpdateEvent("Tick");
+
                 if(e.name.equals("Pattern")) {
                     ui.setPattern((String) e.maybeData);
-                } else if(generationEvent.contains(e)) {
-                    ContextInternalEvent internal = (ContextInternalEvent) e;
-                    int gen = (int) internal.events.stream().filter(ev -> (
-                            ev.type.equals(ContextService.ContextEventType.NEW)
-                                    && ev.contextName.equals("Generation"))).findFirst().get().ctx;
-                    ui.setGeneration(gen);
+                } else if (e.equals(tickEvent)) {
+                    ui.incGeneration();
+                    try {
+                        Thread.sleep(1000);
+                        bp.enqueueExternalEvent(new BEvent("GUI ready"));
+                    } catch (InterruptedException ex) {
+                        ex.printStackTrace();
+                    }
+                    /*new Thread(() -> {
+                        try {
+                            Thread.sleep(1000);
+                            bp.enqueueExternalEvent(new BEvent("GUI ready"));
+                        } catch (InterruptedException ignored) { }
+                    }).start();*/
                 } else {
                     events.stream().filter(e1 -> dieEventSet.contains(e1)).forEach(e1 -> {
                         Cell cell = (Cell) ((ContextService.UpdateEvent) e1).parameters.get("cell");

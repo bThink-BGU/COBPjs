@@ -55,7 +55,7 @@
             <properties>
               <enabled value="false"/>
               <font size="10"/>
-              <text value="Label"/>
+              <text value="Generation - 0"/>
               <verticalTextPosition value="3"/>
             </properties>
           </component>

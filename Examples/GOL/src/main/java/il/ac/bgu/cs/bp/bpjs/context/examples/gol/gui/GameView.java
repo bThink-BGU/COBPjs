@@ -20,6 +20,7 @@ public class GameView {
     private JLabel generation;
     private JPanel panel;
     private JLabel pattern;
+    private int gen = 0;
     private AbstractTableModel model;
 
     public GameView(int size, BProgram bprog) {
@@ -66,10 +67,8 @@ public class GameView {
                 super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
                 setOpaque(true);
                 if ( value != null ) {
-                    setForeground( Color.GREEN );
                     setBackground( Color.GREEN );
                 } else {
-                    setForeground( Color.WHITE );
                     setBackground( Color.WHITE );
                 }
 //                return super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
@@ -92,9 +91,10 @@ public class GameView {
         model.setValueAt(value, i, j);
     }
 
-    public void setGeneration(int gen) {
+    public void incGeneration() {
         generation.setText("Generation - " + gen);
         model.fireTableDataChanged();
+        gen++;
     }
 
     public void setPattern(String p) {

@@ -1,3 +1,6 @@
+importPackage(Packages.il.ac.bgu.cs.bp.bpjs.context);
+importPackage(Packages.il.ac.bgu.cs.bp.bpjs.context.examples.gol.schema);
+
 function populate(name, pattern) {
     const boardSize = pattern["board size"], maxGenerations = pattern["generations"], seed = pattern["seed"];
 
@@ -46,9 +49,20 @@ const patterns = {
             {"i": 3, "j": 1}, {"i": 3, "j": 2},
             {"i": 4, "j": 1}, {"i": 4, "j": 2},
         ]
+    },
+    "Mating" : {
+        "generations": 20,
+        "board size": 6,
+        "seed": [
+            {"i": 1, "j": 2}, {"i": 2, "j": 3},
+            {"i": 3, "j": 3}
+        ]
     }
 };
 
+// const patternName = "Two Lonely Cells";
+// const patternName = "A Row";
+// const patternName = "Blinker 1";
+const patternName = "Mating";
 
-const patternName = "Blinker 1";
 populate(patternName, patterns[patternName]);
