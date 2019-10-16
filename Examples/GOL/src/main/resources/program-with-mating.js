@@ -52,10 +52,30 @@ CTX.subscribe("rule4", "Dead_With_3_Neighbours", function (cell) {
     });
 });
 
-/*
-CTX.subscribe("rule4.2", "ActiveMating", function (cell) {
+CTX.subscribe("rule4.2 - advance cells", "ActiveMatingTack", function (mating) {
+    const current = [mating.n1, mating.n2, mating.n3];
+    const next = nextMatingCells(mating);
+    const remove = current.filter(c => !next.includes(c));
+    const add = next.filter(c =>!current.includes(c));
+    if(next.includes(n1))
+    bp.sync({
+        request: CTX.Transaction(
+            remove.map(c => CTX.UpdateEvent("Die", {"cell": c}))
+                .concat(add.map(c => CTX.UpdateEvent("Reproduce", {"cell": c})))
+                .concat(CTX.UpdateEvent("IncrementRound", {"mating": mating}))
+        ),
+        block: CTX.UpdateEvent("Tick")
+    });
+});
+
+CTX.subscribe("rule4.2 - reproduce", "CompletedMatingTack", function (mating) {
     bp.sync({
         request: CTX.UpdateEvent("Reproduce", {"cell": cell}),
         block: CTX.UpdateEvent("Tick")
     });
-});*/
+});
+
+function nextMatingCells(mating) {
+    var next = [];
+    return next;
+}

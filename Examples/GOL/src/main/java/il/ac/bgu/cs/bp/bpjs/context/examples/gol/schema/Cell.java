@@ -120,5 +120,3 @@ public class Cell extends BasicEntity {
         return String.format("Cell(%d,%d,%b)",i,j,alive);
     }
 }
-
-
