@@ -1,6 +1,17 @@
 importPackage(Packages.il.ac.bgu.cs.bp.bpjs.context);
 importPackage(Packages.il.ac.bgu.cs.bp.bpjs.context.examples.gol.schema);
 
+function registerAllCellsQueries() {
+    for (var i = 0; i < 3; i++) {
+        for (var j = 0; j < 3; j++) {
+            CTX.registerParameterizedContextQuery("SpecificCell", "Cell[" + i + "," + j + "]", {
+                "i": i,
+                "j": j
+            });
+        }
+    }
+}
+
 function populate(name, pattern) {
     const boardSize = pattern["board size"], maxGenerations = pattern["generations"], seed = pattern["seed"];
 
@@ -10,6 +21,10 @@ function populate(name, pattern) {
             let row=[];
             for(let j = 0; j < boardSize; j++) {
                 row.push(new Cell(i, j, false));
+                CTX.registerParameterizedContextQuery("MatingArea", "Mating area of Cell(" + i + "," + j + ")", {
+                    "deadCellI": i,
+                    "deadCellJ": j
+                });
             }
             cells.push(row);
         }
@@ -52,10 +67,10 @@ const patterns = {
     },
     "Mating" : {
         "generations": 20,
-        "board size": 6,
+        "board size": 8,
         "seed": [
-            {"i": 1, "j": 2}, {"i": 2, "j": 3},
-            {"i": 3, "j": 3}
+            {"i": 1, "j": 2}, {"i": 2, "j": 3}, {"i": 3, "j": 3},
+            {"i": 2, "j": 5}, {"i": 3, "j": 5}, {"i": 4, "j": 5}
         ]
     }
 };

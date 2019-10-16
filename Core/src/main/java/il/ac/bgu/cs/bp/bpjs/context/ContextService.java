@@ -420,8 +420,11 @@ public class ContextService implements Serializable {
 
         @Override
         public String toString() {
-            return String.format("{\"type\":%s , \"name\":%s , \"ctx\":%s}", type.toString(), contextName,
-                    ctx.toString());
+            String ctx = this.ctx.toString();
+            if(this.ctx instanceof Object[]) {
+                ctx = Arrays.toString((Object[])this.ctx);
+            }
+            return String.format("{\"type\":%s , \"name\":%s , \"ctx\":%s}", type.toString(), contextName, ctx);
         }
 
         /*

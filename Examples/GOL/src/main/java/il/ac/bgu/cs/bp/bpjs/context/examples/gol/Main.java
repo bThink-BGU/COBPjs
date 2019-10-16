@@ -74,7 +74,7 @@ public class Main {
                 }
             }));
         });*/
-        contextService.initFromResources(persistenceUnit, dbPopulationScript, "program-no-mating.js");
+        contextService.initFromResources(persistenceUnit, dbPopulationScript, "program-with-mating.js");
         BProgram bprog = contextService.getBProgram();
         contextService.addListener(new BProgramRunnerListenerAdapter() {
             private ContextService.AnyNewContextEvent generationEvent = new ContextService.AnyNewContextEvent("Generation");

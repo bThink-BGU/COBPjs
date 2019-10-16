@@ -1,19 +1,17 @@
 package il.ac.bgu.cs.bp.bpjs.context.examples.gol.schema;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.NamedQueries;
-import javax.persistence.NamedQuery;
+import javax.persistence.*;
+import java.util.List;
 
 @Entity
 @NamedQueries(value = {
 //        @NamedQuery(name = "Cell", query = "SELECT c FROM Cell c"),
 //        @NamedQuery(name = "NGB_8", query = "SELECT c FROM Cell c WHERE NGB_COUNT(c)=8"),
         @NamedQuery(name = "N_Neighbours", query = "SELECT c FROM Cell c WHERE "+Cell.countNeighbours1 +" = :n"),
-        @NamedQuery(name = "Alive_With_Less_Than_2_Neighbours", query = "SELECT c FROM Cell c, GameOfLife g WHERE g.tick = 2 AND c.alive = true AND " + Cell.isInMatingArea + " AND "+Cell.countNeighbours1 +" < 2"),
+        @NamedQuery(name = "Alive_With_Less_Than_2_Neighbours", query = "SELECT c FROM Cell c, GameOfLife g WHERE g.tick = 2 AND c.alive = true AND " + Cell.notInMatingArea + " AND "+Cell.countNeighbours1 +" < 2"),
 //        @NamedQuery(name = "2_or_3_Neighbours", query = "SELECT c FROM Cell c WHERE "+Cell.countNeighbours+" = 2 OR "+Cell.countNeighbours+" = 3"),
-        @NamedQuery(name = "Dead_With_3_Neighbours", query = "SELECT c FROM Cell c, GameOfLife g WHERE g.tick = 2 AND c.alive = false AND " + Cell.isInMatingArea + " AND "+Cell.countNeighbours1 +" = 3"),
-        @NamedQuery(name = "Alive_With_More_Than_3_Neighbours", query = "SELECT c FROM Cell c, GameOfLife g WHERE g.tick = 2 AND c.alive = true AND " + Cell.isInMatingArea + " AND "+Cell.countNeighbours1 +" > 3"),
+        @NamedQuery(name = "Dead_With_3_Neighbours", query = "SELECT c FROM Cell c, GameOfLife g WHERE g.tick = 2 AND c.alive = false AND " + Cell.notInMatingArea + " AND "+Cell.countNeighbours1 +" = 3"),
+        @NamedQuery(name = "Alive_With_More_Than_3_Neighbours", query = "SELECT c FROM Cell c, GameOfLife g WHERE g.tick = 2 AND c.alive = true AND " + Cell.notInMatingArea + " AND "+Cell.countNeighbours1 +" > 3"),
         @NamedQuery(name = "Mating", query = "SELECT c, n1, n2, n3 FROM Cell c, Cell n1, Cell n2, Cell n3, GameOfLife g WHERE " +
                 "g.tick = 1 AND " +
                 "c.alive = false AND " +
@@ -66,7 +64,7 @@ public class Cell extends BasicEntity {
             "(n3.i=c.i+1     AND     n3.j=c.j     AND      n3.alive = true) OR " +
             "(n3.i=c.i+1     AND     n3.j=c.j+1   AND      n3.alive = true))";
 
-    public static final String isInMatingArea = "(SELECT COUNT(a) FROM Mating a WHERE c IN ELEMENTS(a.matingArea)) = 0";
+    public static final String notInMatingArea = "(SELECT COUNT(a) FROM Mating a WHERE c IN ELEMENTS(a.matingArea)) = 0";
 
     public static final String countNeighbours1 = "(SELECT COUNT(n) from Cell n WHERE (" +
             "(n.i=c.i-1     AND     n.j=c.j-1   AND      n.alive = true) OR " +
@@ -102,12 +100,11 @@ public class Cell extends BasicEntity {
     public final int j;
     @Column
     public final boolean alive;
+    @ManyToMany(mappedBy = "matingArea")
+    public final List<Mating> matings;
 
     protected Cell() {
-        super();
-        i=0;
-        j=0;
-        alive = false;
+        this(0,0,false);
     }
 
     public Cell(int i, int j, boolean alive) {
@@ -115,6 +112,7 @@ public class Cell extends BasicEntity {
         this.i = i;
         this.j = j;
         this.alive = alive;
+        this.matings = List.of();
     }
 
     @Override

@@ -29,5 +29,4 @@
     <properties>
         <exec.mainClass>il.ac.bgu.cs.bp.bpjs.context.examples.gol.Main</exec.mainClass>
     </properties>
-
 </project>
