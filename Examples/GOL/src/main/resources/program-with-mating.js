@@ -1,3 +1,4 @@
+const tackEvent = CTX.UpdateEvent("Tack");
 const tockEvent = CTX.UpdateEvent("Tock");
 const matingCalculationEvent = bp.Event("Mating");
 
@@ -10,28 +11,24 @@ const anyButGui = bp.EventSet("", function (e) {
 
 CTX.subscribe("Increment Generation", "GameOfLife", function (game) {
     for (let gen = 0; gen < game.maxGeneration; gen++) {
-        bp.sync({request: matingCalculationEvent});
         bp.sync({request: CTX.UpdateEvent("Tick")});
         bp.sync({waitFor: bp.Event("GUI ready"), block: anyButGui});
+        bp.sync({request: tackEvent});
+        bp.sync({waitFor: bp.Event("Mating preparations ended")});
         bp.sync({request: tockEvent, block: anyButTock});
     }
 });
 
-CTX.subscribe("Mating calculation", "GameOfLife", function (game) {
-    while (true) {
-        bp.sync({waitFor: matingCalculationEvent});
-        const mating = CTX.getContextInstances("Mating");
-        for (let index = 0; index < mating.size(); index++) {
-            let cell = mating.get(index)[0];
-            let n1 = mating.get(index)[1];
-            let n2 = mating.get(index)[2];
-            let n3 = mating.get(index)[3];
-
-            bp.log.info("cell=" + cell + "\nn1=" + n1 + "\nn2=" + n2 + "\nn3=" + n3);
-            /*bp.registerBThread("Mating-" + CTX.counter.getAndIncrement() + " for " + cell, function () {
-        });*/
-        }
-        bp.sync({request: CTX.TransactionEvent()});
+CTX.subscribe("Add Matings", "Mating", function (mating) {
+    // const mating = CTX.getContextInstances("Mating");
+    const cell = mating.get(index)[0];
+    const n1 = mating.get(index)[1];
+    const n2 = mating.get(index)[2];
+    const n3 = mating.get(index)[3];
+    const matingArea = CTX.getContextInstances("MatingArea", {"deadCellI":cell.i, "deadCellJ":cell.j});
+    const activeMatings = CTX.getContextInstances("ActiveMating");
+    if(!activeMatings.contains(cell)) {
+        bp.sync({request: CTX.InsertEvent(Mating(cell, n1, n2, n3, matingArea))});
     }
 });
 

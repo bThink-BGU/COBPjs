@@ -10,10 +10,10 @@ import javax.persistence.NamedQuery;
 //        @NamedQuery(name = "Cell", query = "SELECT c FROM Cell c"),
 //        @NamedQuery(name = "NGB_8", query = "SELECT c FROM Cell c WHERE NGB_COUNT(c)=8"),
         @NamedQuery(name = "N_Neighbours", query = "SELECT c FROM Cell c WHERE "+Cell.countNeighbours1 +" = :n"),
-        @NamedQuery(name = "Alive_With_Less_Than_2_Neighbours", query = "SELECT c FROM Cell c, GameOfLife g WHERE g.tick = 1 AND c.alive = true AND "+Cell.countNeighbours1 +" < 2"),
+        @NamedQuery(name = "Alive_With_Less_Than_2_Neighbours", query = "SELECT c FROM Cell c, GameOfLife g WHERE g.tick = 2 AND c.alive = true AND " + Cell.isInMatingArea + " AND "+Cell.countNeighbours1 +" < 2"),
 //        @NamedQuery(name = "2_or_3_Neighbours", query = "SELECT c FROM Cell c WHERE "+Cell.countNeighbours+" = 2 OR "+Cell.countNeighbours+" = 3"),
-        @NamedQuery(name = "Dead_With_3_Neighbours", query = "SELECT c FROM Cell c, GameOfLife g WHERE g.tick = 1 AND c.alive = false AND "+Cell.countNeighbours1 +" = 3"),
-        @NamedQuery(name = "Alive_With_More_Than_3_Neighbours", query = "SELECT c FROM Cell c, GameOfLife g WHERE g.tick = 1 AND c.alive = true AND "+Cell.countNeighbours1 +" > 3"),
+        @NamedQuery(name = "Dead_With_3_Neighbours", query = "SELECT c FROM Cell c, GameOfLife g WHERE g.tick = 2 AND c.alive = false AND " + Cell.isInMatingArea + " AND "+Cell.countNeighbours1 +" = 3"),
+        @NamedQuery(name = "Alive_With_More_Than_3_Neighbours", query = "SELECT c FROM Cell c, GameOfLife g WHERE g.tick = 2 AND c.alive = true AND " + Cell.isInMatingArea + " AND "+Cell.countNeighbours1 +" > 3"),
         @NamedQuery(name = "Mating", query = "SELECT c, n1, n2, n3 FROM Cell c, Cell n1, Cell n2, Cell n3, GameOfLife g WHERE " +
                 "g.tick = 1 AND " +
                 "c.alive = false AND " +
@@ -23,6 +23,7 @@ import javax.persistence.NamedQuery;
                 "n1.i <= n2.i AND n2.i <= n3.i AND " +
                 "n1.j <= n2.j AND n2.j <= n3.j AND " +
                 Cell.n1 + " AND " + Cell.n2 + " AND " + Cell.n3),
+        @NamedQuery(name = "MatingArea", query = "SELECT c FROM Cell c WHERE c.i >= :deadCellI-2 AND c.i <= :deadCellI+2 AND c.j >= :deadCellJ-2 AND c.j <= :deadCellJ+2"),
         @NamedQuery(name = "Die", query = "UPDATE Cell c SET c.alive = false WHERE c=:cell"),
         @NamedQuery(name = "Reproduce", query = "UPDATE Cell c SET c.alive = true WHERE c=:cell"),
 })
@@ -64,6 +65,8 @@ public class Cell extends BasicEntity {
             "(n3.i=c.i+1     AND     n3.j=c.j-1   AND      n3.alive = true) OR " +
             "(n3.i=c.i+1     AND     n3.j=c.j     AND      n3.alive = true) OR " +
             "(n3.i=c.i+1     AND     n3.j=c.j+1   AND      n3.alive = true))";
+
+    public static final String isInMatingArea = "(SELECT COUNT(a) FROM Mating a WHERE c IN ELEMENTS(a.matingArea)) = 0";
 
     public static final String countNeighbours1 = "(SELECT COUNT(n) from Cell n WHERE (" +
             "(n.i=c.i-1     AND     n.j=c.j-1   AND      n.alive = true) OR " +

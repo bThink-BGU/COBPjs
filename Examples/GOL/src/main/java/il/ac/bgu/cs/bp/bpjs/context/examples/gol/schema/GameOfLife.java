@@ -8,9 +8,9 @@ import javax.persistence.NamedQuery;
 @Entity
 @NamedQueries(value = {
     @NamedQuery(name = "GameOfLife", query = "SELECT g FROM GameOfLife g"),
-    @NamedQuery(name = "SetTick", query = "UPDATE GameOfLife SET tick = 1"),
-    @NamedQuery(name = "SetTack", query = "UPDATE GameOfLife SET tick = 0"),
-    @NamedQuery(name = "SetTock", query = "UPDATE GameOfLife SET tick = 0"),
+    @NamedQuery(name = "Tick", query = "UPDATE GameOfLife SET tick = 1"),
+    @NamedQuery(name = "Tack", query = "UPDATE GameOfLife SET tick = 2"),
+    @NamedQuery(name = "Tock", query = "UPDATE GameOfLife SET tick = 0"),
 })
 public class GameOfLife extends BasicEntity {
     @Column

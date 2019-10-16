@@ -3,12 +3,13 @@ package il.ac.bgu.cs.bp.bpjs.context.examples.gol.schema;
 import javax.persistence.Id;
 import javax.persistence.MappedSuperclass;
 import java.io.Serializable;
+import java.util.Objects;
 
 @MappedSuperclass
 @SuppressWarnings("WeakerAccess")
 public abstract class BasicEntity implements Serializable{
     @Id
-	private final String id;
+	public final String id;
 
     protected BasicEntity() {
         id = "";
@@ -43,11 +44,6 @@ public abstract class BasicEntity implements Serializable{
         if (getClass() != obj.getClass())
             return false;
         BasicEntity other = (BasicEntity) obj;
-        if (id == null) {
-            if (other.id != null)
-                return false;
-        } else if (!id.equals(other.id))
-            return false;
-        return true;
+        return Objects.equals(this.id, other.id);
     }
 }

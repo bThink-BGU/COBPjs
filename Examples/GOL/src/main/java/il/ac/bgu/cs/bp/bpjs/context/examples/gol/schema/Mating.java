@@ -1,12 +1,12 @@
 package il.ac.bgu.cs.bp.bpjs.context.examples.gol.schema;
 
+
 import javax.persistence.*;
-import java.util.ArrayList;
 import java.util.List;
 
 @Entity
 @NamedQueries(value = {
-        @NamedQuery(name = "ActiveMatings", query = "SELECT m FROM Mating m")
+        @NamedQuery(name = "ActiveMating", query = "SELECT m FROM Mating m")
 })
 @SuppressWarnings("WeakerAccess")
 public class Mating extends BasicEntity {
@@ -19,18 +19,20 @@ public class Mating extends BasicEntity {
     @OneToOne(cascade = CascadeType.MERGE)
     public final Cell n3;
     @OneToMany(cascade = CascadeType.MERGE)
-    public final List<Cell> area;
+    public final List<Cell> matingArea;
+    @Column
+    public int round = 0;
 
     protected Mating() {
-        this("", new Cell[]{null, null, null}, new ArrayList<Cell>());
+        this("", null, null, null, null, List.of());
     }
 
-    public Mating(String id, Cell[] cell, List<Cell> area) {
-        super("Mating " + cell[0]);
-        this.cell = cell[0];
-        this.n1 = cell[1];
-        this.n2 = cell[2];
-        this.n3 = cell[3];
-        this.area = area;
+    public Mating(String id, Cell cell, Cell n1, Cell n2, Cell n3, List<Cell> matingArea) {
+        super("Mating " + cell);
+        this.cell = cell;
+        this.n1 = n1;
+        this.n2 = n2;
+        this.n3 = n3;
+        this.matingArea = matingArea;
     }
 }
