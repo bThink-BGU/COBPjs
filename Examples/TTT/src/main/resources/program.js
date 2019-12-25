@@ -40,7 +40,7 @@ CTX.subscribe("ClickHandler","Cell", function(c) {
 //detect black cell, white cell - query name
 CTX.subscribe("Update cell upon X or O", "EmptyCell", function(c) {
     var e = bp.sync({ waitFor:[ createEvent("X", c), createEvent("O", c)] });
-    bp.sync({ request: CTX.UpdateEvent("UpdateCell", {cell: c, val: e.name}), block: any });
+    bp.sync({ request: CTX.UpdateEvent("UpdateCell", {cell: c, val: e.name}), block: move });
 });
 
 //block X,O on nonempty cell
