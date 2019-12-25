@@ -162,6 +162,7 @@
         <module>TTT</module>
         <module>Chess</module>
         <module>GOL</module>
+        <module>ConnectedFour</module>
     </modules>
 
 </project>

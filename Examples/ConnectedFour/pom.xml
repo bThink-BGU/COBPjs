@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>com.github.bthink-bgu</groupId>
+        <artifactId>BPjs-Context-Examples</artifactId>
+        <version>1.0.0</version>
+    </parent>
+    <artifactId>BPjs-Context-Examples-ConnectedFour</artifactId>
+    <version>${examples.c4.version}</version>
+    <name>Connected Four Example</name>
+    <packaging>jar</packaging>
+
+    <properties>
+        <exec.mainClass>il.ac.bgu.cs.bp.bpjs.context.examples.c4.Main</exec.mainClass>
+        <exec.verifierClass>il.ac.bgu.cs.bp.bpjs.context.examples.c4.Verifier</exec.verifierClass>
+    </properties>
+
+</project>

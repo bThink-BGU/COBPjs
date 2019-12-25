@@ -1,5 +1,5 @@
 importPackage(Packages.il.ac.bgu.cs.bp.bpjs.context);
-importPackage(Packages.il.ac.bgu.cs.bp.bpjs.context.examples.ttt.schema);
+importPackage(Packages.il.ac.bgu.cs.bp.bpjs.context.examples.c4.schema);
 
 
 //#region HELP FUNCTIONS
