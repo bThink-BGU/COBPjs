@@ -10,7 +10,7 @@
         <version>1.0.0</version>
     </parent>
     <artifactId>BPjs-Context-Examples-Chess</artifactId>
-    <version>${examples.chess.version}</version>
+    <version>0.1.0</version>
     <name>Chess Example</name>
     <packaging>jar</packaging>
 

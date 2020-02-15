@@ -10,7 +10,7 @@
         <version>1.0.0</version>
     </parent>
     <artifactId>BPjs-Context-Examples-TTT</artifactId>
-    <version>${examples.ttt.version}</version>
+    <version>0.1.0</version>
     <name>Tic-Tac-Toe Example</name>
     <packaging>jar</packaging>
 

@@ -10,7 +10,7 @@
         <version>1.0.0</version>
     </parent>
     <artifactId>BPjs-Context-Examples-ConnectedFour</artifactId>
-    <version>${examples.c4.version}</version>
+    <version>0.1.0</version>
     <name>Connected Four Example</name>
     <packaging>jar</packaging>
 
