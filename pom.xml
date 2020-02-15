@@ -17,6 +17,8 @@
 		<examples.ttt.version>0.1.0</examples.ttt.version>
 		<examples.room.version>0.1.0</examples.room.version>
 		<examples.chess.version>0.1.0</examples.chess.version>
+		<examples.gol.version>0.1.0</examples.gol.version>
+		<examples.c4.version>0.1.0</examples.c4.version>
 	</properties>
 
 	<dependencyManagement>
