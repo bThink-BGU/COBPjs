@@ -4,6 +4,10 @@ import il.ac.bgu.cs.bp.bpjs.context.ContextService;
 import il.ac.bgu.cs.bp.bpjs.context.examples.ttt.schema.Cell;
 import il.ac.bgu.cs.bp.bpjs.model.BEvent;
 import il.ac.bgu.cs.bp.bpjs.model.BProgram;
+import il.ac.bgu.cs.bp.bpjs.model.eventsets.EventSet;
+
+import java.util.Map;
+import java.util.Optional;
 
 public class Main {
 	void run(String dbPopulationScript, String persistenceUnit) throws InterruptedException {
@@ -11,6 +15,10 @@ public class Main {
 
 		ContextService contextService = ContextService.getInstance();
 		contextService.initFromResources(persistenceUnit, dbPopulationScript, "program.js", "assertions.js");
+		contextService.addContextUpdateListener(new ContextService.UpdateEvent(
+				(EventSet) bEvent -> bEvent.name.equals("X") || bEvent.name.equals("O"),
+				new String[]{"UpdateCell"},
+				Optional.of(e -> Map.of("cell", e.getData(), "val", e.name))));
 		contextService.run();
 		BProgram bprog = contextService.getBProgram();
 
@@ -21,7 +29,7 @@ public class Main {
 				
 		Thread.sleep(6000);
 		contextService.close();
-	}
+
 
 
 	public static void main(String[] args) throws InterruptedException {

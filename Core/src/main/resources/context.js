@@ -48,9 +48,10 @@ CTX.subscribeWithParameters = subscribeWithParameters;
 
 // Highest priority
 bp.registerBThread("ContextReporterBT", function() {
+    var sets = CTX.AnyContextCommandEvent();
     while (true) {
         // Wait for next update
-        bp.sync({ waitFor:CTX.AnyContextCommandEvent() });
+        bp.sync({ waitFor:sets });
 
         // Trigger new context events
         var events = CTX.getContextEvents();

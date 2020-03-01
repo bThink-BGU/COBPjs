@@ -6,6 +6,8 @@ import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import javax.annotation.Nullable;
 import javax.persistence.*;
 import javax.persistence.metamodel.IdentifiableType;
@@ -16,13 +18,17 @@ import il.ac.bgu.cs.bp.bpjs.context.eventselection.ContextualEventSelectionStrat
 import il.ac.bgu.cs.bp.bpjs.context.eventselection.PrioritizedBSyncEventSelectionStrategy;
 import il.ac.bgu.cs.bp.bpjs.execution.BProgramRunner;
 import il.ac.bgu.cs.bp.bpjs.execution.listeners.BProgramRunnerListener;
+import il.ac.bgu.cs.bp.bpjs.execution.listeners.BProgramRunnerListenerAdapter;
 import il.ac.bgu.cs.bp.bpjs.execution.listeners.PrintBProgramRunnerListener;
 import il.ac.bgu.cs.bp.bpjs.model.BEvent;
 import il.ac.bgu.cs.bp.bpjs.model.BProgram;
 import il.ac.bgu.cs.bp.bpjs.model.ResourceBProgram;
+import il.ac.bgu.cs.bp.bpjs.model.eventsets.ComposableEventSet;
 import il.ac.bgu.cs.bp.bpjs.model.eventsets.EventSet;
+import il.ac.bgu.cs.bp.bpjs.model.eventsets.EventSets;
 import org.hibernate.Session;
 import org.jetbrains.annotations.NotNull;
+import org.mozilla.javascript.NativeArray;
 import org.mozilla.javascript.NativeFunction;
 import org.mozilla.javascript.NativeObject;
 
@@ -41,6 +47,7 @@ public class ContextService implements Serializable {
     private List<NamedQuery> namedQueries;
     private boolean verificationMode = false;
     private Collection<CtxType> contextTypes;
+    private Collection<CommandEvent> contextUpdateListeners;
     private ContextInternalEvent contextEvents;
 
     private static class ContextServiceProxy implements Serializable {
@@ -195,6 +202,11 @@ public class ContextService implements Serializable {
         });
     }
 
+    public static EventSet AnyContextCommandEvent() {
+        EventSet ans = ComposableEventSet.anyOf(getInstance().contextUpdateListeners.stream().map(l->l.eventSet).collect(Collectors.toSet()));
+        return ans;
+    }
+
     public BProgram getBProgram() {
         return bprog;
     }
@@ -202,6 +214,11 @@ public class ContextService implements Serializable {
     public void addListener(BProgramRunnerListener listener) {
         if (rnr != null)
             rnr.addListener(listener);
+    }
+
+    public void addContextUpdateListener(CommandEvent listener) {
+        addListener(listener);
+        contextUpdateListeners.add(listener);
     }
 
     @SuppressWarnings("unused")
@@ -250,9 +267,10 @@ public class ContextService implements Serializable {
         bprog.setEventSelectionStrategy(eventSelectionStrategy);
         bprog.setWaitForExternalEvents(true);
 
+        contextUpdateListeners = new ArrayList<>();
         rnr = new BProgramRunner(bprog);
         addListener(new PrintBProgramRunnerListener());
-        addListener(new DBActuator());
+        addContextUpdateListener(new InsertEvent());
     }
 
     public void run() {
@@ -446,55 +464,48 @@ public class ContextService implements Serializable {
         }
     }
 
-    public static abstract class CommandEvent extends BEvent {
-        public CommandEvent(String name) {
-            super(name);
+    public static abstract class CommandEvent extends BProgramRunnerListenerAdapter {
+        public final EventSet eventSet;
+
+        public CommandEvent(EventSet eventSet) {
+            super();
+            this.eventSet = eventSet;
         }
 
-        public final void execute() {
+        @Override
+        public final void eventSelected(BProgram bp, BEvent theEvent) {
+            if(eventSet.contains(theEvent)) {
+                execute(theEvent);
+            }
+        }
+
+        public final void execute(BEvent event) {
             EntityManager em = getInstance().createEntityManager();
             em.getTransaction().begin();
-            innerExecution(em);
+            innerExecution(em, event);
             em.getTransaction().commit();
             getInstance().updateContexts();
         }
 
-        protected abstract void innerExecution(EntityManager em);
-    }
-
-    @SuppressWarnings("unused")
-    public static final class TransactionEvent extends CommandEvent {
-        public final CommandEvent[] commands;
-
-        public TransactionEvent(CommandEvent... commands) {
-            super("TransactionEvent [ " + Arrays.toString(commands) + " ]");
-            this.commands = commands;
-        }
-
-        @Override
-        protected void innerExecution(EntityManager em) {
-            for (CommandEvent e : commands) {
-                e.innerExecution(em);
-            }
-        }
+        protected abstract void innerExecution(EntityManager em, BEvent event);
     }
 
     public static class InsertEvent extends CommandEvent {
-        public final Object[] persistObjects;
 
-        public InsertEvent(Object... persistObjects) {
-            super("InsertEvent(" + Arrays.toString(persistObjects) + ")");
-            this.persistObjects = persistObjects;
+        public InsertEvent() {
+            super((EventSet) bEvent -> bEvent.name.equals("CTX.Insert"));
         }
 
         @Override
-        protected void innerExecution(EntityManager em) {
-            persistObjects(em, persistObjects);
-        }
-
-        private void persistObjects(EntityManager em, Object... objects) {
-            if (objects == null)
+        protected void innerExecution(EntityManager em, BEvent e) {
+            if (e.maybeData == null)
                 return;
+            List<Object> objects;
+            if(e.maybeData instanceof NativeArray) {
+                objects = (NativeArray)e.maybeData;
+            } else {
+                objects = List.of(e.maybeData);
+            }
             for (Object o : objects) {
                 em.merge(o);
             }
@@ -502,25 +513,30 @@ public class ContextService implements Serializable {
     }
 
     public static class UpdateEvent extends CommandEvent {
-        public final String contextName;
-        public final Map<String, Object> parameters;
+        public final String[] namedQueries;
+        private final Function<BEvent,Map<String,Object>> parametersHandler;
 
-        public UpdateEvent(String contextName, Map<String, Object> parameters) {
-            super("UpdateEvent(" + contextName + "," + parameters.entrySet() + ")");
-            this.contextName = contextName;
-            this.parameters = Collections.unmodifiableMap(parameters);
+        public UpdateEvent(String eventName, String[] namedQueries, Optional<Function<BEvent,Map<String,Object>>> parametersHandler) {
+            this((EventSet) bEvent -> bEvent.name.equals(eventName),namedQueries, parametersHandler);
         }
 
-        @SuppressWarnings("unused")
-        public UpdateEvent(String contextName) {
-            this(contextName, new HashMap<>());
+        public UpdateEvent(EventSet eventSet, String[] namedQueries, Optional<Function<BEvent,Map<String,Object>>> parametersHandler) {
+            super(eventSet);
+            this.namedQueries = namedQueries;
+            this.parametersHandler = parametersHandler.orElse(this::defaultParametersHandler);
+        }
+
+        private Map<String,Object> defaultParametersHandler(BEvent theEvent) {
+            return (Map<String, Object>) theEvent.getData();
         }
 
         @Override
-        protected void innerExecution(EntityManager em) {
-            Query q = em.createNamedQuery(contextName);
-            ContextService.setParameters(q, parameters);
-            q.executeUpdate();
+        protected void innerExecution(EntityManager em, BEvent theEvent) {
+            for (String queryName : namedQueries) {
+                Query q = em.createNamedQuery(queryName);
+                ContextService.setParameters(q, parametersHandler.apply(theEvent));
+                q.executeUpdate();
+            }
         }
     }
 
@@ -599,14 +615,6 @@ public class ContextService implements Serializable {
             ContextInternalEvent internal = (ContextInternalEvent) event;
             return internal.events.stream().anyMatch(e -> (e.type == ContextEventType.ENDED
                     && e.contextName.equals(contextName) && (ctx == null || ctx.equals(e.ctx))));
-        }
-    }
-
-
-    public static class AnyContextCommandEvent implements EventSet {
-        @Override
-        public boolean contains(BEvent event) {
-            return event instanceof CommandEvent;
         }
     }
 
