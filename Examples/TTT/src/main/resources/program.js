@@ -31,16 +31,8 @@ var EndGame = bp.EventSet("EndGame", function(e) {
 
 //#region CEll BEHAVIORS
 CTX.subscribe("ClickHandler","Cell", function(c) {
-    // while (true) {
     bp.sync({ waitFor: createEvent("Click", c) });
     bp.sync({ request: createEvent("X", c) });
-    // }
-});
-
-//detect black cell, white cell - query name
-CTX.subscribe("Update cell upon X or O", "EmptyCell", function(c) {
-    var e = bp.sync({ waitFor:[ createEvent("X", c), createEvent("O", c)] });
-    bp.sync({ request: CTX.UpdateEvent("UpdateCell", {cell: c, val: e.name}), block: move });
 });
 
 //block X,O on nonempty cell
@@ -63,16 +55,6 @@ bp.registerBThread("EnforceTurnsXO", function() {
         });
     }
 });
-
-/* bp.registerBThread("EnforceMoveAfterNonEmptyCell", function() {
-    while (true) {
-        var e = bp.sync({ waitFor: move });
-        bp.sync({
-            waitFor: CTX.AnyNewContextEvent("NonEmptyCell", e.data),
-            block: move
-        });
-}
-}); */
 
 // Represents when the game ends
 bp.registerBThread("block X or O on endgame", function() {

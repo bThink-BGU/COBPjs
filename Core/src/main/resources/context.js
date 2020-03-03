@@ -47,7 +47,7 @@ CTX.subscribe = subscribe;
 CTX.subscribeWithParameters = subscribeWithParameters;
 
 // Highest priority
-bp.registerBThread("ContextReporterBT", function() {
+/*bp.registerBThread("ContextReporterBT", function() {
     while (true) {
         // Wait for next update
         bp.sync({ waitFor:CTX.AnyContextCommandEvent() });
@@ -57,6 +57,6 @@ bp.registerBThread("ContextReporterBT", function() {
         if(events.events.size() > 0)
             bp.sync({ request: events });
     }
-});
+});*/
 
 

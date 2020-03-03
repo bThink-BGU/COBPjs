@@ -1,5 +1,5 @@
 
-const tockEvent = CTX.UpdateEvent("Tock");
+const tockEvent = bp.Event("Tock");
 
 const anyButTock = bp.EventSet("", function(e) {
    return !e.equals(tockEvent);
@@ -10,7 +10,7 @@ const anyButGui = bp.EventSet("", function(e) {
 
 CTX.subscribe("Increment Generation","GameOfLife", function(game) {
     for(let gen = 0; gen < game.maxGeneration; gen ++) {
-        bp.sync({request: CTX.UpdateEvent("Tick")});
+        bp.sync({request: bp.Event("Tick")});
         bp.sync({waitFor: bp.Event("GUI ready"), block: anyButGui});
         bp.sync({request: tockEvent, block: anyButTock});
     }
@@ -18,22 +18,22 @@ CTX.subscribe("Increment Generation","GameOfLife", function(game) {
 
 CTX.subscribe("rule1", "Alive_With_Less_Than_2_Neighbours", function(cell) {
     bp.sync({
-        request: CTX.UpdateEvent("Die", {"cell": cell}),
-        block: CTX.UpdateEvent("Tick")
+        request: bp.Event("Die", {"cell": cell}),
+        block: bp.Event("Tick")
     });
 });
 
 CTX.subscribe("rule3", "Alive_With_More_Than_3_Neighbours", function(cell) {
     bp.sync({
-        request: CTX.UpdateEvent("Die", {"cell": cell}),
-        block: CTX.UpdateEvent("Tick")
+        request: bp.Event("Die", {"cell": cell}),
+        block: bp.Event("Tick")
     });
 });
 
 CTX.subscribe("rule4", "Dead_With_3_Neighbours", function(cell) {
     bp.sync({
-        request: CTX.UpdateEvent("Reproduce", {"cell": cell}),
-        block: CTX.UpdateEvent("Tick")
+        request: bp.Event("Reproduce", {"cell": cell}),
+        block: bp.Event("Tick")
     });
 });
 
@@ -45,7 +45,7 @@ CTX.subscribe("rule4", "Dead_With_3_Neighbours", function(cell) {
         let cell = rule1.get(index);
         bp.registerBThread("Rule 1-" + CTX.counter.getAndIncrement() + " for " + cell, function () {
             bp.sync({
-                request: CTX.UpdateEvent("Die", {"cell": cell}),
+                request: bp.Event("Die", {"cell": cell}),
                 block: bp.Event("Generation Ended")
             });
         });
@@ -64,7 +64,7 @@ CTX.subscribe("rule4", "Dead_With_3_Neighbours", function(cell) {
         let cell = rule3.get(index);
         bp.registerBThread("Rule 3-" + CTX.counter.getAndIncrement() + " for " + cell, function () {
             bp.sync({
-                request: CTX.UpdateEvent("Die", {"cell": cell}),
+                request: bp.Event("Die", {"cell": cell}),
                 block: bp.Event("Generation Ended")
             });
         });
@@ -75,7 +75,7 @@ CTX.subscribe("rule4", "Dead_With_3_Neighbours", function(cell) {
         let cell = rule4.get(index);
         bp.registerBThread("Rule 4-" + CTX.counter.getAndIncrement() + " for " + cell, function () {
             bp.sync({
-                request: CTX.UpdateEvent("Reproduce", {"cell": cell}),
+                request: bp.Event("Reproduce", {"cell": cell}),
                 block: bp.Event("Generation Ended")
             });
         });
@@ -100,7 +100,7 @@ CTX.subscribe("Increment Generation","GameOfLife", function(game) {
     while(gen<maxGen) {
         bp.sync({request: bp.Event("Generation Ended")});
         bp.sync({waitFor: bp.Event("GUI ready")});
-        bp.sync({request: CTX.UpdateEvent("IncrementGeneration")});
+        bp.sync({request: bp.Event("IncrementGeneration")});
         gen++;
     }
 });*/

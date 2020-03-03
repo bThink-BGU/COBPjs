@@ -5,11 +5,11 @@ importPackage(Packages.il.ac.bgu.cs.bp.bpjs.context.examples.room.schema.rooms);
 
 CTX.subscribe("DetectMotionStartInRooms","Room",function (room) {
     bp.sync({ waitFor: room.getMotionDetector().startedEvent() });
-    bp.sync({ request:CTX.UpdateEvent("MarkRoomAsNonEmpty", {room: room}) });
+    bp.sync({ request:bp.Event("MarkRoomAsNonEmpty", {room: room}) });
 });
 CTX.subscribe("DetectMotionStopInRooms","Room",function (room) {
     bp.sync({ waitFor: room.getMotionDetector().stoppedEvent() });
-    bp.sync({ request:CTX.UpdateEvent("MarkRoomAsEmpty", {room: room}) });
+    bp.sync({ request:bp.Event("MarkRoomAsEmpty", {room: room}) });
 });
 
 CTX.subscribe("DelayRoomAsEmpty","Room",function (room) {
@@ -22,12 +22,12 @@ CTX.subscribe("DelayRoomAsEmpty","Room",function (room) {
         bp.registerBThread("DelayRoomAsEmptyHelper_"+(i++), function() {
             var e = bp.sync({
                 waitFor: CTX.AnyTickEvent(),
-                block: CTX.UpdateEvent("MarkRoomAsEmpty", {room: room}),
+                block: bp.Event("MarkRoomAsEmpty", {room: room}),
                 interrupt: motionDetectedEvent,
             });
             bp.sync({
                 waitFor: CTX.TickEvent(e.tick + numberOfTicks),
-                block: CTX.UpdateEvent("MarkRoomAsEmpty", {room: room}),
+                block: bp.Event("MarkRoomAsEmpty", {room: room}),
                 interrupt: motionDetectedEvent,
             });
         });

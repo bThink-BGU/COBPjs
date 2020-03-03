@@ -11,7 +11,7 @@ bp.registerBThread("PopulateDB", function() {
     var building37 = new Building("37");
     var office37_123 = new Office("123", building37, gera);
 
-    bp.sync({ request: CTX.InsertEvent([
+    bp.sync({ request: bp.Event("CTX.Insert",[
             achiya,gera,arnon,
             building37, office37_123,
             building96, office96_224, office96_225, kitchen96_252

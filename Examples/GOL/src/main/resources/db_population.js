@@ -35,12 +35,11 @@ function populate(name, pattern) {
         bp.sync({ waitFor: bp.Event("UI is ready") }); // for gui
         bp.sync({ request: bp.Event("Pattern", name) }); // for gui
 
-        bp.sync({ request: CTX.InsertEvent( [].concat.apply([], cells)) });
+        bp.sync({ request: bp.Event("CTX.Insert", [].concat.apply([], cells)) });
+        for (let i = 0; i < seed.length; i++)
+            bp.sync({ request: bp.Event("Reproduce", {"cell": new Cell(seed[i].i, seed[i].j, false)}) });
 
-        bp.sync({ request: CTX.TransactionEvent(seed.map(cell =>
-                CTX.UpdateEvent("Reproduce", {"cell": new Cell(cell.i, cell.j, false)}))) });
-
-        bp.sync({ request: CTX.InsertEvent(new GameOfLife(maxGenerations, boardSize)) });
+        bp.sync({ request: bp.Event("CTX.Insert", new GameOfLife(maxGenerations, boardSize)) });
     });
 }
 
@@ -75,9 +74,9 @@ const patterns = {
     }
 };
 
-// const patternName = "Two Lonely Cells";
+const patternName = "Two Lonely Cells";
 // const patternName = "A Row";
 // const patternName = "Blinker 1";
-const patternName = "Mating";
+// const patternName = "Mating";
 
 populate(patternName, patterns[patternName]);
