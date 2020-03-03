@@ -47,17 +47,16 @@ CTX.subscribe = subscribe;
 CTX.subscribeWithParameters = subscribeWithParameters;
 
 // Highest priority
-bp.registerBThread("ContextReporterBT", function() {
-    var sets = CTX.AnyContextCommandEvent();
+/*bp.registerBThread("ContextReporterBT", function() {
     while (true) {
         // Wait for next update
-        bp.sync({ waitFor:sets });
+        bp.sync({ waitFor:CTX.AnyContextCommandEvent() });
 
         // Trigger new context events
         var events = CTX.getContextEvents();
         if(events.events.size() > 0)
             bp.sync({ request: events });
     }
-});
+});*/
 
 

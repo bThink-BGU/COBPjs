@@ -7,9 +7,10 @@ import il.ac.bgu.cs.bp.bpjs.context.examples.gol.schema.Cell;
 import il.ac.bgu.cs.bp.bpjs.execution.listeners.BProgramRunnerListenerAdapter;
 import il.ac.bgu.cs.bp.bpjs.model.BEvent;
 import il.ac.bgu.cs.bp.bpjs.model.BProgram;
+import il.ac.bgu.cs.bp.bpjs.model.eventsets.EventSet;
 
 import javax.swing.*;
-import java.util.List;
+import java.util.*;
 
 public class Main {
     private static GameView ui;
@@ -74,8 +75,15 @@ public class Main {
                 }
             }));
         });*/
-        contextService.initFromResources(persistenceUnit, dbPopulationScript, "program-with-mating.js");
+        contextService.initFromResources(persistenceUnit, dbPopulationScript, "program-no-mating.js");
         BProgram bprog = contextService.getBProgram();
+
+        contextService.addContextUpdateListener(new ContextService.UpdateEvent("Tick", new String[]{"Tick"}));
+        contextService.addContextUpdateListener(new ContextService.UpdateEvent("Tack", new String[]{"Tack"}));
+        contextService.addContextUpdateListener(new ContextService.UpdateEvent("Tock", new String[]{"Tock"}));
+        contextService.addContextUpdateListener(new ContextService.UpdateEvent("Die", new String[]{"Die"}));
+        contextService.addContextUpdateListener(new ContextService.UpdateEvent("Reproduce", new String[]{"Reproduce"}));
+
         contextService.addListener(new BProgramRunnerListenerAdapter() {
             private ContextService.AnyNewContextEvent generationEvent = new ContextService.AnyNewContextEvent("Generation");
             private AnyDieEvent dieEventSet = new AnyDieEvent();
@@ -83,19 +91,13 @@ public class Main {
 
             @Override
             public void eventSelected(BProgram bp, BEvent e) {
-                if(e.name.equals("board size")) {
-                    SwingUtilities.invokeLater(() -> ui = new GameView(((Double)e.maybeData).intValue(), bprog));
-                }
-                List<BEvent> events = Lists.newArrayList();
-                if(e instanceof ContextService.TransactionEvent) {
-                    events.addAll(Lists.newArrayList(((ContextService.TransactionEvent)e).commands));
-                } else {
-                    events.add(e);
+                if (e.name.equals("board size")) {
+                    SwingUtilities.invokeLater(() -> ui = new GameView(((Double) e.maybeData).intValue(), bprog));
                 }
 
-                ContextService.UpdateEvent tickEvent = new ContextService.UpdateEvent("Tick");
+                BEvent tickEvent = new BEvent("Tick");
 
-                if(e.name.equals("Pattern")) {
+                if (e.name.equals("Pattern")) {
                     ui.setPattern((String) e.maybeData);
                 } else if (e.equals(tickEvent)) {
                     ui.incGeneration();
@@ -111,16 +113,12 @@ public class Main {
                             bp.enqueueExternalEvent(new BEvent("GUI ready"));
                         } catch (InterruptedException ignored) { }
                     }).start();*/
-                } else {
-                    events.stream().filter(e1 -> dieEventSet.contains(e1)).forEach(e1 -> {
-                        Cell cell = (Cell) ((ContextService.UpdateEvent) e1).parameters.get("cell");
-                        ui.setCell(cell.i, cell.j, null);
-                    });
-
-                    events.stream().filter(e1 -> reproduceEventSet.contains(e1)).forEach(e1 -> {
-                        Cell cell = (Cell) ((ContextService.UpdateEvent) e1).parameters.get("cell");
-                        ui.setCell(cell.i, cell.j, "");
-                    });
+                } else if (e.name.equals("Die")) {
+                    Cell cell = (Cell) ((Map) e.maybeData).get("cell");
+                    ui.setCell(cell.i, cell.j, null);
+                } else if (e.name.equals("Reproduce")) {
+                    Cell cell = (Cell) ((Map) e.maybeData).get("cell");
+                    ui.setCell(cell.i, cell.j, "");
                 }
             }
         });

@@ -25,7 +25,6 @@ import il.ac.bgu.cs.bp.bpjs.model.BProgram;
 import il.ac.bgu.cs.bp.bpjs.model.ResourceBProgram;
 import il.ac.bgu.cs.bp.bpjs.model.eventsets.ComposableEventSet;
 import il.ac.bgu.cs.bp.bpjs.model.eventsets.EventSet;
-import il.ac.bgu.cs.bp.bpjs.model.eventsets.EventSets;
 import org.hibernate.Session;
 import org.jetbrains.annotations.NotNull;
 import org.mozilla.javascript.NativeArray;
@@ -47,7 +46,7 @@ public class ContextService implements Serializable {
     private List<NamedQuery> namedQueries;
     private boolean verificationMode = false;
     private Collection<CtxType> contextTypes;
-    private Collection<CommandEvent> contextUpdateListeners;
+    private Collection<EffectFunction> contextUpdateListeners;
     private ContextInternalEvent contextEvents;
 
     private static class ContextServiceProxy implements Serializable {
@@ -63,6 +62,7 @@ public class ContextService implements Serializable {
             Session session = em.unwrap(Session.class);
             session.doWork(connection -> em.getMetamodel().getEntities()
                     .forEach(e -> dbDump.addAll(Db2Sql.dumpTable(connection, e.getName()))));
+            em.close();
         }
 
         private Object readResolve() throws ObjectStreamException {
@@ -75,6 +75,7 @@ public class ContextService implements Serializable {
                     .forEach(e -> em.createQuery("Delete from " + e.getName() + " e").executeUpdate());
             dbDump.forEach(s -> em.createNativeQuery(s).executeUpdate());
             em.getTransaction().commit();
+            em.close();
             return uniqInstance;
         }
     }
@@ -203,8 +204,14 @@ public class ContextService implements Serializable {
     }
 
     public static EventSet AnyContextCommandEvent() {
-        EventSet ans = ComposableEventSet.anyOf(getInstance().contextUpdateListeners.stream().map(l->l.eventSet).collect(Collectors.toSet()));
-        return ans;
+        return ComposableEventSet.anyOf(getInstance().contextUpdateListeners.stream().map(l->l.eventSet).collect(Collectors.toSet()));
+    }
+
+    public static void updateContextForVerification(BEvent selectedEvent) {
+        getInstance().contextUpdateListeners.forEach(c -> {
+            if(c.eventSet.contains(selectedEvent))
+                c.execute(selectedEvent);
+        });
     }
 
     public BProgram getBProgram() {
@@ -216,7 +223,7 @@ public class ContextService implements Serializable {
             rnr.addListener(listener);
     }
 
-    public void addContextUpdateListener(CommandEvent listener) {
+    public void addContextUpdateListener(EffectFunction listener) {
         addListener(listener);
         contextUpdateListeners.add(listener);
     }
@@ -225,16 +232,15 @@ public class ContextService implements Serializable {
     public void initFromString(String persistenceUnit, String program) {
         bprog = new ResourceBProgram("context.js");
         bprog.appendSource(program);
-
         init(persistenceUnit);
     }
 
     public void initFromResources(String persistenceUnit, String... programs) {
         List<String> a = new ArrayList<>(Arrays.asList(programs));
         a.add(0, "context.js");
-        if (verificationMode) {
+        /*if (verificationMode) {
             a.add("internal_context_verification.js");
-        }
+        }*/
         bprog = new ResourceBProgram(a);
 
         init(persistenceUnit);
@@ -259,6 +265,31 @@ public class ContextService implements Serializable {
             }
         });
 
+        if(!verificationMode) {
+            bprog.prependSource("bp.registerBThread(\"ContextReporterBT\", function() {\n" +
+                    "    while (true) {\n" +
+                    "        // Wait for next update\n" +
+                    "        bp.sync({ waitFor:CTX.AnyContextCommandEvent() });\n" +
+                    "\n" +
+                    "        // Trigger new context events\n" +
+                    "        var events = CTX.getContextEvents();\n" +
+                    "        if(events.events.size() > 0)\n" +
+                    "            bp.sync({ request: events });\n" +
+                    "    }\n" +
+                    "});");
+        } else {
+            bprog.prependSource("bp.registerBThread(\"ContextReporterBT\", function() {\n" +
+                    "    while (true) {\n" +
+                    "        var e = bp.sync({ waitFor: bp.EventSet(\"\", function(e) { return true;})});\n" +
+                    "        CTX.updateContextForVerification(e);\n" +
+                    "        // Trigger new context events\n" +
+                    "        var events = CTX.getContextEvents();\n" +
+                    "        if(events.events.size() > 0)\n" +
+                    "            bp.sync({ request: events });\n" +
+                    "    }\n" +
+                    "});");
+        }
+
         ContextualEventSelectionStrategy eventSelectionStrategy =
                 new PrioritizedBSyncEventSelectionStrategy();
         eventSelectionStrategy.setPriority("ContextReporterBT", 1000);
@@ -270,7 +301,7 @@ public class ContextService implements Serializable {
         contextUpdateListeners = new ArrayList<>();
         rnr = new BProgramRunner(bprog);
         addListener(new PrintBProgramRunnerListener());
-        addContextUpdateListener(new InsertEvent());
+        addContextUpdateListener(new InsertEffect());
     }
 
     public void run() {
@@ -464,10 +495,10 @@ public class ContextService implements Serializable {
         }
     }
 
-    public static abstract class CommandEvent extends BProgramRunnerListenerAdapter {
+    public static abstract class EffectFunction extends BProgramRunnerListenerAdapter {
         public final EventSet eventSet;
 
-        public CommandEvent(EventSet eventSet) {
+        public EffectFunction(EventSet eventSet) {
             super();
             this.eventSet = eventSet;
         }
@@ -490,9 +521,9 @@ public class ContextService implements Serializable {
         protected abstract void innerExecution(EntityManager em, BEvent event);
     }
 
-    public static class InsertEvent extends CommandEvent {
+    public static class InsertEffect extends EffectFunction {
 
-        public InsertEvent() {
+        public InsertEffect() {
             super((EventSet) bEvent -> bEvent.name.equals("CTX.Insert"));
         }
 
@@ -500,33 +531,37 @@ public class ContextService implements Serializable {
         protected void innerExecution(EntityManager em, BEvent e) {
             if (e.maybeData == null)
                 return;
-            List<Object> objects;
-            if(e.maybeData instanceof NativeArray) {
-                objects = (NativeArray)e.maybeData;
-            } else {
-                objects = List.of(e.maybeData);
-            }
+            List<Object> objects = e.maybeData instanceof NativeArray ? (NativeArray)e.maybeData : List.of(e.maybeData);
+
             for (Object o : objects) {
                 em.merge(o);
             }
         }
     }
 
-    public static class UpdateEvent extends CommandEvent {
+    public static class UpdateEffect extends EffectFunction {
         public final String[] namedQueries;
         private final Function<BEvent,Map<String,Object>> parametersHandler;
 
-        public UpdateEvent(String eventName, String[] namedQueries, Optional<Function<BEvent,Map<String,Object>>> parametersHandler) {
+        public UpdateEffect(String eventName, String[] namedQueries) {
+            this(eventName, namedQueries, UpdateEffect::defaultParametersHandler);
+        }
+
+        public UpdateEffect(String eventName, String[] namedQueries, Function<BEvent,Map<String,Object>> parametersHandler) {
             this((EventSet) bEvent -> bEvent.name.equals(eventName),namedQueries, parametersHandler);
         }
 
-        public UpdateEvent(EventSet eventSet, String[] namedQueries, Optional<Function<BEvent,Map<String,Object>>> parametersHandler) {
-            super(eventSet);
-            this.namedQueries = namedQueries;
-            this.parametersHandler = parametersHandler.orElse(this::defaultParametersHandler);
+        public UpdateEffect(EventSet eventSet, String[] namedQueries) {
+            this(eventSet, namedQueries, UpdateEffect::defaultParametersHandler);
         }
 
-        private Map<String,Object> defaultParametersHandler(BEvent theEvent) {
+        public UpdateEffect(EventSet eventSet, String[] namedQueries, Function<BEvent,Map<String,Object>> parametersHandler) {
+            super(eventSet);
+            this.namedQueries = namedQueries;
+            this.parametersHandler = parametersHandler;
+        }
+
+        private static Map<String,Object> defaultParametersHandler(BEvent theEvent) {
             return (Map<String, Object>) theEvent.getData();
         }
 
@@ -534,7 +569,7 @@ public class ContextService implements Serializable {
         protected void innerExecution(EntityManager em, BEvent theEvent) {
             for (String queryName : namedQueries) {
                 Query q = em.createNamedQuery(queryName);
-                ContextService.setParameters(q, parametersHandler.apply(theEvent));
+                if(theEvent.maybeData != null) ContextService.setParameters(q, parametersHandler.apply(theEvent));
                 q.executeUpdate();
             }
         }

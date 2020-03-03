@@ -8,6 +8,6 @@ public class AnyReproduceEvent implements EventSet {
 
     @Override
     public boolean contains(BEvent e) {
-        return e instanceof ContextService.UpdateEvent && ((ContextService.UpdateEvent)e).contextName.equals("Reproduce");
+        return e.name.equals("Reproduce");
     }
 }
