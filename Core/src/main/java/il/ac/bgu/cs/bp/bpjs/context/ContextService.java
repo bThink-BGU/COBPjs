@@ -32,13 +32,15 @@ import org.mozilla.javascript.NativeFunction;
 import org.mozilla.javascript.NativeObject;
 
 public class ContextService implements Serializable {
-    public static AtomicInteger counter = new AtomicInteger(0);
+    @SuppressWarnings("unused")
+    public static final AtomicInteger counter = new AtomicInteger(0);
     private static final ContextService uniqInstance = new ContextService();
     @SuppressWarnings("unused")
     public static NativeFunction subscribe;
     @SuppressWarnings("unused")
     public static NativeFunction subscribeWithParameters;
     private EntityManagerFactory emf;
+    private EntityManager em;
     private final Collection<EntityManagerCreateHook> entityManagerCreateHooks = new ConcurrentLinkedDeque<>();
     private ExecutorService pool;
     private BProgram bprog;
@@ -108,6 +110,7 @@ public class ContextService implements Serializable {
         return em;
     }
 
+    @SuppressWarnings("unused")
     public void addEntityManagerCreateHook(EntityManagerCreateHook hook) {
         entityManagerCreateHooks.add(hook);
     }
@@ -135,8 +138,9 @@ public class ContextService implements Serializable {
         }
 
         private Query createQuery() {
-            Query q = uniqInstance.createEntityManager().createNamedQuery(queryName);
-            q.setHint("javax.persistence.cache.retrieveMode", CacheRetrieveMode.BYPASS);
+            Query q = uniqInstance.em.createNamedQuery(queryName);
+            /*q.setHint("javax.persistence.cache.retrieveMode", CacheRetrieveMode.BYPASS);
+            q.setHint("javax.persistence.cache.store", CacheStoreMode.REFRESH);*/
             ContextService.setParameters(q, parameters);
             return q;
         }
@@ -184,6 +188,7 @@ public class ContextService implements Serializable {
         return new ContextServiceProxy(this);
     }
 
+    @SuppressWarnings("unused")
     public void enableTicker() {
         pool.execute(new Runnable() {
             private int tick = 0;
@@ -203,10 +208,12 @@ public class ContextService implements Serializable {
         });
     }
 
+    @SuppressWarnings("unused")
     public static EventSet AnyContextCommandEvent() {
         return ComposableEventSet.anyOf(getInstance().contextUpdateListeners.stream().map(l->l.eventSet).collect(Collectors.toSet()));
     }
 
+    @SuppressWarnings("unused")
     public static void updateContextForVerification(BEvent selectedEvent) {
         getInstance().contextUpdateListeners.forEach(c -> {
             if(c.eventSet.contains(selectedEvent))
@@ -218,6 +225,7 @@ public class ContextService implements Serializable {
         return bprog;
     }
 
+    @SuppressWarnings("WeakerAccess")
     public void addListener(BProgramRunnerListener listener) {
         if (rnr != null)
             rnr.addListener(listener);
@@ -238,9 +246,6 @@ public class ContextService implements Serializable {
     public void initFromResources(String persistenceUnit, String... programs) {
         List<String> a = new ArrayList<>(Arrays.asList(programs));
         a.add(0, "context.js");
-        /*if (verificationMode) {
-            a.add("internal_context_verification.js");
-        }*/
         bprog = new ResourceBProgram(a);
 
         init(persistenceUnit);
@@ -250,12 +255,14 @@ public class ContextService implements Serializable {
         close();
         contextTypes = new ConcurrentLinkedDeque<>();
         pool = Executors.newFixedThreadPool(2);
-        emf = Persistence.createEntityManagerFactory(persistenceUnit, ImmutableMap
-                .of("javax.persistence.sharedCache.mode", "NONE"));
+        emf = Persistence.createEntityManagerFactory(persistenceUnit, Map.of(
+                "javax.persistence.cache.retrieveMode", CacheRetrieveMode.BYPASS,
+                "javax.persistence.cache.store", CacheStoreMode.REFRESH));
+        em = createEntityManager();
         namedQueries = findAllNamedQueries(emf);
         namedQueries.forEach(namedQuery -> {
             try {
-                Query q = createEntityManager().createQuery(namedQuery.query());
+                Query q = em.createQuery(namedQuery.query());
                 Set<Parameter<?>> parameters = q.getParameters();
                 if ((parameters == null || parameters.isEmpty()) &&
                         namedQuery.query().trim().toLowerCase().startsWith("select")) {
@@ -316,6 +323,15 @@ public class ContextService implements Serializable {
         contextTypes.forEach(ctxType -> {
             // Remember the list of contexts that we already reported of
             List<?> knownContexts = new LinkedList<>(ctxType.activeContexts);
+
+            for (Object o : knownContexts) {
+                try {
+                    em.refresh(o);
+                } catch (Exception e) {
+                    System.err.println("Cannot refresh non basic entity object");
+                }
+            }
+
             // Update the list of contexts
             ctxType.updateActive();
 
@@ -334,6 +350,7 @@ public class ContextService implements Serializable {
         contextEvents = new ContextInternalEvent(events);
     }
 
+    @SuppressWarnings("unused")
     public static ContextInternalEvent getContextEvents() {
         return getInstance().innerGetContextEvents();
     }
@@ -379,6 +396,7 @@ public class ContextService implements Serializable {
         updateContexts();
     }
 
+    @SuppressWarnings("unused")
     public static void registerParameterizedContextQuery(String queryName, String uniqueId,
                                                          NativeObject params) {
         getInstance().innerRegisterParameterizedContextQuery(queryName, uniqueId, params);
@@ -388,6 +406,7 @@ public class ContextService implements Serializable {
                                                         NativeObject params) {
         namedQueries.forEach(namedQuery -> {
             if (namedQuery.name().equals(queryName)) {
+                //noinspection unchecked
                 registerContextQuery(queryName, uniqueId, params);
             }
         });
@@ -402,6 +421,7 @@ public class ContextService implements Serializable {
     }
 
     // region Internal Events
+    @SuppressWarnings("unused")
     public static class ContextInternalEvent extends BEvent {
         private static final long serialVersionUID = 3165975196124148981L;
         private static final AtomicInteger counter = new AtomicInteger(0);
@@ -450,6 +470,7 @@ public class ContextService implements Serializable {
         }
     }
 
+    @SuppressWarnings("WeakerAccess")
     public static class ContextInternalEventData implements Serializable {
         private static final long serialVersionUID = 8036020413270769137L;
         public final ContextEventType type;
@@ -495,6 +516,8 @@ public class ContextService implements Serializable {
         }
     }
 
+
+    @SuppressWarnings("WeakerAccess")
     public static abstract class EffectFunction extends BProgramRunnerListenerAdapter {
         public final EventSet eventSet;
 
@@ -511,7 +534,7 @@ public class ContextService implements Serializable {
         }
 
         public final void execute(BEvent event) {
-            EntityManager em = getInstance().createEntityManager();
+            EntityManager em = getInstance().em;
             em.getTransaction().begin();
             innerExecution(em, event);
             em.getTransaction().commit();
@@ -521,6 +544,7 @@ public class ContextService implements Serializable {
         protected abstract void innerExecution(EntityManager em, BEvent event);
     }
 
+    @SuppressWarnings("WeakerAccess")
     public static class InsertEffect extends EffectFunction {
 
         public InsertEffect() {
@@ -531,6 +555,7 @@ public class ContextService implements Serializable {
         protected void innerExecution(EntityManager em, BEvent e) {
             if (e.maybeData == null)
                 return;
+            @SuppressWarnings("unchecked")
             List<Object> objects = e.maybeData instanceof NativeArray ? (NativeArray)e.maybeData : List.of(e.maybeData);
 
             for (Object o : objects) {
@@ -539,6 +564,7 @@ public class ContextService implements Serializable {
         }
     }
 
+    @SuppressWarnings({"WeakerAccess", "unused"})
     public static class UpdateEffect extends EffectFunction {
         public final String[] namedQueries;
         private final Function<BEvent,Map<String,Object>> parametersHandler;
@@ -561,6 +587,7 @@ public class ContextService implements Serializable {
             this.parametersHandler = parametersHandler;
         }
 
+        @SuppressWarnings("unchecked")
         private static Map<String,Object> defaultParametersHandler(BEvent theEvent) {
             return (Map<String, Object>) theEvent.getData();
         }
@@ -585,6 +612,7 @@ public class ContextService implements Serializable {
         }
     }
 
+    @SuppressWarnings("WeakerAccess")
     public static class TickEvent extends BEvent {
         public final int tick;
 
@@ -601,6 +629,7 @@ public class ContextService implements Serializable {
     // endregion
 
     // region Internal EventSets
+    @SuppressWarnings({"unused", "WeakerAccess"})
     public static class AnyNewContextEvent implements EventSet {
         private static final long serialVersionUID = -8858955086405859047L;
         public final String contextName;
@@ -628,6 +657,7 @@ public class ContextService implements Serializable {
         }
     }
 
+    @SuppressWarnings({"unused", "WeakerAccess"})
     public static class AnyContextEndedEvent implements EventSet {
         private static final long serialVersionUID = 5402960437353425951L;
         public final String contextName;

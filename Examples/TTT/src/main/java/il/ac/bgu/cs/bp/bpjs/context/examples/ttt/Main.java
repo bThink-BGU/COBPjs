@@ -24,6 +24,7 @@ public class Main {
 		Thread.sleep(3000);
 		ContextService.getContextInstances("Cell")
 				.forEach(cell -> bprog.enqueueExternalEvent(new BEvent("Click", cell)));
+//		bprog.enqueueExternalEvent(new BEvent("Click", ContextService.getContextInstances("Cell").get(0)));
 
 		Thread.sleep(6000);
 		contextService.close();

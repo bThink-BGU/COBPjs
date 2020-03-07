@@ -3,7 +3,7 @@
 
     <persistence-unit name="ContextDB">
         <provider>org.hibernate.jpa.HibernatePersistenceProvider</provider>
-        <shared-cache-mode>NONE</shared-cache-mode>
+<!--        <shared-cache-mode>NONE</shared-cache-mode>-->
         <properties>
             <!-- SQLite configuration -->
             <!--<property name="hibernate.connection.url" value="jdbc:sqlite::memory:"/>-->
