@@ -569,6 +569,10 @@ public class ContextService implements Serializable {
         public final String[] namedQueries;
         private final Function<BEvent,Map<String,Object>> parametersHandler;
 
+        public UpdateEffect(String eventName) {
+            this(eventName, new String[] {eventName});
+        }
+
         public UpdateEffect(String eventName, String[] namedQueries) {
             this(eventName, namedQueries, UpdateEffect::defaultParametersHandler);
         }

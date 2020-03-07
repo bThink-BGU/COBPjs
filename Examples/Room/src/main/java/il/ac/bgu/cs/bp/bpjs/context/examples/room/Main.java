@@ -17,6 +17,8 @@ public class Main {
 		ContextService contextService = ContextService.getInstance();
 		contextService.initFromResources(persistenceUnit, dbPopulationScript, "program.js");
 		contextService.enableTicker();
+		contextService.addContextUpdateListener(new ContextService.UpdateEffect("MarkRoomAsNonEmpty"));
+		contextService.addContextUpdateListener(new ContextService.UpdateEffect("MarkRoomAsEmpty"));
 		contextService.run();
 		BProgram bprog = contextService.getBProgram();
 

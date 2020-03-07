@@ -1,7 +1,7 @@
 bp.registerBThread("PopulateDB", function() {
-    var achiya = new Worker(000000001, "Achiya Elyasaf");
-    var gera = new Worker(000000002, "Gera Weiss");
-    var arnon = new Worker(000000003, "Arnon Sturm");
+    var achiya = new Worker("000000001", "Achiya Elyasaf");
+    var gera = new Worker("000000002", "Gera Weiss");
+    var arnon = new Worker("000000003", "Arnon Sturm");
 
     var building96 = new Building("96");
     var office96_224 = new Office("224", building96, achiya);
