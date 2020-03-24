@@ -1,7 +1,3 @@
-importPackage(Packages.il.ac.bgu.cs.bp.bpjs.context);
-importPackage(Packages.il.ac.bgu.cs.bp.bpjs.context.examples.ttt.schema);
-
-
 function registerAllCellsQueries() {
     for (var i = 0; i < 3; i++) {
         for (var j = 0; j < 3; j++) {

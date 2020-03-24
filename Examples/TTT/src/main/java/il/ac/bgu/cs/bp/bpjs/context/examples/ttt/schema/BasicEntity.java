@@ -3,7 +3,6 @@ package il.ac.bgu.cs.bp.bpjs.context.examples.ttt.schema;
 import javax.persistence.Id;
 import javax.persistence.MappedSuperclass;
 import java.io.Serializable;
-import java.util.Objects;
 
 @MappedSuperclass
 @SuppressWarnings("WeakerAccess")
@@ -44,6 +43,11 @@ public abstract class BasicEntity implements Serializable{
         if (getClass() != obj.getClass())
             return false;
         BasicEntity other = (BasicEntity) obj;
-        return Objects.equals(id, other.id);
+        if (id == null) {
+            if (other.id != null)
+                return false;
+        } else if (!id.equals(other.id))
+            return false;
+        return true;
     }
 }
