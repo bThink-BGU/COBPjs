@@ -17,6 +17,7 @@ public class Main {
 				(EventSet) bEvent -> bEvent.name.equals("X") || bEvent.name.equals("O"),
 				new String[]{"UpdateCell"},
 				e -> Map.of("cell", e.getData(), "val", e.name)));
+		initDB(contextService);
 		contextService.run();
 		BProgram bprog = contextService.getBProgram();
 
@@ -29,6 +30,9 @@ public class Main {
 		contextService.close();
 	}
 
+	void initDB(ContextService contextService) {
+		//create all cells and triples.
+	}
 
 	public static void main(String[] args) throws InterruptedException {
 		new Main().run("db_population.js", "ContextDB");

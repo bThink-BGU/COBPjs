@@ -13,6 +13,7 @@ import javax.persistence.NamedQuery;
         @NamedQuery(name = "EmptyCell", query = "SELECT c FROM Cell c WHERE c.value = ''"),
         @NamedQuery(name = "NonEmptyCell", query = "SELECT c FROM Cell c WHERE not(c.value = '')"),
         @NamedQuery(name = "UpdateCell", query = "Update Cell C set C.value=:val where C=:cell"),
+        @NamedQuery(name = "MarkCellWithX", query = "Update Cell C set C.value='X' where C=:cell"),
 })
 public class Cell extends BasicEntity {
     @Column

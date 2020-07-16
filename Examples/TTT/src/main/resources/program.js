@@ -109,7 +109,7 @@ CTX.subscribe("PreventThirdX", "Triple", function(t) {
 //#region fork functions
 // Player O strategy to prevent the Fork22 of player X
 function addFork22PermutationBthreads(c1,c2){ //
-    bp.registerBThread("PreventFork22X", function() {
+    bp.registerBThread("PreventFork22X_"+c1+"_"+c2, function() {
         bp.sync({ waitFor:[ createEvent("X",c1) ] });
         bp.sync({ waitFor:[ createEvent("X",c2) ] });
         bp.sync({ request:[ createEvent("O",getCell(2,2)),createEvent("O",getCell(0,2)), createEvent("O",getCell(2,0))]}, 30);
@@ -118,7 +118,7 @@ function addFork22PermutationBthreads(c1,c2){ //
 
 // Player O strategy to prevent the Fork02 of player X
 function addFork02PermutationBthreads(c1,c2){ //
-    bp.registerBThread("PreventFork02X", function() {
+    bp.registerBThread("PreventFork02X_"+c1+"_"+c2, function() {
         bp.sync({ waitFor:[ createEvent("X",c1) ] });
         bp.sync({ waitFor:[ createEvent("X",c2) ] });
         bp.sync({ request:[ createEvent("O",getCell(0,2)),createEvent("O",getCell(0,0)), createEvent("O",getCell(2,2))]}, 30);
@@ -127,7 +127,7 @@ function addFork02PermutationBthreads(c1,c2){ //
 
 // Player O strategy to prevent the Fork20 of player X
 function addFork20PermutationBthreads(c1,c2){ //
-    bp.registerBThread("PreventFork20X", function() {
+    bp.registerBThread("PreventFork20X_"+c1+"_"+c2, function() {
         bp.sync({ waitFor:[ createEvent("X",c1) ] });
         bp.sync({ waitFor:[ createEvent("X",c2) ] });
         bp.sync({ request:[ createEvent("O",getCell(2,0)),createEvent("O",getCell(0,0)), createEvent("O",getCell(2,2))] }, 30);
@@ -136,7 +136,7 @@ function addFork20PermutationBthreads(c1,c2){ //
 
 // Player O strategy to prevent the Fork00 of player X
 function addFork00PermutationBthreads(c1,c2){ //
-    bp.registerBThread("PreventFork20X", function() {
+    bp.registerBThread("PreventFork20X_"+c1+"_"+c2, function() {
         bp.sync({ waitFor:[ createEvent("X",c1) ] });
         bp.sync({ waitFor:[ createEvent("X",c2) ] });
         bp.sync({ request:[ createEvent("O",getCell(0,0)),createEvent("O", getCell(0,2)), createEvent("O",getCell(2,0))] }, 30);
@@ -145,7 +145,7 @@ function addFork00PermutationBthreads(c1,c2){ //
 
 // Player O strategy to prevent the Forkdiagonal of player X
 function addForkdiagPermutationBthreads(c1,c2){ //
-    bp.registerBThread("PreventForkdiagX", function() {
+    bp.registerBThread("PreventForkdiagX_"+c1+"_"+c2, function() {
         bp.sync({ waitFor:[ createEvent("X",c1) ] });
         bp.sync({ waitFor:[ createEvent("X",c2) ] });
         bp.sync({ request:[ createEvent("O", getCell(0,1)),createEvent("O",getCell(1,0)), createEvent("O", getCell(2,1)), createEvent("O", getCell(1,2)) ] }, 30);
