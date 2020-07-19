@@ -1,45 +1,75 @@
 package il.ac.bgu.cs.bp.bpjs.context.examples.chess.schema;
 
-import il.ac.bgu.cs.bp.bpjs.context.examples.chess.schema.BasicEntity;
-import il.ac.bgu.cs.bp.bpjs.context.examples.chess.schema.Color;
+import org.hibernate.annotations.LazyToOne;
+import org.hibernate.annotations.LazyToOneOption;
 
 import javax.persistence.*;
+import java.util.HashMap;
 
+/**
+ * Created By: Assaf, On 17/02/2020
+ * Description:
+ */
 @Entity
 @NamedQueries(value = {
-        @NamedQuery(name = "Piece", query = "SELECT p FROM Piece p"),
-        @NamedQuery(name = "PieceOfType", query = "SELECT p FROM Piece p WHERE p.type =:type"),
+        @NamedQuery(name = "RemovePiece", query = "DELETE FROM Piece p WHERE p = :piece"),
+        @NamedQuery(name = "WhitePieces", query = "SELECT p FROM Piece p WHERE p.color = 'White'"),
+        @NamedQuery(name = "BlackPieces", query = "SELECT p FROM Piece p WHERE p.color = 'Black'"),
 })
-public class Piece extends BasicEntity {
-    public Piece() {
-        this(null, null, -1);
+public class Piece extends BasicEntity
+{
+    public enum Type
+    {
+        Pawn,Knight,Bishop,Rook,Queen,King
+    }
+
+    public enum Color
+    {
+        Black,White
     }
 
     @Enumerated(EnumType.STRING)
-    public final Color color;
-
-    @Enumerated(EnumType.STRING)
+    @Column
     public final Type type;
+    @Enumerated(EnumType.STRING)
+    @Column
+    public final Color color;
+    @Column
+    public final int counter;
+    @OneToOne(mappedBy = "piece")
+    public final Cell cell;
 
+    private static HashMap<Type,Integer> whiteCounter = new HashMap<>();
+    private static HashMap<
+            Type,Integer> blackCounter = new HashMap<>();
 
-    public Piece(Color color, Type type, int id) {
-        super(color + "_" + type + "_" + id);
-        this.color = color;
-        this.type = type;
+    public Piece()
+    {
+        super();
+        color = null;
+        counter = 0;
+        type = null;
+        cell = null;
     }
 
-    public enum Type {
-        King(1),
-        Queen(1),
-        Pawn(8),
-        Rook(2),
-        Bishop(2),
-        Knight(2);
+    public Piece(Type type, Color color)
+    {
+        super(type + "-" + color + "-" + ((color.equals(Color.White) ? whiteCounter : blackCounter).get(type) != null ? (color.equals(Color.White) ? whiteCounter : blackCounter).get(type) : 1));
 
-        public final int Count;
-        Type(int count) {
-            this.Count = count;
+        HashMap<Type,Integer> map = (color.equals(Color.White) ? whiteCounter : blackCounter);
+        if(!map.containsKey(type))
+        {
+            this.counter = 1;
+            map.put(type,2);
         }
+        else
+        {
+            this.counter = map.get(type);
+            map.replace(type, this.counter + 1);
+        }
+
+        this.type = type;
+        this.color = color;
+        this.cell = null;
     }
 }
-

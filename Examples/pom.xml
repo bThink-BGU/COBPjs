@@ -128,8 +128,8 @@
 
     <modules>
 <!--        <module>Room</module>-->
-        <module>TTT</module>
-<!--        <module>Chess</module>-->
+<!--        <module>TTT</module>-->
+        <module>Chess</module>
 <!--        <module>GOL</module>-->
     </modules>
 

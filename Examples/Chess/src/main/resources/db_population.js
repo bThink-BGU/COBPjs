@@ -1,97 +1,132 @@
 importPackage(Packages.il.ac.bgu.cs.bp.bpjs.context.examples.chess.schema);
-importPackage(Packages.il.ac.bgu.cs.bp.bpjs.context.examples.chess.events);
-importPackage(Packages.il.ac.bgu.cs.bp.bpjs.Chess.context);
+importPackage(Packages.il.ac.bgu.cs.bp.bpjs.context.examples.chess.effectFunction);
 
-var size = 8;
-
-var addPieceEventSet = bp.EventSet("AddPieceEventSet", function(e) {
-    return e.name.equals("AddPiece");
+//<editor-fold desc="Events">
+var fenEvent = bp.EventSet("", function (e) {
+    return e.name.equals("ParseFen");
 });
+//</editor-fold>
 
-var setColorEventSet = bp.EventSet("SetColorEventSet", function(e) {
-    return e.name.equals("Color");
-});
-
-bp.registerBThread("Create Board", function() {
-    var cells = [], i, j;
-    for (i = 0; i < size; i++) {
-        for (j = 0; j < size; j++) {
-            cells.push(new Cell(i, j));
+//<editor-fold desc="Cells Functions">
+function registerCellsQueries()
+{
+    for (var i = 0; i < 8; i++)
+    {
+        for (var j = 0; j < 8; j++)
+        {
+            CTX.registerParameterizedContextQuery("SpecificCell", "Cell[" + i + "," + j + "]", {
+                "row": i,
+                "col": j
+            });
         }
     }
-    bp.sync({ request: CTX.InsertEvent(Game.create(cells)) });
-});
-
-CTX.subscribe("Set Color", "GameStateInit", function (game) {
-    var myColor = bp.sync({waitFor: setColorEventSet}).data;
-    bp.sync({ request: CTX.UpdateEvent("ChangeMyColor", { "color": myColor , "game":game }) });
-});
-
-CTX.subscribe("Place Pieces", "GameStateInit", function (game) {
-    while(true) {
-        var e = bp.sync({waitFor: addPieceEventSet, interrupt: CTX.ContextEndedEvent("GameStateInit", game) });
-        var piece = e.data.get("Piece");
-        CTX.registerParameterizedContextQuery("CellWithPiece", "CellWithPiece_"+piece.getId(), {"piece":piece});
-        bp.sync({
-            request:
-                CTX.TransactionEvent(
-                    CTX.InsertEvent(piece),
-                    CTX.UpdateEvent("SetPiece", {
-                        "cell": game.Board(e.data.get("Row"), e.data.get("Col")),
-                        "piece": piece
-                    })
-                )
-        });
-    }
-});
-
-CTX.subscribe("Start Game", "GameStateInit", function (game) {
-        bp.sync({waitFor: bp.Event("init_end") });
-        bp.sync({ request: CTX.UpdateEvent("ChangeGameState", {"game":game, "state": Game.State.PLAYING })});
-});
-
-function addAllPieces(game) {
-    var types = Type.values();
-    var colors = Color.values();
-    var pieces = [];
-    var piece;
-    for (var c = 0; c < colors.length; c++) {
-        for (var t = 0; t < types.length; t++) {
-            var type = types[t];
-            for (var n = 0; n < type.Count; n++) {
-                piece = new Piece(colors[c], type, n+1);
-
-                CTX_instance.registerParameterizedContextQuery("PieceOfType", type.toString(), {
-                    "type": type
-                });
-                CTX_instance.registerParameterizedContextQuery("CellWithPiece", "CellWithPiece("+piece.toString()+")", {
-                    "p": piece
-                });
-                CTX_instance.registerParameterizedContextQuery("CellWithColor", "CellWithColor("+ colors[c] +")", {
-                    "color" : colors[c]
-                });
-                CTX_instance.registerParameterizedContextQuery("CellWithType", "CellWithType("+ type +")", {
-                    "type" : type
-                });
-                CTX_instance.registerParameterizedContextQuery("SpecificPiece", "SpecificPiece("+piece.toString()+")", {
-                    "piece": piece
-                });
-                CTX_instance.registerParameterizedContextQuery("PieceOfId", "PieceOfId("+ n+1 +")", {
-                    "id": (n+1).toString()
-                });
-
-                pieces.push(piece);
-            }
-        }
-    }
-    return pieces;
 }
 
-/*
-bp.registerBThread("PopulateDB", function() {
-    var cells = createCells();
-    var pieces = createPieces();
-    bp.sync({ request: CTX.InsertEvent(cells) });
-    bp.sync({ request: CTX.InsertEvent(pieces) });
-    bp.sync({ request: bp.Event("Context Population Ended") });
-});*/
+registerCellsQueries();
+
+function getCell(i,j){
+    return CTX.getContextInstances("Cell["+i+","+j+"]").get(0);
+}
+
+function getCellByPiece(piece)
+{
+    return CTX.getContextInstances("Piece[" + piece + "]").get(0);
+}
+//</editor-fold>
+
+bp.registerBThread("Populate",function ()
+{
+    // cells
+    for(var row = 0; row < 8; row++)
+    {
+        for(var col = 0; col < 8; col++)
+        {
+            bp.sync({ request: bp.Event("Add Cell", new Cell(row,col))});
+        }
+    }
+
+    // pieces
+    while (true)
+    {
+        var fen = bp.sync({waitFor:fenEvent}).data;
+
+        // delete old
+        /*var nonEmpty = CTX.getContextInstances("NotEmptyCell");
+        for(var i = 0; i < nonEmpty.size(); i++)
+        {
+            bp.sync({ request: CTX.UpdateEvent("UpdateCell",{cell:nonEmpty.get(i), piece: null})});
+        }*/
+
+        // populate new
+        parseBoard(fen);
+
+        // prepare board for debug and print
+        var board = [];
+
+        for(var row = 0; row < 8; row++)
+        {
+            var r = [];
+            for(var col = 0; col < 8; col++)
+            {
+                r.push(getCell(row,col));
+            }
+            board.push(r);
+        }
+
+        bp.sync({request:bp.Event("Done Populate",board)});
+    }
+});
+
+
+function parseBoard(toParse)
+{
+    bp.log.info("fen: " + toParse);
+    var tokens = toParse.split("/");
+    var row = 0,column = 0;
+
+    for(var i = 0; i < tokens.length; i++)
+    {
+        for(var token = 0; token < tokens[i].length(); token++)
+        {
+            var currentToken = tokens[i].substring(token,token+1);
+            var toNum = parseInt(currentToken);
+
+            if(isNaN(toNum))
+            {
+                var piece = null;
+                switch(String(currentToken))
+                {
+                    case "p": piece = new Piece(Piece.Type.Pawn,Piece.Color.White); break;
+                    case "n": piece = new Piece(Piece.Type.Knight,Piece.Color.White); break;
+                    case "b": piece = new Piece(Piece.Type.Bishop,Piece.Color.White); break;
+                    case "r": piece = new Piece(Piece.Type.Rook,Piece.Color.White); break;
+                    case "q": piece = new Piece(Piece.Type.Queen,Piece.Color.White); break;
+                    case "k": piece = new Piece(Piece.Type.King,Piece.Color.White); break;
+                    case "P": piece = new Piece(Piece.Type.Pawn,Piece.Color.Black); break;
+                    case "N": piece = new Piece(Piece.Type.Knight,Piece.Color.Black); break;
+                    case "B": piece = new Piece(Piece.Type.Bishop,Piece.Color.Black); break;
+                    case "R": piece = new Piece(Piece.Type.Rook,Piece.Color.Black); break;
+                    case "Q": piece = new Piece(Piece.Type.Queen,Piece.Color.Black); break;
+                    case "K": piece = new Piece(Piece.Type.King,Piece.Color.Black); break;
+                }
+
+                if(piece != null)
+                {
+                    bp.log.info("piece" + piece+" row: "+row+" col: "+column);
+                    // update cell to store piece
+                    var cell = getCell(row,column);
+                    bp.log.info("piece" + piece);
+                    bp.sync({ request: bp.Event("Add Piece", {"piece":piece , "cell": cell})});
+
+                    CTX.registerParameterizedContextQuery("PieceCell", "Piece[" + piece + "]", {"piece": piece});
+                }
+
+                column++;
+            }
+            else column += toNum;
+        }
+
+        column = 0;
+        row++;
+    }
+}

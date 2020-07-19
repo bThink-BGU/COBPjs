@@ -17,6 +17,8 @@ import javax.persistence.NamedQuery;
 })
 public class Cell extends BasicEntity {
     @Column
+    public final int game;
+    @Column
     public final int i;
     @Column
     public final int j;
@@ -27,11 +29,13 @@ public class Cell extends BasicEntity {
         super();
         i=0;
         j=0;
+        game = 0;
     }
 
-    public Cell(int i, int j) {
-        super("cell("+i+","+j+")");
+    public Cell(int i, int j, int game) {
+        super("cell("+game+": "+i+","+j+")");
         this.i = i;
         this.j = j;
+        this.game = game;
     }
 }

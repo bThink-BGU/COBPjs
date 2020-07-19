@@ -146,7 +146,7 @@ public class ContextService implements Serializable {
         }
     }
 
-    private static void setParameters(Query q, Map<String, ?> parameters) {
+    public static void setParameters(Query q, Map<String, ?> parameters) {
         if (parameters != null) {
             parameters.forEach((key, val) -> {
                 Object v = val;

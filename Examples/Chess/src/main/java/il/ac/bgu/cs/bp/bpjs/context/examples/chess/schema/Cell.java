@@ -2,51 +2,48 @@ package il.ac.bgu.cs.bp.bpjs.context.examples.chess.schema;
 
 import javax.persistence.*;
 
+/**
+ * Created By: Assaf, On 17/02/2020
+ * Description:
+ */
 @Entity
 @NamedQueries(value = {
         @NamedQuery(name = "Cell", query = "SELECT c FROM Cell c"),
-        @NamedQuery(name = "NonEmptyCell", query = "SELECT c FROM Cell c WHERE not(c.piece is null)"),
-        @NamedQuery(name = "EmptyCell", query = "SELECT c FROM Cell c WHERE c.piece is null"),
-        @NamedQuery(name = "SetPiece", query = "Update Cell c set c.piece=:piece where c=:cell"),
-        @NamedQuery(name = "CellWithPiece", query = "Select c FROM Cell c Where c.piece=:piece"),
+        @NamedQuery(name = "EmptyCell", query = "SELECT c FROM Cell c WHERE c.piece IS NULL"),
+        @NamedQuery(name = "NotEmptyCell", query = "SELECT c FROM Cell c WHERE c.piece IS NOT NULL"),
+        @NamedQuery(name = "WhiteCell", query = "SELECT c FROM Cell c WHERE c.piece IS NOT NULL AND c.piece.color = 'White'"),
+        @NamedQuery(name = "BlackCell", query = "SELECT c FROM Cell c WHERE c.piece IS NOT NULL AND c.piece.color = 'Black'"),
+        @NamedQuery(name = "SpecificCell", query = "SELECT c FROM Cell c WHERE c.row=:row AND c.col=:col"),
+        @NamedQuery(name = "PieceCell", query = "SELECT c FROM Cell c WHERE c.piece = :piece"),
+        @NamedQuery(name = "PawnCell", query = "SELECT c FROM Cell c WHERE c.piece IS NOT NULL AND c.piece.type = 'Pawn'"),
+        //-------------------------
+        @NamedQuery(name = "UpdateCell", query = "Update Cell c set c.piece=:piece where c=:cell"),
 })
+@NamedNativeQueries(value = {
 
-public class Cell extends BasicEntity {
-    @ManyToOne(fetch = FetchType.LAZY)
-    private Game game;
-
+})
+public class Cell extends BasicEntity
+{
     @Column
-    public final int i;
-
+    public final int row;
     @Column
-    public final int j;
-    @OneToOne(cascade = CascadeType.ALL,orphanRemoval = true)
+    public final int col;
+    @OneToOne(cascade = CascadeType.MERGE, fetch = FetchType.LAZY)
     public Piece piece;
-    protected Cell() {
-        this(0, 0, null);
+
+    public Cell()
+    {
+        super();
+        row = -1;
+        col = -1;
+        this.piece = null;
     }
 
-    public Cell(int i, int j) {
-        this(i, j, null);
-    }
-
-    public Cell(int i, int j, Piece p) {
-        super("Cell(" + i + "," + j + ")");
-        this.i = i;
-        this.j = j;
-        this.piece = p;
-    }
-
-    void setGame(Game game) {
-        this.game = game;
-    }
-
-    @Override
-    public String toString() {
-        String ans="Cell(" + (char)('a' + j)  + (8 - i) + "):";
-        if(piece == null){
-            return ans+"Empty";
-        }
-        return ans+ piece;
+    public Cell(int row, int col)
+    {
+        super("Cell[" + row + "," + col + "]");
+        this.row = row;
+        this.col = col;
+        this.piece = null;
     }
 }

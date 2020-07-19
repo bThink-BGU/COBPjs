@@ -1,32 +1,21 @@
 package il.ac.bgu.cs.bp.bpjs.context.examples.chess;
 
-import java.io.FileNotFoundException;
-import java.io.PrintStream;
-import java.io.UnsupportedEncodingException;
+import java.io.*;
+import java.util.Scanner;
 
+/**
+ * Created By: Assaf, On 14/02/2020
+ * Description:
+ */
 public class Main {
-    private UCI uci;
-    private PrintStream logger;
-    private PrintStream stdout;
+    public static void main(String[] args) throws InterruptedException {
+        String inData = "position fen r3k2r/8/8/8/8/8/8/4K3 w k - 0 1\n";
+        InputStream stdin = System.in;
+        System.setIn(new ByteArrayInputStream(inData.getBytes()));
 
-    public Main() throws FileNotFoundException, UnsupportedEncodingException {
-        logger = new PrintStream("bp.log","UTF-8");
-        stdout = System.out;
-        System.setOut(logger);
-        System.setErr(logger);
-        this.uci = new UCI(System.in, stdout, logger);
-    }
-
-    public void run() {
-//        uci.initCommunication();
-        Thread l = new Thread(uci);
-        l.start();
-//        uci.newGame();
-//        System.out.println("end of run");
-    }
-
-
-    public static void main(String[] args) throws FileNotFoundException, UnsupportedEncodingException {
-        new Main().run();
+        UCI uci = new UCI();
+        Thread t = new Thread(uci);
+        t.start();
+        t.join();
     }
 }
