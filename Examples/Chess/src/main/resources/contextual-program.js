@@ -18,9 +18,14 @@ var staticMoves = bp.EventSet("Non Moves",function (e) {
     return moves.contains(e) && (e.data.source.equals(e.data.target) || e.data.source.piece === null);
 });
 
+var donePopulationEvent = bp.EventSet("Start Event", function (e) {
+    return e.name.equals("Done Populate");
+});
+
 // Requirement : Turn Base Game, White Starts
-/*bp.registerBThread("EnforceTurns",function ()
+bp.registerBThread("EnforceTurns",function ()
 {
+    bp.sync({waitFor:donePopulationEvent});
     while (true)
     {
         bp.sync({waitFor:whiteMoves,block:blackMoves});
@@ -31,12 +36,14 @@ var staticMoves = bp.EventSet("Non Moves",function (e) {
 // Requirement : Moving Pieces only inside the board bounds.  - not in wikipedia
 bp.registerBThread("Movement in bounds",function ()
 {
+    bp.sync({waitFor:donePopulationEvent});
     bp.sync({block:outBoundsMoves});
 });
 
 // Requirement : Move is allowed only if source has piece on it. - not in wikipedia
 bp.registerBThread("Enforce Movement to a new cell", function ()
 {
+    bp.sync({waitFor:donePopulationEvent});
     bp.sync({block:staticMoves});
 });
 
@@ -63,7 +70,7 @@ CTX.subscribe("Move 1 forward", "Pawns", function (pawn) {
     var targetCell = getCell(currentCell.row + forward, currentCell.col);
     bp.sync({   request: getMove(currentCell, targetCell),
         interrupt: contextEndedEvent });
-});*/
+});
 //</editor-fold>
 
 // Requirement : A piece moves to a vacant square except when capturing an opponent's piece
