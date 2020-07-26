@@ -23,6 +23,7 @@ var donePopulationEvent = bp.EventSet("Start Event", function (e) {
 });
 
 // Requirement : Turn Base Game, White Starts
+
 bp.registerBThread("EnforceTurns",function ()
 {
     bp.sync({waitFor:donePopulationEvent});
