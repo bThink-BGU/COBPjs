@@ -46,7 +46,7 @@ public class ContextService implements Serializable {
     private List<NamedQuery> namedQueries;
     private boolean verificationMode = false;
     private Collection<CtxType> contextTypes;
-    private Collection<EffectFunction> contextUpdateListeners;
+    private Collection<EffectFunction> effectFunctions;
     private ContextInternalEvent contextEvents;
 
     private static class ContextServiceProxy implements Serializable {
@@ -204,11 +204,11 @@ public class ContextService implements Serializable {
     }
 
     public static EventSet AnyContextCommandEvent() {
-        return ComposableEventSet.anyOf(getInstance().contextUpdateListeners.stream().map(l->l.eventSet).collect(Collectors.toSet()));
+        return ComposableEventSet.anyOf(getInstance().effectFunctions.stream().map(l->l.eventSet).collect(Collectors.toSet()));
     }
 
     public static void updateContextForVerification(BEvent selectedEvent) {
-        getInstance().contextUpdateListeners.forEach(c -> {
+        getInstance().effectFunctions.forEach(c -> {
             if(c.eventSet.contains(selectedEvent))
                 c.execute(selectedEvent);
         });
@@ -223,9 +223,9 @@ public class ContextService implements Serializable {
             rnr.addListener(listener);
     }
 
-    public void addContextUpdateListener(EffectFunction listener) {
+    public void addEffectFunction(EffectFunction listener) {
         addListener(listener);
-        contextUpdateListeners.add(listener);
+        effectFunctions.add(listener);
     }
 
     @SuppressWarnings("unused")
@@ -298,10 +298,10 @@ public class ContextService implements Serializable {
         bprog.setEventSelectionStrategy(eventSelectionStrategy);
         bprog.setWaitForExternalEvents(true);
 
-        contextUpdateListeners = new ArrayList<>();
+        effectFunctions = new ArrayList<>();
         rnr = new BProgramRunner(bprog);
         addListener(new PrintBProgramRunnerListener());
-        addContextUpdateListener(new InsertEffect());
+        addEffectFunction(new InsertEffect());
     }
 
     public void run() {

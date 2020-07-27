@@ -1,13 +1,23 @@
+function Move(source,target) {
+    return bp.Event("Move",{source:source,target:target});
+}
+
+
+function AnyMoveFrom(source) {
+    return bp.EventSet("AnyMoveFrom "+ source, function (e) {
+        return e.name.equals("Move") && e.data.source != null && e.data.source.equals(source);
+    });
+}
 var moves = bp.EventSet("Moves", function (e) {
     return e.name.equals("Move");
 });
 
 var whiteMoves = bp.EventSet("White Moves",function (e) {
-    return moves.contains(e) && (e.data.source.piece !== null) && (Piece.Color.White.equals(e.data.source.piece.color));
+    return moves.contains(e) && (e.data.source.piece != null) && (Piece.Color.White.equals(e.data.source.piece.color));
 });
 
 var blackMoves = bp.EventSet("black Moves",function (e) {
-    return moves.contains(e) && (e.data.source.piece !== null) && (Piece.Color.Black.equals(e.data.source.piece.color));
+    return moves.contains(e) && (e.data.source.piece != null) && (Piece.Color.Black.equals(e.data.source.piece.color));
 });
 
 var outBoundsMoves = bp.EventSet("",function (e) {
@@ -54,24 +64,29 @@ CTX.subscribe("Move 2 forward", "UnmovedPawns", function (pawn) {
 
     var contextEndedEvent = CTX.AnyContextEndedEvent("UnmovedPawns",pawn);
     var forward = pawn.color.equals(Piece.Color.Black) ? -2 : 2;
-
     var currentCell = pawn.cell;
+
     var targetCell = getCell(currentCell.row + forward, currentCell.col);
-    bp.sync({   request: getMove(currentCell, targetCell),
+    bp.sync({   request: Move(currentCell, targetCell),
                 interrupt: contextEndedEvent });
 });
 
 CTX.subscribe("Move 1 forward", "Pawns", function (pawn) {
     bp.sync({waitFor:donePopulationEvent});
-
     var contextEndedEvent = CTX.AnyContextEndedEvent("Pawns",pawn);
     var forward = pawn.color.equals(Piece.Color.Black) ? -1 : 1;
-
     var currentCell = pawn.cell;
-    var targetCell = getCell(currentCell.row + forward, currentCell.col);
-    bp.sync({   request: getMove(currentCell, targetCell),
-        interrupt: contextEndedEvent });
+    while(true) {
+        var targetCell = getCell(currentCell.row + forward, currentCell.col);
+        let e = bp.sync({
+            request: Move(currentCell, targetCell), waitFor: AnyMoveFrom(currentCell),
+            interrupt: contextEndedEvent
+        });
+        currentCell = e.data.target;
+    }
 });
+
+
 //</editor-fold>
 
 // Requirement : A piece moves to a vacant square except when capturing an opponent's piece

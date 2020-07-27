@@ -43,7 +43,7 @@ public class Move extends ContextService.EffectFunction
 
         if (targetPiece != null) {
             Query q3 = em.createNamedQuery("RemovePiece");
-            ContextService.setParameters(q1, new HashMap<>() {{
+            ContextService.setParameters(q3, new HashMap<>() {{
                 put("piece", targetPiece);
             }});
             q3.executeUpdate();

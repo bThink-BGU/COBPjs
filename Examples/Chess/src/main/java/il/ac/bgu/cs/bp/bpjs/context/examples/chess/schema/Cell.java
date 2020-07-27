@@ -15,12 +15,9 @@ import javax.persistence.*;
         @NamedQuery(name = "BlackCell", query = "SELECT c FROM Cell c WHERE c.piece IS NOT NULL AND c.piece.color = 'Black'"),
         @NamedQuery(name = "SpecificCell", query = "SELECT c FROM Cell c WHERE c.row=:row AND c.col=:col"),
         @NamedQuery(name = "PieceCell", query = "SELECT c FROM Cell c WHERE c.piece = :piece"),
-        @NamedQuery(name = "PawnCell", query = "SELECT c FROM Cell c WHERE c.piece IS NOT NULL AND c.piece.type = 'Pawn'"),
+        @NamedQuery(name = "CellsWithPawn", query = "SELECT c FROM Cell c WHERE c.piece IS NOT NULL AND c.piece.type = 'Pawn'"),
         //-------------------------
         @NamedQuery(name = "UpdateCell", query = "Update Cell c set c.piece=:piece where c=:cell"),
-})
-@NamedNativeQueries(value = {
-
 })
 public class Cell extends BasicEntity
 {
@@ -28,7 +25,7 @@ public class Cell extends BasicEntity
     public final int row;
     @Column
     public final int col;
-    @OneToOne(cascade = CascadeType.MERGE, fetch = FetchType.LAZY)
+    @OneToOne
     public Piece piece;
 
     public Cell()

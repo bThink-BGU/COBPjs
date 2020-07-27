@@ -1,20 +1,13 @@
 package il.ac.bgu.cs.bp.bpjs.context.examples.chess.schema;
 
-import org.hibernate.annotations.LazyToOne;
-import org.hibernate.annotations.LazyToOneOption;
-
 import javax.persistence.*;
-import java.util.HashMap;
 
-/**
- * Created By: Assaf, On 17/02/2020
- * Description:
- */
 @Entity
 @NamedQueries(value = {
-        @NamedQuery(name = "UnmovedPawns", query = "SELECT p FROM Pawn p WHERE didMove = false "),
+        @NamedQuery(name = "Pawns", query = "SELECT p FROM Pawn p"),
+        @NamedQuery(name = "UnmovedPawns", query = "SELECT p FROM Pawn p WHERE p.didMove = FALSE"),
         @NamedQuery(name = "WhitePawns", query = "SELECT p FROM Pawn p WHERE p.color = 'White'"),
-        @NamedQuery(name = "BlackPawn", query = "SELECT p FROM Pawn p WHERE p.color = 'Black'"),
+        @NamedQuery(name = "BlackPawns", query = "SELECT p FROM Pawn p WHERE p.color = 'Black'"),
         @NamedQuery(name = "UpdatePawnMoved", query = "UPDATE Pawn p SET p.didMove=TRUE WHERE p=:pawn"),
 })
 public class Pawn extends Piece
@@ -27,8 +20,8 @@ public class Pawn extends Piece
         super();
     }
 
-    public Pawn(Type type, Color color)
+    public Pawn(Color color)
     {
-        super(type, color);
+        super(Type.Pawn, color);
     }
 }

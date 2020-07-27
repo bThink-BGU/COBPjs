@@ -6,10 +6,6 @@ import org.hibernate.annotations.LazyToOneOption;
 import javax.persistence.*;
 import java.util.HashMap;
 
-/**
- * Created By: Assaf, On 17/02/2020
- * Description:
- */
 @Entity
 @NamedQueries(value = {
         @NamedQuery(name = "RemovePiece", query = "DELETE FROM Piece p WHERE p = :piece"),
@@ -40,8 +36,11 @@ public class Piece extends BasicEntity
     public final Cell cell;
 
     private static HashMap<Type,Integer> whiteCounter = new HashMap<>();
-    private static HashMap<
-            Type,Integer> blackCounter = new HashMap<>();
+    private static HashMap<Type,Integer> blackCounter = new HashMap<>();
+
+    public void updateLocation() {
+        //TODO: call db.
+    }
 
     public Piece()
     {

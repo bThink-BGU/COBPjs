@@ -6,7 +6,6 @@ import il.ac.bgu.cs.bp.bpjs.context.examples.chess.effectFunction.AddPiece;
 import il.ac.bgu.cs.bp.bpjs.context.examples.chess.effectFunction.Move;
 import il.ac.bgu.cs.bp.bpjs.context.examples.chess.effectFunction.PawnMove;
 import il.ac.bgu.cs.bp.bpjs.context.examples.chess.schema.Cell;
-import il.ac.bgu.cs.bp.bpjs.context.examples.chess.schema.Pawn;
 import il.ac.bgu.cs.bp.bpjs.context.examples.chess.schema.Piece;
 import il.ac.bgu.cs.bp.bpjs.execution.listeners.BProgramRunnerListenerAdapter;
 import il.ac.bgu.cs.bp.bpjs.model.BEvent;
@@ -32,10 +31,10 @@ public class UCI implements Runnable
         ContextService contextService = ContextService.getInstance();
         contextService.initFromResources("ContextDB","db_population.js", "contextual-program.js");
 
-        contextService.addContextUpdateListener(new AddCell());
-        contextService.addContextUpdateListener(new AddPiece());
-        contextService.addContextUpdateListener(new Move());
-        contextService.addContextUpdateListener(new PawnMove());
+        contextService.addEffectFunction(new AddCell());
+        contextService.addEffectFunction(new AddPiece());
+        contextService.addEffectFunction(new Move());
+        contextService.addEffectFunction(new PawnMove());
 
         contextService.addListener(new BProgramRunnerListenerAdapter() {
             @Override
@@ -77,7 +76,7 @@ public class UCI implements Runnable
             playing();
             Thread.sleep(3000);
         }catch (InterruptedException e) {}
-        contextService.close();
+//        contextService.close();
     }
 
     public void playing()
@@ -133,7 +132,7 @@ public class UCI implements Runnable
                 {
                     switch (board[row][column].piece.type)
                     {
-                        case Pawn: s += (board[row][column].piece.color.equals(Piece.Color.White) ? "w|" : "l|"); break;
+                        case Pawn: s += (board[row][column].piece.color.equals(Piece.Color.White) ? "p|" : "P|"); break;
                         case Knight: s += (board[row][column].piece.color.equals(Piece.Color.White) ? "n|" : "N|"); break;
                         case Bishop: s += (board[row][column].piece.color.equals(Piece.Color.White) ? "b|" : "B|"); break;
                         case Rook: s += (board[row][column].piece.color.equals(Piece.Color.White) ? "r|" : "R|"); break;

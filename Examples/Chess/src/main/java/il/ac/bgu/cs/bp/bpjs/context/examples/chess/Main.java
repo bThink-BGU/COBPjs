@@ -9,7 +9,7 @@ import java.util.Scanner;
  */
 public class Main {
     public static void main(String[] args) throws InterruptedException {
-        String inData = "position fen r3k2r/8/8/8/8/8/8/4K3 w k - 0 1\n";
+        String inData = "position fen 8/p3p2p/8/8/8/8/4P3/8 w k - 0 1\n";
         InputStream stdin = System.in;
         System.setIn(new ByteArrayInputStream(inData.getBytes()));
 
