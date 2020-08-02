@@ -29,14 +29,14 @@ public class UCI implements Runnable
     public void run()
     {
         ContextService contextService = ContextService.getInstance();
-        contextService.initFromResources("ContextDB","db_population.js", "contextual-program.js");
+        contextService.initFromResources("ContextDB","db_population.js", "contextual-program.js", "assertions.js");
 
         contextService.addEffectFunction(new AddCell());
         contextService.addEffectFunction(new AddPiece());
         contextService.addEffectFunction(new Move());
-        contextService.addEffectFunction(new PawnMove());
+//        contextService.addEffectFunction(new PawnMove());
 
-        contextService.addListener(new BProgramRunnerListenerAdapter() {
+        /*contextService.addListener(new BProgramRunnerListenerAdapter() {
             @Override
             public void eventSelected(BProgram bp, BEvent theEvent)
             {
@@ -58,14 +58,14 @@ public class UCI implements Runnable
                 }
                 else if(theEvent.name.equals("Move"))
                 {
-                    Map<String, Cell> data = (Map<String, Cell>) theEvent.maybeData;
+                    *//*Map<String, Cell> data = (Map<String, Cell>) theEvent.maybeData;
                     // normal
                     board[data.get("target").row][data.get("target").col].piece = board[data.get("source").row][data.get("source").col].piece;
-                    board[data.get("source").row][data.get("source").col].piece = null;
+                    board[data.get("source").row][data.get("source").col].piece = null;*//*
                     print();
                 }
             }
-        });
+        });*/
 
         this.program = contextService.getBProgram();
         this.program.setWaitForExternalEvents(true);

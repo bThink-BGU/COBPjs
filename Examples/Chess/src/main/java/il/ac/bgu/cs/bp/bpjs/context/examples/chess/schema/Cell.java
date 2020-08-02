@@ -2,10 +2,6 @@ package il.ac.bgu.cs.bp.bpjs.context.examples.chess.schema;
 
 import javax.persistence.*;
 
-/**
- * Created By: Assaf, On 17/02/2020
- * Description:
- */
 @Entity
 @NamedQueries(value = {
         @NamedQuery(name = "Cell", query = "SELECT c FROM Cell c"),
@@ -42,5 +38,10 @@ public class Cell extends BasicEntity
         this.row = row;
         this.col = col;
         this.piece = null;
+    }
+
+    @Override
+    public String toString() {
+        return "Cell[" + row + "," + col + ","+piece+"]";
     }
 }

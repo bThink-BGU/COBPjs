@@ -32,7 +32,7 @@ public class Piece extends BasicEntity
     public final Color color;
     @Column
     public final int counter;
-    @OneToOne(mappedBy = "piece")
+    @OneToOne(mappedBy = "piece",cascade = CascadeType.DETACH)
     public final Cell cell;
 
     private static HashMap<Type,Integer> whiteCounter = new HashMap<>();

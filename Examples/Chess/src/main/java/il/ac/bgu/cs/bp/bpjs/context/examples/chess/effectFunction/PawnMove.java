@@ -10,10 +10,6 @@ import javax.persistence.Query;
 import java.util.HashMap;
 import java.util.Map;
 
-/**
- * Created By: Assaf, On 26/02/2020
- * Description:
- */
 public class PawnMove extends ContextService.EffectFunction
 {
     public PawnMove() {

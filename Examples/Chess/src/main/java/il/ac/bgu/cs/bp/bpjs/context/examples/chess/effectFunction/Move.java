@@ -25,6 +25,7 @@ public class Move extends ContextService.EffectFunction
         Map<String, Cell> data = (Map<String, Cell>) e.maybeData;
         Cell source = data.get("source");
         Cell target = data.get("target");
+        Piece sourcePiece = source.piece;
         Piece targetPiece = target.piece;
 
         Query q1 = em.createNamedQuery("UpdateCell");
@@ -47,6 +48,14 @@ public class Move extends ContextService.EffectFunction
                 put("piece", targetPiece);
             }});
             q3.executeUpdate();
+        }
+
+        if (sourcePiece.type.equals(Piece.Type.Pawn)) {
+            Query q4 = em.createNamedQuery("UpdatePawnMoved");
+            ContextService.setParameters(q4, new HashMap<>() {{
+                put("pawn", sourcePiece);
+            }});
+            q4.executeUpdate();
         }
     }
 }

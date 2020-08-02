@@ -24,10 +24,6 @@ var outBoundsMoves = bp.EventSet("",function (e) {
     return moves.contains(e) && (e.data.source.row < 0 || e.data.source.row > 7 || e.data.source.col < 0 || e.data.source.col > 7 || e.data.target.row < 0 || e.data.target.row > 7 || e.data.target.col < 0 || e.data.target.col > 7);
 });
 
-var staticMoves = bp.EventSet("Non Moves",function (e) {
-    return moves.contains(e) && (e.data.source.equals(e.data.target) || e.data.source.piece === null);
-});
-
 var donePopulationEvent = bp.EventSet("Start Event", function (e) {
     return e.name.equals("Done Populate");
 });
@@ -51,13 +47,6 @@ bp.registerBThread("Movement in bounds",function ()
     bp.sync({block:outBoundsMoves});
 });
 
-// Requirement : Move is allowed only if source has piece on it. - not in wikipedia
-bp.registerBThread("Enforce Movement to a new cell", function ()
-{
-    bp.sync({waitFor:donePopulationEvent});
-    bp.sync({block:staticMoves});
-});
-
 //<editor-fold desc="Pawn Rules">
 CTX.subscribe("Move 2 forward", "UnmovedPawns", function (pawn) {
     bp.sync({waitFor:donePopulationEvent});
@@ -75,13 +64,14 @@ CTX.subscribe("Move 1 forward", "Pawns", function (pawn) {
     bp.sync({waitFor:donePopulationEvent});
     var contextEndedEvent = CTX.AnyContextEndedEvent("Pawns",pawn);
     var forward = pawn.color.equals(Piece.Color.Black) ? -1 : 1;
-    var currentCell = pawn.cell;
+    let currentCell = pawn.cell;
     while(true) {
         var targetCell = getCell(currentCell.row + forward, currentCell.col);
         let e = bp.sync({
             request: Move(currentCell, targetCell), waitFor: AnyMoveFrom(currentCell),
             interrupt: contextEndedEvent
         });
+        bp.log.info("selected event is " + e);
         currentCell = e.data.target;
     }
 });

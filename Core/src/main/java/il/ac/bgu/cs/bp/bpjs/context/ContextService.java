@@ -495,6 +495,9 @@ public class ContextService implements Serializable {
         }
     }
 
+    //TODO: make sure that for each event - only one effect function is called (otherwise - race condition).
+    //TODO: make sure that effect functions are called before "external" listeners.
+    //TODO: make sure that "External" listeners get the events only at super step.
     public static abstract class EffectFunction extends BProgramRunnerListenerAdapter {
         public final EventSet eventSet;
 
