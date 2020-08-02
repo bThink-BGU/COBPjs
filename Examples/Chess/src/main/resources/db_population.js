@@ -27,6 +27,10 @@ function getCell(i,j){
     return CTX.getContextInstances("Cell["+i+","+j+"]").get(0);
 }
 
+function getUpdatedCell(c){
+    return getCell(c.row, c.col);
+}
+
 function getCellByPiece(piece)
 {
     return CTX.getContextInstances("Piece[" + piece + "]").get(0);
@@ -79,7 +83,7 @@ bp.registerBThread("Populate",function ()
 
 function parseBoard(toParse)
 {
-    bp.log.info("fen: " + toParse);
+    // bp.log.info("fen: " + toParse);
     var tokens = toParse.split("/");
     var row = 0,column = 0;
 
@@ -111,10 +115,10 @@ function parseBoard(toParse)
 
                 if(piece != null)
                 {
-                    bp.log.info("piece" + piece+" row: "+row+" col: "+column);
+                    // bp.log.info("piece" + piece+" row: "+row+" col: "+column);
                     // update cell to store piece
                     var cell = getCell(row,column);
-                    bp.log.info("piece" + piece);
+                    // bp.log.info("piece" + piece);
                     bp.sync({ request: bp.Event("Add Piece", {"piece":piece , "cell": cell})});
 
                     CTX.registerParameterizedContextQuery("PieceCell", "Piece[" + piece + "]", {"piece": piece});

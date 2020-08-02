@@ -62,17 +62,19 @@ CTX.subscribe("Move 2 forward", "UnmovedPawns", function (pawn) {
 
 CTX.subscribe("Move 1 forward", "Pawns", function (pawn) {
     bp.sync({waitFor:donePopulationEvent});
-    var contextEndedEvent = CTX.AnyContextEndedEvent("Pawns",pawn);
-    var forward = pawn.color.equals(Piece.Color.Black) ? -1 : 1;
+    let contextEndedEvent = CTX.AnyContextEndedEvent("Pawns",pawn);
+    let forward = pawn.color.equals(Piece.Color.Black) ? -1 : 1;
     let currentCell = pawn.cell;
     while(true) {
-        var targetCell = getCell(currentCell.row + forward, currentCell.col);
+        let targetCell = getCell(currentCell.row + forward, currentCell.col);
         let e = bp.sync({
             request: Move(currentCell, targetCell), waitFor: AnyMoveFrom(currentCell),
             interrupt: contextEndedEvent
         });
-        bp.log.info("selected event is " + e);
-        currentCell = e.data.target;
+        // bp.log.info(e);
+        if(e.data.source.equals(currentCell)) {
+            currentCell = getUpdatedCell(e.data.target);
+        }
     }
 });
 
