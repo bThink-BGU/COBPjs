@@ -74,6 +74,7 @@ CTX.subscribe("Move 1 forward", "Pawns", function (pawn) {
         // bp.log.info(e);
         if(e.data.source.equals(currentCell)) {
             currentCell = getUpdatedCell(e.data.target);
+            // CTX[e.data.target].getUpdatedEntity(pawn);
         }
     }
 });
