@@ -73,6 +73,7 @@ CTX.subscribe("WhitePawn - Move 1 forward", "CellsWithWhitePawn", function (cell
             bp.sync({   waitFor:AnyMoveFrom(targetCell),
                         interrupt: contextEndedEvent});
         }
+        targetCell = getCell(currentCell.row + forward, currentCell.col);
     }
 });
 
@@ -93,6 +94,7 @@ CTX.subscribe("BlackPawn - Move 1 forward", "CellsWithBlackPawn", function (cell
             bp.sync({   waitFor:AnyMoveFrom(targetCell),
                         interrupt: contextEndedEvent});
         }
+        targetCell = getCell(currentCell.row + forward, currentCell.col);
     }
 });
 
@@ -113,6 +115,8 @@ CTX.subscribe("Pawn - Move 2 forward", "UnmovedPawns", function (pawn) {
             bp.sync({   waitFor:[AnyMoveFrom(currentCell),AnyMoveFrom(targetCell),AnyMoveTo(targetCell),AnyMoveFrom(pathtotargetCell),AnyMoveTo(pathtotargetCell)],
                         interrupt: contextEndedEvent});
         }
+        targetCell = getCell(currentCell.row + forward2, currentCell.col);
+        pathtotargetCell = getCell(currentCell.row + forward1, currentCell.col);
     }
 });
 
@@ -152,6 +156,16 @@ CTX.subscribe("BlackPawn - Capturing", "CellsWithBlackPawn", function (cell) {
             bp.sync({   waitFor:[AnyMoveFrom(currentCell),AnyMoveTo(targetCellR),AnyMoveFrom(targetCellR),AnyMoveFrom(targetCellL),AnyMoveTo(targetCellL)],
                         interrupt: contextEndedEvent});
         }
+        if (currentCell.col + 1 <= 7){
+            targetCellR = getCell(currentCell.row + forward, currentCell.col + 1);
+        }else{
+            targetCellR = getCell(currentCell.row + forward, currentCell.col - 1);
+        }
+        if (currentCell.col - 1 >= 0){
+            targetCellL = getCell(currentCell.row + forward, currentCell.col - 1);
+        }else{
+            targetCellL = getCell(currentCell.row + forward, currentCell.col + 1);
+        }
     }
 });
 
@@ -190,6 +204,16 @@ CTX.subscribe("WhitePawn - Capturing", "CellsWithWhitePawn", function (cell) {
         }else{
             bp.sync({   waitFor:[AnyMoveFrom(currentCell),AnyMoveTo(targetCellR),AnyMoveFrom(targetCellR),AnyMoveFrom(targetCellL),AnyMoveTo(targetCellL)],
                         interrupt: contextEndedEvent});
+        }
+        if (currentCell.col + 1 <= 7){
+            targetCellR = getCell(currentCell.row + forward, currentCell.col + 1);
+        }else{
+            targetCellR = getCell(currentCell.row + forward, currentCell.col - 1);
+        }
+        if (currentCell.col - 1 >= 0){
+            targetCellL = getCell(currentCell.row + forward, currentCell.col - 1);
+        }else{
+            targetCellL = getCell(currentCell.row + forward, currentCell.col + 1);
         }
     }
 });
