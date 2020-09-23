@@ -2,9 +2,10 @@ package il.ac.bgu.cs.bp.bpjs.context.examples.room.schema;
 
 import javax.persistence.Id;
 import javax.persistence.MappedSuperclass;
+import java.io.Serializable;
 
 @MappedSuperclass
-public class BasicEntity {
+public class BasicEntity implements Serializable {
     @Id
 	protected String id;
 

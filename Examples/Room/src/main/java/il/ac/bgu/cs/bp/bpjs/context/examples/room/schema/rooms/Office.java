@@ -1,7 +1,6 @@
 package il.ac.bgu.cs.bp.bpjs.context.examples.room.schema.rooms;
 
 
-import il.ac.bgu.cs.bp.bpjs.context.examples.room.schema.Building;
 import il.ac.bgu.cs.bp.bpjs.context.examples.room.schema.Worker;
 import il.ac.bgu.cs.bp.bpjs.context.examples.room.schema.devices.AirConditioner;
 
@@ -22,8 +21,12 @@ public class Office extends Room {
         super();
     }
 
-    public Office(String id, Building building, Worker worker) {
-        super(id, building);
+    public Office(String id) {
+        this(id, null);
+    }
+
+    public Office(String id, Worker worker) {
+        super(id);
         airConditioner = new AirConditioner(getId() + ".AirConditioner");
         this.worker = worker;
     }
