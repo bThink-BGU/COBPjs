@@ -4,9 +4,11 @@ importPackage(Packages.il.ac.bgu.cs.bp.bpjs.context);
 // BP related functions
 /////////////////////////////////////////////////////////////////////
 
+const Any = (type => bp.EventSet("Any(" + type + ")", e => e.name == type));
+
 const bthread = function (name, f) {
-    bp.registerBThread(name + "-" + random.string(4),
-        { interrupt:[] },
+    bp.registerBThread(name,
+        {interrupt: []},
         function () {
             f.bname = name
             f()
@@ -14,7 +16,13 @@ const bthread = function (name, f) {
 }
 
 const sync = function (stmt) {
-    stmt.interrupt.push(...bp.thread.data.interrupt)
+    if (!stmt.interrupt) {
+        stmt.interrupt = bp.thread.data.interrupt
+    } else if (isArray(stms.interrupt)) {
+        stmt.interrupt = stmt.interrupt.concat(bp.thread.data.interrupt)
+    } else {
+        stmt.interrupt = [stmt.interrupt].concat(bp.thread.data.interrupt)
+    }
     return bp.sync(stmt)
 }
 
@@ -34,19 +42,19 @@ const AllButContext = bp.EventSet("AllButContext", e => (!ctxEvents.includes(Str
 const ContextEvents = bp.EventSet("ContextEvents", e => (ctxEvents.includes(String(e.name))))
 const AnyEvents = AllButCTX
 
-const AnyInContext = ((type,ctx) => bp.EventSet("Any(" + type + ")", e => e.name == type && e.data.id == ctx.id))
+const AnyInContext = ((type, ctx) => bp.EventSet("Any(" + type + ")", e => e.name == type && e.data.id == ctx.id))
 
 bthread("ContextHandler", function () {
-        var CTX_Instance = Context.CreateInstance(new Map())
-        while (true) {
-            sync({waitFor: bp.all})
-        }
+    var CTX_Instance = Context.CreateInstance(new Map())
+    while (true) {
+        sync({waitFor: bp.all})
+    }
 })
 
 function startContext(ctx) {
     sync({request: ___CTX___, block: AllButCTX});
     //TODO: throw an error if ctx.id exists
-    Object.assign(ctx, {id: Context.getId()})
+    Object.assign(ctx, {id: Context.generateUniqueId()})
     var c = Object.assign({}, ctx)
     Context.GetInstance().set(c.id, c)
     sync({request: CtxStart(c), block: AllButContext});
@@ -62,24 +70,24 @@ function updateContext(ctx) {
 
 function getQueryResults(query) {
     // bp.sync({request: ___CTX___, block: AllButCTX}); //do we need this?
-    var ans=[]
-    for(let ctx of Context.GetInstance().values()) {
+    var ans = []
+    for (let ctx of Context.GetInstance().values()) {
         if (query(ctx)) ans.push(ctx)
     }
     return ans
 }
 
-var cbt = function(name, q, bt) {
-    bp.registerBThread("cbt: " + name, {interrupt:[]}, function () {
+var cbt = function (name, q, bt) {
+    bp.registerBThread("cbt: " + name, {interrupt: []}, function () {
         var activated = {};
         while (true) {
             sync({waitFor: ContextEvents})
             for (let val of Context.GetInstance().values()) {
                 // let ctx = val;
-                let ctx = Object.assign({},val)
+                let ctx = Object.assign({}, val)
                 if (!activated[ctx.id] && q.query(ctx)) {
                     activated[ctx.id] = true;
-                    bp.registerBThread("Live copy"+ " (" + Context.getId() + "):" + name + " "+ctx.id,
+                    bp.registerBThread("Live copy" + " (" + Context.generateUniqueId() + "):" + name + " " + ctx.id,
                         {query: q.name, seed: ctx, interrupt: CtxEnd(q.name, ctx.id)},
                         function () {
                             bt(ctx)

@@ -19,8 +19,8 @@ public class ContextBProgram extends BProgram {
 
     @Override
     protected void setupProgramScope(Scriptable scope) {
-        InputStream testoryJS = Thread.currentThread().getContextClassLoader().getResourceAsStream("context.js");
-        evaluate(testoryJS, "context.js");
+        InputStream contextJS = Thread.currentThread().getContextClassLoader().getResourceAsStream("context.js");
+        evaluate(contextJS, "context.js");
 
         setWaitForExternalEvents(false);
 
