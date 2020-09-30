@@ -4,7 +4,7 @@ bthread("SimulateMinutes",function () {
     }
 })
 
-cbt("SimulateMovements", dal.Room, function (room) {
+cbt("SimulateMovements", "Room.All", function (room) {
     sync({waitFor: Any("Minute")})
     sync({ request: bp.Event("MotionDetected", room.id) }, -50);
     // sync({ request: bp.Event("MotionDetected", room.id) }, -50);

@@ -1,8 +1,8 @@
-cbt("MarkNonEmptyUponMotion", dal.EmptyRoom, function (room) {
+cbt("MarkNonEmptyUponMotion", "Room.Empty", function (room) {
     sync({ waitFor: bp.Event("MotionDetected", room.id) });
     sync({request: bp.Event("RoomIsNonEmpty", room.id)});
 });
-cbt("MarkEmptyIfNoMovement", dal.NoMovement_3, function (room) {
+cbt("MarkEmptyIfNoMovement", "Room.NoMovement3", function (room) {
     sync({
         request: bp.Event("RoomIsEmpty", room.id),
         waitFor: bp.Event("MotionDetected", room.id)
@@ -21,20 +21,20 @@ cbt("MarkEmptyIfNoMovement", dal.NoMovement_3, function (room) {
     });
 });*/
 
-cbt("Light: On", dal.NonEmptyRoom, function (room) {
+cbt("Light: On", "Room.Nonempty", function (room) {
     sync({
         request: bp.Event("On", room.light),
         // interrupt: CTX.AnyContextEndedEvent("NonEmptyRoom", room)
     });
 });
-cbt("Light: Off", dal.EmptyRoom, function (room) {
+cbt("Light: Off", "Room.Empty", function (room) {
     sync({request: bp.Event("Off", room.light)});
 });
 
-cbt("Air-conditioner: On", dal.NonEmptyOffice, function (office) {
+cbt("Air-conditioner: On", "Office.Nonempty", function (office) {
     sync({request: bp.Event("On", office.airConditioner)});
 });
 
-cbt("Air-conditioner: Off", dal.EmptyOffice, function (office) {
+cbt("Air-conditioner: Off", "Office.Empty", function (office) {
     sync({request: bp.Event("Off", office.AirConditioner)});
 });
