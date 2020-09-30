@@ -54,6 +54,14 @@ public class Context implements Serializable {
         updateQueries();
     }
 
+    public ActiveChange[] getNewForQuery(String query) {
+        return changes.stream().filter(c -> c.type.equals("new") && c.query.equals(query)).toArray(ActiveChange[]::new);
+    }
+
+    public ActiveChange[] getRecentCtxEnd() {
+        return changes.stream().filter(c -> c.type.equals("end")).toArray(ActiveChange[]::new);
+    }
+
     public void deleteEntity(ContextEntity detachedEntity) {
         if (!CTX.containsKey(detachedEntity.id)) {
             throw new IllegalArgumentException("Key " + detachedEntity.id + " does not exists");

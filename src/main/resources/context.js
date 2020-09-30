@@ -10,7 +10,9 @@ const AnyBut = (type => bp.EventSet("AnyBut(" + type + ")", e => e.name != type)
 const bthread = function (name, f) {
     bp.registerBThread(name,
         {interrupt: [], name: name},
-        function() {f()})
+        function () {
+            f()
+        })
 }
 
 const sync = function (stmt, priority) {
@@ -20,10 +22,10 @@ const sync = function (stmt, priority) {
         } else {
             stmt.interrupt = [stmt.interrupt].concat(bp.thread.data.interrupt)
         }
-    }else{
+    } else {
         stmt.interrupt = bp.thread.data.interrupt
     }
-    return bp.sync(stmt,priority?priority:0)
+    return bp.sync(stmt, priority ? priority : 0)
 }
 
 /////////////////////////////////////////////////////////////////////
@@ -104,8 +106,8 @@ bthread("AnnounceEndedCTX", function () {
     while (true) {
         sync({waitFor: AnyChangedEntityCTX})
         // sync({request: ___CTX___, block: AllButCTX})
-        let changes = Context.GetInstance().recentChanges()
-        for(let i=0; i< changes.length; i++ ) {
+        let changes = Context.GetInstance().getRecentCtxEnd()
+        for (let i = 0; i < changes.length; i++) {
             let change = changes[i]
             if (change.type.equals("end")) {
                 sync({request: CtxEnd(change.query, change.entity.id), block: AnyBut("CtxEnd")})
@@ -125,18 +127,18 @@ function getActiveResults(query) {
 var cbt = function (name, q, bt) {
     bp.registerBThread("cbt: " + name, {interrupt: []}, function () {
         while (true) {
-            let changes = Context.GetInstance().recentChanges()
-            for(let i=0; i< changes.length; i++ ) {
-                let change = changes[i]
-                // bp.log.info("change "+change)
-                if (change.type.equals("new") && change.query.equals(q)) {
-                    let entity = change.entity;
-                    bp.registerBThread("Live copy" + ": " + name + " " + entity.id + " (" + Context.generateUniqueId() + ")",
-                        {query: q, seed: entity.id, interrupt: CtxEnd(q, entity.id)},
+            let changes = Context.GetInstance().getNewForQuery(q)
+            for (let i = 0; i < changes.length; i++) {
+                let change = changes[i];
+                ((btname,query,entity) => {
+                    bp.registerBThread(btname,
+                        {query: query, seed: entity.id, interrupt: CtxEnd(query, entity.id)},
                         function () {
                             bt(entity)
                         });
-                }
+                })("Live copy" + ": " + name + " " + change.entity.id + " (" + Context.generateUniqueId() + ")",
+                    q,
+                    change.entity)
             }
             sync({waitFor: AnyChangedEntityCTX})
         }
