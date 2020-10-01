@@ -36,5 +36,5 @@ cbt("Air-conditioner: On", "Office.Nonempty", function (office) {
 });
 
 cbt("Air-conditioner: Off", "Office.Empty", function (office) {
-    sync({request: bp.Event("Off", office.AirConditioner)});
+    sync({request: bp.Event("Off", office.airConditioner)});
 });

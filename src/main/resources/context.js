@@ -9,14 +9,14 @@ const AnyBut = (type => bp.EventSet("AnyBut(" + type + ")", e => e.name != type)
 
 const bthread = function (name, f) {
     bp.registerBThread(name,
-        // {interrupt: [], name: name}, // from BPjs 0.10.6
+        {interrupt: [], name: name}, // from BPjs 0.10.6
         function () {
             f()
         })
 }
 
 const sync = function (stmt, priority) {
-    /*if (stmt.interrupt) {
+    if (stmt.interrupt) {
         if (isArray(stmt.interrupt)) {
             stmt.interrupt = stmt.interrupt.concat(bp.thread.data.interrupt)
         } else {
@@ -24,7 +24,7 @@ const sync = function (stmt, priority) {
         }
     } else {
         stmt.interrupt = bp.thread.data.interrupt
-    }*/ // from BPjs 0.10.6
+    } // from BPjs 0.10.6
     return bp.sync(stmt, priority ? priority : 0)
 }
 
@@ -126,7 +126,7 @@ function getActiveResults(query) {
 
 var cbt = function (name, q, bt) {
     bp.registerBThread("cbt: " + name,
-        // {interrupt: []}, // from BPjs 0.10.6
+        {interrupt: []}, // from BPjs 0.10.6
         function () {
             while (true) {
                 let changes = Context.GetInstance().getNewForQuery(q)
@@ -134,7 +134,7 @@ var cbt = function (name, q, bt) {
                     let change = changes[i];
                     ((btname, query, entity) => {
                         bp.registerBThread(btname,
-                            // {query: query, seed: entity.id, interrupt: CtxEnd(query, entity.id)}, // from BPjs 0.10.6
+                            {query: query, seed: entity.id, interrupt: CtxEnd(query, entity.id)}, // from BPjs 0.10.6
                             function () {
                                 bt(entity)
                             });
