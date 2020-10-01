@@ -1,29 +1,46 @@
 package il.ac.bgu.cs.bp.bpjs.context;
 
 import com.google.common.base.Objects;
+import il.ac.bgu.cs.bp.bpjs.model.BProgram;
+import org.mozilla.javascript.Context;
+import org.mozilla.javascript.Function;
+import org.mozilla.javascript.NativeArray;
 
 import java.io.Serializable;
 
-public abstract class ContextEntity<T extends ContextEntity<T>> implements Serializable {
+public class ContextEntity implements Serializable {
     public final String id;
+    public final String type;
     private boolean attached = false;
+    public final Object data;
 
-    protected ContextEntity(String id) {
+    public ContextEntity(String id, String type, Object data) {
         this.id = id;
+        this.type = type;
+        this.data = data;
     }
-    protected ContextEntity(ContextEntity<T> other) {
+
+    private ContextEntity(ContextEntity other) {
         this.id = other.id;
+        this.type = other.type;
+        this.data = other.data;
     }
 
-    public abstract void mergeChanges(T other);
+    public void mergeChanges(BProgram bp, ContextEntity other) {
+        assign(bp, this.data, other.data);
+    }
 
-    public ContextEntity<T> attachedCopy() {
-        ContextEntity<T> clone = cloneEntity();
+    private Object assign(BProgram bp, Object target, Object source) {
+        Function fct = bp.getFromGlobalScope("assign", Function.class).get();
+        return fct.call(Context.getCurrentContext(), bp.getGlobalScope(), bp.getGlobalScope(), new Object[]{target, source});
+    }
+
+    public ContextEntity attachedCopy(BProgram bp) {
+        Object clonedData = assign(bp, new NativeArray(0), data);
+        ContextEntity clone = new ContextEntity(id, type, clonedData);
         clone.attached = true;
         return clone;
     }
-
-    protected abstract ContextEntity<T> cloneEntity();
 
     @Override
     public final boolean equals(Object o) {

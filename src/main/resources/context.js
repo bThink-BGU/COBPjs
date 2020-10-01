@@ -59,8 +59,12 @@ const AnyEvents = AllButCTX
 
 const AnyInContext = ((type, ctx) => bp.EventSet("Any(" + type + ")", e => e.name == type && e.data.id == ctx.id))
 
+function assign(target, source) {
+    return Object.assign(target, source)
+}
+
 bthread("ContextHandler", function () {
-    var CTX_Instance = Context.GetInstance()
+    var CTX_Instance = ContextService.GetInstance()
     while (true) {
         sync({waitFor: ContextResultEvents})
     }
@@ -70,7 +74,7 @@ bthread("CTX.InsertEntityHandler", function () {
     while (true) {
         let ctx = sync({waitFor: AnyInsertEntityCTX}).data
         sync({request: ___CTX___, block: AllButCTX})
-        Context.GetInstance().insertEntity(ctx)
+        ContextService.GetInstance().insertEntity(ctx)
         sync({request: CtxEntityChanged("Insert", ctx), block: AnyBut("CTX.EntityChanged")})
     }
 })
@@ -79,7 +83,7 @@ bthread("CTX.UpdateEntityHandler", function () {
     while (true) {
         let ctx = sync({waitFor: AnyUpdateEntityCTX}).data
         sync({request: ___CTX___, block: AllButCTX})
-        Context.GetInstance().updateEntity(ctx)
+        ContextService.GetInstance().updateEntity(ctx)
         sync({request: CtxEntityChanged("Update", ctx), block: AnyBut("CTX.EntityChanged")})
     }
 })
@@ -88,25 +92,25 @@ bthread("CTX.DeleteEntityHandler", function () {
     while (true) {
         let ctx = sync({waitFor: AnyDeleteEntityCTX}).data
         sync({request: ___CTX___, block: AllButCTX})
-        Context.GetInstance().deleteEntity(ctx)
+        ContextService.GetInstance().deleteEntity(ctx)
         sync({request: CtxEntityChanged("Delete", ctx), block: AnyBut("CTX.EntityChanged")})
     }
 })
 
-bthread("CTX.RegisterQueryHandler", function () {
+/*bthread("CTX.RegisterQueryHandler", function () {
     while (true) {
         let query = sync({waitFor: AnyRegisterQueryCTX}).data
         sync({request: ___CTX___, block: AllButCTX})
-        Context.GetInstance().registerQuery(query)
+        ContextService.GetInstance().registerQuery(query)
         sync({request: CtxQueryRegistered(query), block: AnyBut("CTX.QueryRegistered")})
     }
-})
+})*/
 
 bthread("AnnounceEndedCTX", function () {
     while (true) {
         sync({waitFor: AnyChangedEntityCTX})
         // sync({request: ___CTX___, block: AllButCTX})
-        let changes = Context.GetInstance().getRecentCtxEnd()
+        let changes = ContextService.GetInstance().getRecentCtxEnd()
         for (let i = 0; i < changes.length; i++) {
             let change = changes[i]
             if (change.type.equals("end")) {
@@ -117,11 +121,11 @@ bthread("AnnounceEndedCTX", function () {
 })
 
 function getQueryResults(query) {
-    return Context.GetInstance().getQueryResults(query)
+    return ContextService.GetInstance().getQueryResults(query)
 }
 
 function getActiveResults(query) {
-    return Context.GetInstance().getActive(query)
+    return ContextService.GetInstance().getActive(query)
 }
 
 var cbt = function (name, q, bt) {
@@ -129,7 +133,7 @@ var cbt = function (name, q, bt) {
         {interrupt: []}, // from BPjs 0.10.6
         function () {
             while (true) {
-                let changes = Context.GetInstance().getNewForQuery(q)
+                let changes = ContextService.GetInstance().getNewForQuery(q)
                 for (let i = 0; i < changes.length; i++) {
                     let change = changes[i];
                     ((btname, query, entity) => {

@@ -1,19 +1,34 @@
 package il.ac.bgu.cs.bp.bpjs.context;
 
+import il.ac.bgu.cs.bp.bpjs.execution.BProgramRunner;
+import il.ac.bgu.cs.bp.bpjs.model.BProgram;
+import org.mozilla.javascript.Context;
+import org.mozilla.javascript.Function;
+
 import java.io.Serializable;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
-public class Context implements Serializable {
-    private static final Context singleton = new Context();
-    private static AtomicInteger idCounter = new AtomicInteger(0);
+public class ContextService implements Serializable {
+    private static ContextService singleton;
+    private final transient AtomicInteger idCounter = new AtomicInteger(0);
 
-    public final Map<String, ContextEntity> CTX;
-    public final Map<String, List<ContextEntity>> active = new HashMap<>();
-    private Set<ActiveChange> changes = new HashSet<>();
+    private final transient BProgram bp;
+    private final transient BProgramRunner rnr;
+    private final transient Map<String, Function> queries = new HashMap<>();
+    private final Map<String, ContextEntity> CTX = new HashMap<>();
+    private final Map<String, List<ContextEntity>> active = new HashMap<>();
+    private final Set<ActiveChange> changes = new HashSet<>();
+    private final ArrayList<EffectFunction> effectFunctions = new ArrayList<>();
 
-    public static Context GetInstance() {
+    public static ContextService GetInstance() {
+        return singleton;
+    }
+
+    public static ContextService CreateInstance(BProgram bp, BProgramRunner rnr) {
+        singleton = new ContextService(bp, rnr);
+//        bp.putInGlobalScope("CTX", singleton); //TODO return
         return singleton;
     }
 
@@ -21,27 +36,39 @@ public class Context implements Serializable {
         return singleton.idCounter.incrementAndGet();
     }
 
+    public void addEffectFunction(EffectFunction function) {
+        this.effectFunctions.add(function);
+        rnr.addListener(function);
+    }
+
     public List<ContextEntity> getActive(String query) {
         return active.get(query);
     }
 
     public List<ContextEntity> getQueryResults(String query) {
-        return CTX.values().stream().filter(entity -> Query.getQuery(query).func(entity)).collect(Collectors.toList());
+        return CTX.values().stream().filter(entity -> runQuery(query, entity)).collect(Collectors.toList());
+    }
+
+    private boolean runQuery(String queryName, ContextEntity entity) {
+        Function fct = queries.get(queryName);
+        Object result = fct.call(Context.getCurrentContext(), bp.getGlobalScope(), bp.getGlobalScope(), new Object[]{entity});
+        return (boolean) Context.jsToJava(result,boolean.class);
     }
 
     public ActiveChange[] recentChanges() {
         return changes.toArray(ActiveChange[]::new);
     }
 
-    private Context() {
-        CTX = new HashMap<>();
+    private ContextService(BProgram bp, BProgramRunner rnr) {
+        this.bp = bp;
+        this.rnr = rnr;
     }
 
     public void insertEntity(ContextEntity entity) {
         if (CTX.containsKey(entity.id)) {
             throw new IllegalArgumentException("Key " + entity.id + " already exists");
         }
-        ContextEntity attached = entity.attachedCopy();
+        ContextEntity attached = entity.attachedCopy(bp);
         CTX.put(attached.id, attached);
         updateQueries();
     }
@@ -50,7 +77,7 @@ public class Context implements Serializable {
         if (!CTX.containsKey(detachedEntity.id)) {
             throw new IllegalArgumentException("Key " + detachedEntity.id + " does not exists");
         }
-        CTX.get(detachedEntity.id).mergeChanges(detachedEntity);
+        CTX.get(detachedEntity.id).mergeChanges(bp, detachedEntity);
         updateQueries();
     }
 
@@ -70,16 +97,17 @@ public class Context implements Serializable {
         updateQueries();
     }
 
-    public boolean hasQuery(String q) {
+    /*public boolean hasQuery(String q) {
         return active.containsKey(q);
-    }
+    }*/
 
-    public void registerQuery(String q) {
+    public void registerQuery(String q, Function query) {
         if (active.containsKey(q)) {
             throw new IllegalArgumentException("Query " + q + " already exists");
         }
         active.put(q, new ArrayList<>());
-        updateQueries();
+        queries.put(q, query);
+//        updateQueries();
     }
 
     private void updateQueries() {
@@ -107,8 +135,8 @@ public class Context implements Serializable {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        Context context = (Context) o;
-        return Objects.equals(CTX, context.CTX);
+        ContextService contextService = (ContextService) o;
+        return Objects.equals(CTX, contextService.CTX);
     }
 
     @Override

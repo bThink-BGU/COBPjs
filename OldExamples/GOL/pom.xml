@@ -15,6 +15,6 @@
     <packaging>jar</packaging>
 
     <properties>
-        <exec.mainClass>il.ac.bgu.cs.bp.bpjs.context.examples.gol.Main</exec.mainClass>
+        <exec.mainClass>il.ac.bgu.cs.bp.bpjs.contextService.examples.gol.Main</exec.mainClass>
     </properties>
 </project>

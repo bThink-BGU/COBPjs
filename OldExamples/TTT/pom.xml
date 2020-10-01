@@ -15,8 +15,8 @@
     <packaging>jar</packaging>
 
     <properties>
-        <exec.mainClass>il.ac.bgu.cs.bp.bpjs.context.examples.ttt.Main</exec.mainClass>
-        <exec.verifierClass>il.ac.bgu.cs.bp.bpjs.context.examples.ttt.Verifier</exec.verifierClass>
+        <exec.mainClass>il.ac.bgu.cs.bp.bpjs.contextService.examples.ttt.Main</exec.mainClass>
+        <exec.verifierClass>il.ac.bgu.cs.bp.bpjs.contextService.examples.ttt.Verifier</exec.verifierClass>
     </properties>
 
 </project>
