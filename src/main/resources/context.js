@@ -9,14 +9,14 @@ const AnyBut = (type => bp.EventSet("AnyBut(" + type + ")", e => e.name != type)
 
 const bthread = function (name, f) {
     bp.registerBThread(name,
-        {interrupt: [], name: name},
+        // {interrupt: [], name: name}, // from BPjs 0.10.6
         function () {
             f()
         })
 }
 
 const sync = function (stmt, priority) {
-    if (stmt.interrupt) {
+    /*if (stmt.interrupt) {
         if (isArray(stmt.interrupt)) {
             stmt.interrupt = stmt.interrupt.concat(bp.thread.data.interrupt)
         } else {
@@ -24,7 +24,7 @@ const sync = function (stmt, priority) {
         }
     } else {
         stmt.interrupt = bp.thread.data.interrupt
-    }
+    }*/ // from BPjs 0.10.6
     return bp.sync(stmt, priority ? priority : 0)
 }
 
@@ -51,10 +51,10 @@ const AnyDeleteEntityCTX = bp.EventSet("AnyDeleteEntityCTX", e => (String(e.name
 const AnyChangedEntityCTX = bp.EventSet("AnyEntityChangedCTX", e => (String(e.name).equals("CTX.EntityChanged")))
 const AnyRegisterQueryCTX = bp.EventSet("AnyRegisterQueryCTX", e => (String(e.name).equals("CTX.RegisterQuery")))
 const AllButCTX = bp.EventSet("AllButCTX", e => (String(e.name) != "___CTX___"))
-const AllButContext = bp.EventSet("AllButContext", e => (!ctxEvents.includes(String(e.name))))
-const ContextEvents = bp.EventSet("ContextEvents", e => (ctxEvents.includes(String(e.name))))
-const ContextResultEvents = bp.EventSet("ContextResultEvents", e => (ctxResultEvents.includes(String(e.name))))
-const ContextRequestEvents = bp.EventSet("ContextRequestEvents", e => (ctxRequestEvents.includes(String(e.name))))
+const AllButContext = bp.EventSet("AllButContext", e => (ctxEvents.indexOf(String(e.name)) === -1))
+const ContextEvents = bp.EventSet("ContextEvents", e => (ctxEvents.indexOf(String(e.name))) > -1)
+const ContextResultEvents = bp.EventSet("ContextResultEvents", e => (ctxResultEvents.indexOf(String(e.name))) > -1)
+const ContextRequestEvents = bp.EventSet("ContextRequestEvents", e => (ctxRequestEvents.indexOf(String(e.name))) > -1)
 const AnyEvents = AllButCTX
 
 const AnyInContext = ((type, ctx) => bp.EventSet("Any(" + type + ")", e => e.name == type && e.data.id == ctx.id))
@@ -125,22 +125,24 @@ function getActiveResults(query) {
 }
 
 var cbt = function (name, q, bt) {
-    bp.registerBThread("cbt: " + name, {interrupt: []}, function () {
-        while (true) {
-            let changes = Context.GetInstance().getNewForQuery(q)
-            for (let i = 0; i < changes.length; i++) {
-                let change = changes[i];
-                ((btname,query,entity) => {
-                    bp.registerBThread(btname,
-                        {query: query, seed: entity.id, interrupt: CtxEnd(query, entity.id)},
-                        function () {
-                            bt(entity)
-                        });
-                })("Live copy" + ": " + name + " " + change.entity.id + " (" + Context.generateUniqueId() + ")",
-                    q,
-                    change.entity)
+    bp.registerBThread("cbt: " + name,
+        // {interrupt: []}, // from BPjs 0.10.6
+        function () {
+            while (true) {
+                let changes = Context.GetInstance().getNewForQuery(q)
+                for (let i = 0; i < changes.length; i++) {
+                    let change = changes[i];
+                    ((btname, query, entity) => {
+                        bp.registerBThread(btname,
+                            // {query: query, seed: entity.id, interrupt: CtxEnd(query, entity.id)}, // from BPjs 0.10.6
+                            function () {
+                                bt(entity)
+                            });
+                    })("Live copy" + ": " + name + " " + change.entity.id + " (" + Context.generateUniqueId() + ")",
+                        q,
+                        change.entity)
+                }
+                sync({waitFor: AnyChangedEntityCTX})
             }
-            sync({waitFor: AnyChangedEntityCTX})
-        }
-    })
+        })
 }

@@ -21,11 +21,11 @@ public class Verifier {
         final ContextBProgram bprog = new ContextBProgram(options.path);
         bprog.setEventSelectionStrategy(new PrioritizedBSyncEventSelectionStrategyWithDefault());
         DfsBProgramVerifier vrf = new DfsBProgramVerifier();      // ... and a verifier
-        vrf.setIterationCountGap(50);
+        vrf.setIterationCountGap(200);
         vrf.setProgressListener(new PrintDfsVerifierListener());  // add a listener to print progress
 //        vrf.setDebugMode(true);
         vrf.addInspection(ExecutionTraceInspections.FAILED_ASSERTIONS);
-        vrf.addInspection(ExecutionTraceInspections.DEADLOCKS);
+//        vrf.addInspection(ExecutionTraceInspections.DEADLOCKS);
         VerificationResult res = vrf.verify(bprog);                  // this might take a while
         System.out.println("# state = " + res.getScannedStatesCount());
         System.out.println("time in millis = " + res.getTimeMillies());
