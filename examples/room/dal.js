@@ -12,12 +12,12 @@ function isRoom(type) {
 let dal = {}
 
 dal.Minute = {}
-dal.Minute.query = ctx => ctx.type.equals("Minute")
+dal.Minute.query = ctx => ctx.type.equals("Time")
 dal.Minute.name = 'Time.All'
 ContextService.GetInstance().registerQuery(dal.Minute.name, dal.Minute.query)
 
 dal.NoMovement3 = {}
-dal.NoMovement3.query = ctx => isRoom(ctx.type) && !ctx.data.isEmpty && getQueryResults(dal.Minute.query).get(0).data.value - ctx.data.lastMovement >= 3
+dal.NoMovement3.query = ctx => isRoom(ctx.type) && !ctx.data.isEmpty && getQueryResults(dal.Minute.name).get(0).data.value - ctx.data.lastMovement >= 3
 dal.NoMovement3.name = 'Room.NoMovement3'
 ContextService.GetInstance().registerQuery(dal.NoMovement3.name, dal.NoMovement3.query)
 
@@ -75,7 +75,7 @@ bthread('RoomCtx handler', function () {
                 } else if (e.name == "RoomIsEmpty") {
                     room.data.isEmpty = true;
                 } else if (e.name == "MotionDetected") {
-                    let time = getQueryResults("Time.All").get(0).time
+                    let time = getQueryResults(dal.Minute.name).get(0).data.value
                     // bp.log.info("time is "+time)
                     room.data.lastMovement = time
                 }
@@ -94,6 +94,6 @@ bthread("populate data", function () {
     // sync({request: CtxRegisterQuery("Office.Empty")}, 100)
     // sync({request: CtxRegisterQuery("Office.Nonempty")}, 100)*/
     sync({request: bp.Event("AddTime", ContextEntity("Time","Time",{value:3}))}, 100)
-    sync({request: bp.Event("AddRoom", ContextEntity("Room","96/224",{light:"96/224.light", isEmpty:true, lastMovement:0}))}, 100)
+    sync({request: bp.Event("AddRoom", ContextEntity("96/224","Room",{light:"96/224.light", isEmpty:true, lastMovement:0}))}, 100)
     // bp.sync({request: bp.Event("AddRoom", Office("37/101"))}, 100)
 })

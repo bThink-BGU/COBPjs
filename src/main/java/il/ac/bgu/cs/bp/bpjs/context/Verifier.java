@@ -21,6 +21,7 @@ public class Verifier {
         final ContextBProgram bprog = new ContextBProgram(options.path);
         bprog.setEventSelectionStrategy(new PrioritizedBSyncEventSelectionStrategyWithDefault());
         DfsBProgramVerifier vrf = new DfsBProgramVerifier();      // ... and a verifier
+        ContextService contextService = ContextService.CreateInstance(bprog);
         vrf.setIterationCountGap(200);
         vrf.setProgressListener(new PrintDfsVerifierListener());  // add a listener to print progress
 //        vrf.setDebugMode(true);

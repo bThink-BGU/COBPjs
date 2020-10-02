@@ -136,13 +136,15 @@ var cbt = function (name, q, bt) {
                 let changes = ContextService.GetInstance().getNewForQuery(q)
                 for (let i = 0; i < changes.length; i++) {
                     let change = changes[i];
+                    // bp.log.info(change)
+                    let btname = "Live copy" + ": " + name + " " + change.entity.id + " (" + ContextService.generateUniqueId() + ")";
                     ((btname, query, entity) => {
                         bp.registerBThread(btname,
                             {query: query, seed: entity.id, interrupt: CtxEnd(query, entity.id)}, // from BPjs 0.10.6
                             function () {
                                 bt(entity)
                             });
-                    })("Live copy" + ": " + name + " " + change.entity.id + " (" + Context.generateUniqueId() + ")",
+                    })(btname,
                         q,
                         change.entity)
                 }

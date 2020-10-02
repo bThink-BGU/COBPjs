@@ -1,4 +1,4 @@
-cbt("MarkNonEmptyUponMotion", "Room.Empty", function (room) {
+cbt("MarkNonEmptyUponMotion", dal.EmptyRoom.name, function (room) {
     sync({ waitFor: bp.Event("MotionDetected", room.id) });
     sync({request: bp.Event("RoomIsNonEmpty", room.id)});
 });
@@ -11,11 +11,11 @@ cbt("MarkEmptyIfNoMovement", "Room.NoMovement3", function (room) {
 
 cbt("Light: On", "Room.Nonempty", function (room) {
     sync({
-        request: bp.Event("On", room.light),
+        request: bp.Event("On", room.data.light),
     });
 });
 cbt("Light: Off", "Room.Empty", function (room) {
-    sync({request: bp.Event("Off", room.light)});
+    sync({request: bp.Event("Off", room.data.light)});
 });
 /*
 

@@ -32,6 +32,10 @@ public class ContextService implements Serializable {
         return singleton;
     }
 
+    public static ContextService CreateInstance(BProgram bp) {
+        return CreateInstance(bp, null);
+    }
+
     public static int generateUniqueId() {
         return singleton.idCounter.incrementAndGet();
     }
