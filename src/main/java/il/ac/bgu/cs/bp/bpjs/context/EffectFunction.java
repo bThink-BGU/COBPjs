@@ -13,8 +13,15 @@ public class EffectFunction extends BProgramRunnerListenerAdapter {
         this.effect = effect;
     }
 
+
     @Override
     public void eventSelected(BProgram bp, BEvent event) {
-        effect.call(Context.getCurrentContext(), bp.getGlobalScope(), bp.getGlobalScope(), new Object[]{event});
+        Context ctx = Context.enter();
+        try {
+            effect.call(ctx, bp.getGlobalScope(), bp.getGlobalScope(), new Object[]{bp, event});
+        }finally {
+            Context.exit();
+        }
+
     }
 }

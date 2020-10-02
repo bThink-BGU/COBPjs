@@ -9,90 +9,112 @@ function isRoom(type) {
     return type.equals('Room') || type.equals('Office')
 }
 
-let dal = {}
+let queries = {}
 
-dal.Minute = {}
-dal.Minute.query = ctx => ctx.type.equals("Time")
-dal.Minute.name = 'Time.All'
-ContextService.GetInstance().registerQuery(dal.Minute.name, dal.Minute.query)
+queries.Minute = {}
+queries.Minute.query = ctx => ctx.type.equals("Time")
+queries.Minute.name = 'Time.All'
+ContextService.GetInstance().registerQuery(queries.Minute.name, queries.Minute.query)
 
-dal.NoMovement3 = {}
-dal.NoMovement3.query = ctx => isRoom(ctx.type) && !ctx.data.isEmpty && getQueryResults(dal.Minute.name).get(0).data.value - ctx.data.lastMovement >= 3
-dal.NoMovement3.name = 'Room.NoMovement3'
-ContextService.GetInstance().registerQuery(dal.NoMovement3.name, dal.NoMovement3.query)
+queries.NoMovement3 = {}
+queries.NoMovement3.query = ctx => isRoom(ctx.type) && !ctx.data.isEmpty && getQueryResults(queries.Minute.name).get(0).data.value - ctx.data.lastMovement >= 3
+queries.NoMovement3.name = 'Room.NoMovement3'
+ContextService.GetInstance().registerQuery(queries.NoMovement3.name, queries.NoMovement3.query)
 
-dal.Room = {}
-dal.Room.query = ctx => isRoom(ctx.type)
-dal.Room.name = 'Room.All'
-ContextService.GetInstance().registerQuery(dal.Room.name, dal.Room.query)
+queries.Room = {}
+queries.Room.query = ctx => isRoom(ctx.type)
+queries.Room.name = 'Room.All'
+ContextService.GetInstance().registerQuery(queries.Room.name, queries.Room.query)
 
-dal.EmptyRoom = {}
-dal.EmptyRoom.query = ctx => isRoom(ctx.type) && ctx.data.isEmpty
-dal.EmptyRoom.name = 'Room.Empty'
-ContextService.GetInstance().registerQuery(dal.EmptyRoom.name, dal.EmptyRoom.query)
+queries.EmptyRoom = {}
+queries.EmptyRoom.query = ctx => isRoom(ctx.type) && ctx.data.isEmpty
+queries.EmptyRoom.name = 'Room.Empty'
+ContextService.GetInstance().registerQuery(queries.EmptyRoom.name, queries.EmptyRoom.query)
 
-dal.NonEmptyRoom = {}
-dal.NonEmptyRoom.query = ctx => isRoom(ctx.type) && !ctx.data.isEmpty
-dal.NonEmptyRoom.name = 'Room.Nonempty'
-ContextService.GetInstance().registerQuery(dal.NonEmptyRoom.name, dal.NonEmptyRoom.query)
+queries.NonEmptyRoom = {}
+queries.NonEmptyRoom.query = ctx => isRoom(ctx.type) && !ctx.data.isEmpty
+queries.NonEmptyRoom.name = 'Room.Nonempty'
+ContextService.GetInstance().registerQuery(queries.NonEmptyRoom.name, queries.NonEmptyRoom.query)
 
-dal.EmptyOffice = {}
-dal.EmptyOffice.query = ctx => ctx.type.equals("Office") && ctx.data.isEmpty
-dal.EmptyOffice.name = 'Office.Empty'
-ContextService.GetInstance().registerQuery(dal.EmptyOffice.name, dal.EmptyOffice.query)
+queries.EmptyOffice = {}
+queries.EmptyOffice.query = ctx => ctx.type.equals("Office") && ctx.data.isEmpty
+queries.EmptyOffice.name = 'Office.Empty'
+ContextService.GetInstance().registerQuery(queries.EmptyOffice.name, queries.EmptyOffice.query)
 
-dal.NonEmptyOffice = {}
-dal.NonEmptyOffice.query = ctx => ctx.type.equals("Office") && !ctx.data.isEmpty
-dal.NonEmptyOffice.name = 'Office.Nonempty'
-ContextService.GetInstance().registerQuery(dal.NonEmptyOffice.name, dal.NonEmptyOffice.query)
+queries.NonEmptyOffice = {}
+queries.NonEmptyOffice.query = ctx => ctx.type.equals("Office") && !ctx.data.isEmpty
+queries.NonEmptyOffice.name = 'Office.Nonempty'
+ContextService.GetInstance().registerQuery(queries.NonEmptyOffice.name, queries.NonEmptyOffice.query)
 
 /*dal.SpecificRoom = {}
 dal.SpecificRoom.query = id => (ctx => isRoom(ctx.type) && ctx.id.equals(id))
 dal.SpecificRoom.name = 'SpecificRoom'*/
 
+let effects = {}
 
+effects.AddTime = {}
+effects.AddTime.name = "AddTime"
+effects.AddTime.effect = EffectFunction((bp, e) => {
+    if(e.name.equals("AddTime")) {
+        ContextService.GetInstance().insertEntity(e.data)
+    }
+})
+ContextService.GetInstance().addEffectFunction(effects.AddTime.effect)
 
-bthread("MinuteHandler", function () {
-    let time = sync({waitFor: Any("AddTime")}).data;
-    sync({request: CtxInsertEntity(time)}, 200)
-    while (true) {
-        sync({waitFor: Any('Minute')})
+effects.Minute = {}
+effects.Minute.name = "Minute"
+effects.Minute.effect = EffectFunction((bp, e) => {
+    if(e.name.equals("Minute")) {
+        let time = ContextService.GetInstance().getEntity("Time")
         time.data.value++
-        sync({request: CtxUpdateEntity(time)}, 200)
+        ContextService.GetInstance().updateEntity(time)
     }
 })
+ContextService.GetInstance().addEffectFunction(effects.Minute.effect)
 
-bthread('RoomCtx handler', function () {
-    while (true) {
-        let room = sync({waitFor: Any("AddRoom")}).data
-        sync({request: CtxInsertEntity(room)}, 200)
-        bthread("RoomCtx handler: " + room.id, function () {
-            while (true) {
-                let e = sync({waitFor: anyRoomUpdate(room.id)})
-                // bp.log.info("event in room " + room.id)
-                if (e.name == "RoomIsNonEmpty") {
-                    room.data.isEmpty = false;
-                } else if (e.name == "RoomIsEmpty") {
-                    room.data.isEmpty = true;
-                } else if (e.name == "MotionDetected") {
-                    let time = getQueryResults(dal.Minute.name).get(0).data.value
-                    // bp.log.info("time is "+time)
-                    room.data.lastMovement = time
-                }
-                sync({request: CtxUpdateEntity(room)}, 200)
-            }
-        })
+effects.AddRoom = {}
+effects.AddRoom.name = "AddRoom"
+effects.AddRoom.effect = EffectFunction((bp, e) => {
+    if(e.name.equals("AddRoom")) {
+        ContextService.GetInstance().insertEntity(e.data)
     }
 })
+ContextService.GetInstance().addEffectFunction(effects.AddRoom.effect)
+
+effects.RoomIsNonEmpty = {}
+effects.RoomIsNonEmpty.name = "RoomIsNonEmpty"
+effects.RoomIsNonEmpty.effect = EffectFunction((bp, e) => {
+    if(e.name.equals("RoomIsNonEmpty")) {
+        let room = ContextService.GetInstance().getEntity(e.data)
+        room.data.isEmpty = false
+        ContextService.GetInstance().updateEntity(room)
+    }
+})
+ContextService.GetInstance().addEffectFunction(effects.RoomIsNonEmpty.effect)
+
+effects.RoomIsEmpty = {}
+effects.RoomIsEmpty.name = "RoomIsEmpty"
+effects.RoomIsEmpty.effect = EffectFunction((bp, e) => {
+    if(e.name.equals("RoomIsEmpty")) {
+        let room = ContextService.GetInstance().getEntity(e.data)
+        room.data.isEmpty = false
+        ContextService.GetInstance().updateEntity(room)
+    }
+})
+ContextService.GetInstance().addEffectFunction(effects.RoomIsEmpty.effect)
+
+effects.MotionDetected = {}
+effects.MotionDetected.name = "MotionDetected"
+effects.MotionDetected.effect = EffectFunction((bp, e) => {
+    if(e.name.equals("MotionDetected")) {
+        let room = ContextService.GetInstance().getEntity(e.data)
+        room.data.lastMovement = ContextService.GetInstance().getEntity("Time").data.value
+        ContextService.GetInstance().updateEntity(room)
+    }
+})
+ContextService.GetInstance().addEffectFunction(effects.MotionDetected.effect)
 
 bthread("populate data", function () {
-    /*sync({request: CtxRegisterQuery("Time.All")}, 100)
-    sync({request: CtxRegisterQuery("Room.All")}, 100)
-    sync({request: CtxRegisterQuery("Room.NoMovement3")}, 100)
-    sync({request: CtxRegisterQuery("Room.Empty")}, 100)
-    sync({request: CtxRegisterQuery("Room.Nonempty")}, 100)
-    // sync({request: CtxRegisterQuery("Office.Empty")}, 100)
-    // sync({request: CtxRegisterQuery("Office.Nonempty")}, 100)*/
     sync({request: bp.Event("AddTime", ContextEntity("Time","Time",{value:3}))}, 100)
     sync({request: bp.Event("AddRoom", ContextEntity("96/224","Room",{light:"96/224.light", isEmpty:true, lastMovement:0}))}, 100)
     // bp.sync({request: bp.Event("AddRoom", Office("37/101"))}, 100)

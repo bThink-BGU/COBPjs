@@ -50,17 +50,30 @@ public class ContextService implements Serializable {
     }
 
     public List<ContextEntity> getQueryResults(String query) {
+        return getQueryResults(queries.get(query));
+    }
+
+    public List<ContextEntity> getQueryResults(Function query) {
         return CTX.values().stream().filter(entity -> runQuery(query, entity)).collect(Collectors.toList());
     }
 
+    public ContextEntity getEntity(String id) {
+        return CTX.get(id);
+    }
+
     private boolean runQuery(String queryName, ContextEntity entity) {
-        Function fct = queries.get(queryName);
+        return runQuery(queries.get(queryName), entity);
+    }
+
+    private boolean runQuery(Function fct, ContextEntity entity) {
         Object result = fct.call(Context.getCurrentContext(), bp.getGlobalScope(), bp.getGlobalScope(), new Object[]{entity});
         return (boolean) Context.jsToJava(result,boolean.class);
     }
 
     public ActiveChange[] recentChanges() {
-        return changes.toArray(ActiveChange[]::new);
+        ActiveChange[] ans = changes.toArray(ActiveChange[]::new);
+        changes.clear();
+        return ans;
     }
 
     private ContextService(BProgram bp, BProgramRunner rnr) {
@@ -83,10 +96,6 @@ public class ContextService implements Serializable {
         }
         CTX.get(detachedEntity.id).mergeChanges(bp, detachedEntity);
         updateQueries();
-    }
-
-    public ActiveChange[] getNewForQuery(String query) {
-        return changes.stream().filter(c -> c.type.equals("new") && c.query.equals(query)).toArray(ActiveChange[]::new);
     }
 
     public ActiveChange[] getRecentCtxEnd() {
@@ -115,7 +124,7 @@ public class ContextService implements Serializable {
     }
 
     private void updateQueries() {
-        changes.clear();
+//        changes.clear();
         active.entrySet().forEach(entry -> {
             List<ContextEntity> entryEntities = entry.getValue();
             // Remember the list of contexts that we already reported of

@@ -1,20 +1,20 @@
-cbt("MarkNonEmptyUponMotion", dal.EmptyRoom.name, function (room) {
+cbt("MarkNonEmptyUponMotion", queries.EmptyRoom.name, function (room) {
     sync({ waitFor: bp.Event("MotionDetected", room.id) });
     sync({request: bp.Event("RoomIsNonEmpty", room.id)});
 });
-cbt("MarkEmptyIfNoMovement", "Room.NoMovement3", function (room) {
+cbt("MarkEmptyIfNoMovement", queries.NoMovement3.name, function (room) {
     sync({
         request: bp.Event("RoomIsEmpty", room.id),
         waitFor: bp.Event("MotionDetected", room.id)
     });
 });
 
-cbt("Light: On", "Room.Nonempty", function (room) {
+cbt("Light: On", queries.NonEmptyRoom.name, function (room) {
     sync({
         request: bp.Event("On", room.data.light),
     });
 });
-cbt("Light: Off", "Room.Empty", function (room) {
+cbt("Light: Off", queries.EmptyRoom.name, function (room) {
     sync({request: bp.Event("Off", room.data.light)});
 });
 /*

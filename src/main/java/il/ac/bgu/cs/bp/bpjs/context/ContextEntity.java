@@ -27,7 +27,8 @@ public class ContextEntity implements Serializable {
     }
 
     public void mergeChanges(BProgram bp, ContextEntity other) {
-        assign(bp, this.data, other.data);
+        if(this!=other)
+            assign(bp, this.data, other.data);
     }
 
     private Object assign(BProgram bp, Object target, Object source) {
