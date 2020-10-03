@@ -1,4 +1,5 @@
 importPackage(Packages.il.ac.bgu.cs.bp.bpjs.context);
+importPackage(Packages.java.util);
 
 /////////////////////////////////////////////////////////////////////
 // BP related functions
@@ -33,14 +34,16 @@ const sync = function (stmt, priority) {
 /////////////////////////////////////////////////////////////////////
 const CtxEntityChanged = (changes => bp.Event("CTX.EntityChanged", changes))
 const CtxEndES = (query, id) => bp.EventSet("", e => {
-    return e.name.equals("CTX.EntityChanged") && e.data.filter(change => change.type.equals("end") && change.query.equals(query) && change.entity.id.equals(id)).length > 1
+    var val =  e.name.equals("CTX.EntityChanged") && e.data.stream().filter(change => change.type.equals("end") && change.query.equals(query) && change.entity.id.equals(id)).count() > 1
+    if(val) bp.log.info("val" + val)
+    return val
 })
 const CtxStartES = (query) => bp.EventSet("", e => {
     if (!e.name.equals("CTX.EntityChanged")) {
         return false
     }
-    for (let i = 0; i < e.data.length; i++) {
-        if (e.data[i].type.equals("new") && e.data[i].query.equals(query)) {
+    for (let i = 0; i < e.data.size(); i++) {
+        if (e.data.get(i).type.equals("new") && e.data.get(i).query.equals(query)) {
             return true
         }
     }
@@ -51,65 +54,20 @@ function assign(target, source) {
     return Object.assign(target, source)
 }
 
+var CTX_Instance = ContextService.GetInstance();
 bthread("ContextHandler", function () {
-    var CTX_Instance = ContextService.GetInstance()
     while (true) {
-        sync({waitFor: bp.all})
+        var e = sync({waitFor: bp.all})
+        CTX_Instance.runEffectFunctionsInVerification(e) //NOT ACCURATE since b-threads may advance before this b-thread
         var changes = CTX_Instance.recentChanges()
-        if (changes.length > 0)
+/*        bp.log.info("last event: " + e)
+        bp.log.info("changes length: " + changes.length)
+        bp.log.info("changes: " + Arrays.toString(changes))*/
+        if (changes.size() > 0) {
             sync({request: CtxEntityChanged(changes)}, 5000)
-    }
-})
-/*
-bthread("CTX.InsertEntityHandler", function () {
-    while (true) {
-        let ctx = sync({waitFor: AnyInsertEntityCTX}).data
-        sync({request: ___CTX___, block: AllButCTX})
-        ContextService.GetInstance().insertEntity(ctx)
-        sync({request: CtxEntityChanged("Insert", ctx), block: AnyBut("CTX.EntityChanged")})
-    }
-})
-
-bthread("CTX.UpdateEntityHandler", function () {
-    while (true) {
-        let ctx = sync({waitFor: AnyUpdateEntityCTX}).data
-        sync({request: ___CTX___, block: AllButCTX})
-        ContextService.GetInstance().updateEntity(ctx)
-        sync({request: CtxEntityChanged("Update", ctx), block: AnyBut("CTX.EntityChanged")})
-    }
-})
-
-bthread("CTX.DeleteEntityHandler", function () {
-    while (true) {
-        let ctx = sync({waitFor: AnyDeleteEntityCTX}).data
-        sync({request: ___CTX___, block: AllButCTX})
-        ContextService.GetInstance().deleteEntity(ctx)
-        sync({request: CtxEntityChanged("Delete", ctx), block: AnyBut("CTX.EntityChanged")})
-    }
-})*/
-
-/*bthread("CTX.RegisterQueryHandler", function () {
-    while (true) {
-        let query = sync({waitFor: AnyRegisterQueryCTX}).data
-        sync({request: ___CTX___, block: AllButCTX})
-        ContextService.GetInstance().registerQuery(query)
-        sync({request: CtxQueryRegistered(query), block: AnyBut("CTX.QueryRegistered")})
-    }
-})
-
-bthread("AnnounceEndedCTX", function () {
-    while (true) {
-        sync({waitFor: AnyChangedEntityCTX})
-        // sync({request: ___CTX___, block: AllButCTX})
-        let changes = ContextService.GetInstance().getRecentCtxEnd()
-        for (let i = 0; i < changes.length; i++) {
-            let change = changes[i]
-            if (change.type.equals("end")) {
-                sync({request: CtxEnd(change.query, change.entity.id), block: AnyBut("CtxEnd")})
-            }
         }
     }
-})*/
+})
 
 function getQueryResults(query) {
     return ContextService.GetInstance().getQueryResults(query)
@@ -141,9 +99,10 @@ var cbt = function (name, q, bt) {
                 }
                 let changes = sync({waitFor: CtxStartES(q)}).data
                 active = []
-                for (let i = 0; i < changes.length; i++) {
-                    if (changes[i].type.equals("new") && changes[i].query.equals(q))
-                        active.push(changes[i])
+                for (let i = 0; i < changes.size() ; i++) {
+                    let change = changes.get(0)
+                    if (change.type.equals("new") && change.query.equals(q))
+                        active.push(change)
                 }
             }
         })

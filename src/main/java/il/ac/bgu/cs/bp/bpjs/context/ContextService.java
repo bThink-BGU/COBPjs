@@ -1,10 +1,12 @@
 package il.ac.bgu.cs.bp.bpjs.context;
 
 import il.ac.bgu.cs.bp.bpjs.execution.BProgramRunner;
+import il.ac.bgu.cs.bp.bpjs.model.BEvent;
 import il.ac.bgu.cs.bp.bpjs.model.BProgram;
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.Function;
 
+import java.io.ObjectStreamException;
 import java.io.Serializable;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -12,15 +14,15 @@ import java.util.stream.Collectors;
 
 public class ContextService implements Serializable {
     private static ContextService singleton;
-    private final transient AtomicInteger idCounter = new AtomicInteger(0);
+    private final BProgram bp;
+    private final BProgramRunner rnr;
 
-    private final transient BProgram bp;
-    private final transient BProgramRunner rnr;
-    private final transient Map<String, Function> queries = new HashMap<>();
-    private final Map<String, ContextEntity> CTX = new HashMap<>();
-    private final Map<String, List<ContextEntity>> active = new HashMap<>();
-    private final Set<ActiveChange> changes = new HashSet<>();
-    private final ArrayList<EffectFunction> effectFunctions = new ArrayList<>();
+    private AtomicInteger idCounter = new AtomicInteger(0);
+    private Map<String, Function> queries = new HashMap<>();
+    private Map<String, ContextEntity> CTX = new HashMap<>();
+    private Map<String, List<ContextEntity>> active = new HashMap<>();
+    private Set<ActiveChange> changes = new HashSet<>();
+    private ArrayList<EffectFunction> effectFunctions = new ArrayList<>();
 
     public static ContextService GetInstance() {
         return singleton;
@@ -32,8 +34,47 @@ public class ContextService implements Serializable {
         return singleton;
     }
 
-    public static ContextService CreateInstance(BProgram bp) {
-        return CreateInstance(bp, null);
+    private static class ContextServiceProxy implements Serializable {
+        private final AtomicInteger idCounter;
+        private final Map<String, ContextEntity> CTX;
+        private final Map<String, List<ContextEntity>> active;
+        private final Set<ActiveChange> changes;
+
+        ContextServiceProxy(ContextService cs) {
+            this.idCounter = cs.idCounter;
+            this.CTX = cs.CTX;
+            this.active = cs.active;
+            this.changes = cs.changes;
+        }
+
+        private Object readResolve() throws ObjectStreamException {
+            singleton.idCounter = this.idCounter;
+            singleton.CTX = this.CTX;
+            singleton.active = this.active;
+            singleton.changes = this.changes;
+
+            return singleton;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            ContextService contextService = (ContextService) o;
+            return Objects.equals(CTX, contextService.CTX) &&
+                    Objects.equals(idCounter, contextService.idCounter) &&
+                    Objects.equals(active, contextService.active) &&
+                    Objects.equals(changes, contextService.changes);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(CTX, active, changes, idCounter);
+        }
+    }
+
+    private Object writeReplace() throws ObjectStreamException {
+        return new ContextServiceProxy(this);
     }
 
     public static int generateUniqueId() {
@@ -42,7 +83,16 @@ public class ContextService implements Serializable {
 
     public void addEffectFunction(EffectFunction function) {
         this.effectFunctions.add(function);
-        rnr.addListener(function);
+        if(rnr!=null)
+            rnr.addListener(function);
+    }
+
+    public void runEffectFunctionsInVerification(BEvent selectedEvent) {
+        if(rnr == null) {
+            this.effectFunctions.forEach(c -> {
+                c.eventSelected(bp, selectedEvent);
+            });
+        }
     }
 
     public List<ContextEntity> getActive(String query) {
@@ -70,10 +120,8 @@ public class ContextService implements Serializable {
         return (boolean) Context.jsToJava(result,boolean.class);
     }
 
-    public ActiveChange[] recentChanges() {
-        ActiveChange[] ans = changes.toArray(ActiveChange[]::new);
-        changes.clear();
-        return ans;
+    public List<ActiveChange> recentChanges() {
+        return new ArrayList<ActiveChange>(changes);
     }
 
     private ContextService(BProgram bp, BProgramRunner rnr) {
@@ -124,6 +172,7 @@ public class ContextService implements Serializable {
     }
 
     private void updateQueries() {
+        changes = new HashSet<>();
 //        changes.clear();
         active.entrySet().forEach(entry -> {
             List<ContextEntity> entryEntities = entry.getValue();
@@ -149,12 +198,15 @@ public class ContextService implements Serializable {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         ContextService contextService = (ContextService) o;
-        return Objects.equals(CTX, contextService.CTX);
+        return Objects.equals(CTX, contextService.CTX) &&
+                Objects.equals(idCounter, contextService.idCounter) &&
+                Objects.equals(active, contextService.active) &&
+                Objects.equals(changes, contextService.changes);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(CTX);
+        return Objects.hash(CTX, idCounter, active, changes);
     }
 
     public static class ActiveChange implements Serializable {

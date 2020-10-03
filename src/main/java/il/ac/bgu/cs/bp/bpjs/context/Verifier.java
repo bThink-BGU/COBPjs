@@ -16,15 +16,15 @@ public class Verifier {
         parser.parseAndExitUponError(args);
         options = parser.getOptions(BProgramOptions.class);
         options.path = "examples/room";
-        
+
         System.out.println("\nRunning tests from path: " + options.path);
         final ContextBProgram bprog = new ContextBProgram(options.path);
         bprog.setEventSelectionStrategy(new PrioritizedBSyncEventSelectionStrategyWithDefault());
+        ContextService contextService = ContextService.CreateInstance(bprog, null);
         DfsBProgramVerifier vrf = new DfsBProgramVerifier();      // ... and a verifier
-        ContextService contextService = ContextService.CreateInstance(bprog);
         vrf.setIterationCountGap(200);
         vrf.setProgressListener(new PrintDfsVerifierListener());  // add a listener to print progress
-//        vrf.setDebugMode(true);
+        vrf.setDebugMode(true);
 //        vrf.addInspection(ExecutionTraceInspections.FAILED_ASSERTIONS);
         vrf.addInspection(ExecutionTraceInspections.DEADLOCKS);
         VerificationResult res = vrf.verify(bprog);                  // this might take a while

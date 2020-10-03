@@ -6,7 +6,9 @@ import il.ac.bgu.cs.bp.bpjs.model.BProgram;
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.Function;
 
-public class EffectFunction extends BProgramRunnerListenerAdapter {
+import java.io.Serializable;
+
+public class EffectFunction extends BProgramRunnerListenerAdapter implements Serializable {
     private final Function effect;
 
     public EffectFunction(Function effect) {
