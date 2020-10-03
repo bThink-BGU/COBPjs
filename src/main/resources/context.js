@@ -34,20 +34,12 @@ const sync = function (stmt, priority) {
 /////////////////////////////////////////////////////////////////////
 const CtxEntityChanged = (changes => bp.Event("CTX.EntityChanged", changes))
 const CtxEndES = (query, id) => bp.EventSet("", e => {
-    var val =  e.name.equals("CTX.EntityChanged") && e.data.stream().filter(change => change.type.equals("end") && change.query.equals(query) && change.entity.id.equals(id)).count() > 1
-    if(val) bp.log.info("val" + val)
-    return val
+    return e.name.equals("CTX.EntityChanged") &&
+        e.data.stream().filter(change => change.type.equals("end") && change.query.equals(query) && change.entity.id.equals(id)).count() > 0
 })
 const CtxStartES = (query) => bp.EventSet("", e => {
-    if (!e.name.equals("CTX.EntityChanged")) {
-        return false
-    }
-    for (let i = 0; i < e.data.size(); i++) {
-        if (e.data.get(i).type.equals("new") && e.data.get(i).query.equals(query)) {
-            return true
-        }
-    }
-    return false
+    return  e.name.equals("CTX.EntityChanged") &&
+        e.data.stream().filter(change => change.type.equals("new") && change.query.equals(query)).count() > 0
 })
 
 function assign(target, source) {
@@ -60,9 +52,9 @@ bthread("ContextHandler", function () {
         var e = sync({waitFor: bp.all})
         CTX_Instance.runEffectFunctionsInVerification(e) //NOT ACCURATE since b-threads may advance before this b-thread
         var changes = CTX_Instance.recentChanges()
-/*        bp.log.info("last event: " + e)
-        bp.log.info("changes length: " + changes.length)
-        bp.log.info("changes: " + Arrays.toString(changes))*/
+        /*        bp.log.info("last event: " + e)
+                bp.log.info("changes length: " + changes.length)
+                bp.log.info("changes: " + Arrays.toString(changes))*/
         if (changes.size() > 0) {
             sync({request: CtxEntityChanged(changes)}, 5000)
         }
@@ -77,33 +69,34 @@ function getActiveResults(query) {
     return ContextService.GetInstance().getActive(query)
 }
 
+function createLiveCopy(name, query, entity, bt) {
+    bp.registerBThread(name,
+        {query: query, seed: entity.id, interrupt: CtxEndES(query, entity.id)}, // from BPjs 0.10.6
+        function () {
+            bt(entity)
+        })
+}
+
 var cbt = function (name, q, bt) {
     bp.registerBThread("cbt: " + name,
         {interrupt: []}, // from BPjs 0.10.6
         function () {
-            let active = ContextService.GetInstance().getActive(q)
+            ContextService.GetInstance().getActive(q).forEach(change => createLiveCopy(
+                "Live copy" + ": " + name + " " + change.entity.id + " (" + ContextService.generateUniqueId() + ")",
+                q,
+                change.entity,
+                bt
+            ))
             while (true) {
-                for (let i = 0; i < active.length; i++) {
-                    let change = active[i];
-                    // bp.log.info(change)
-                    let btname = "Live copy" + ": " + name + " " + change.entity.id + " (" + ContextService.generateUniqueId() + ")";
-                    ((btname, query, entity) => {
-                        bp.registerBThread(btname,
-                            {query: query, seed: entity.id, interrupt: CtxEndES(query, entity.id)}, // from BPjs 0.10.6
-                            function () {
-                                bt(entity)
-                            });
-                    })(btname,
+                sync({waitFor: CtxStartES(q)})
+                    .data
+                    .stream().filter(change => change.type.equals("new") && change.query.equals(q))
+                    .forEach(change => createLiveCopy(
+                        "Live copy" + ": " + name + " " + change.entity.id + " (" + ContextService.generateUniqueId() + ")",
                         q,
-                        change.entity)
-                }
-                let changes = sync({waitFor: CtxStartES(q)}).data
-                active = []
-                for (let i = 0; i < changes.size() ; i++) {
-                    let change = changes.get(0)
-                    if (change.type.equals("new") && change.query.equals(q))
-                        active.push(change)
-                }
+                        change.entity,
+                        bt
+                    ))
             }
         })
 }

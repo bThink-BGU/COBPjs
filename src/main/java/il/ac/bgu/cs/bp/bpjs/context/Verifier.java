@@ -24,7 +24,7 @@ public class Verifier {
         DfsBProgramVerifier vrf = new DfsBProgramVerifier();      // ... and a verifier
         vrf.setIterationCountGap(200);
         vrf.setProgressListener(new PrintDfsVerifierListener());  // add a listener to print progress
-        vrf.setDebugMode(true);
+//        vrf.setDebugMode(true);
 //        vrf.addInspection(ExecutionTraceInspections.FAILED_ASSERTIONS);
         vrf.addInspection(ExecutionTraceInspections.DEADLOCKS);
         VerificationResult res = vrf.verify(bprog);                  // this might take a while

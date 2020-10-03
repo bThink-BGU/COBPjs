@@ -7,6 +7,7 @@ import org.mozilla.javascript.Function;
 import org.mozilla.javascript.NativeArray;
 
 import java.io.Serializable;
+import java.util.Map;
 
 public class ContextEntity implements Serializable {
     public final String id;
@@ -53,8 +54,8 @@ public class ContextEntity implements Serializable {
 
     @Override
     public String toString() {
-        return getClass() + "{" +
-                "id='" + id + '\'' +
+        return "Entity {" +
+                "id='" + id + "'" +
                 '}';
     }
 

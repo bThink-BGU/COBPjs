@@ -38,20 +38,18 @@ public class ContextService implements Serializable {
         private final AtomicInteger idCounter;
         private final Map<String, ContextEntity> CTX;
         private final Map<String, List<ContextEntity>> active;
-        private final Set<ActiveChange> changes;
 
         ContextServiceProxy(ContextService cs) {
             this.idCounter = cs.idCounter;
             this.CTX = cs.CTX;
             this.active = cs.active;
-            this.changes = cs.changes;
         }
 
         private Object readResolve() throws ObjectStreamException {
             singleton.idCounter = this.idCounter;
             singleton.CTX = this.CTX;
             singleton.active = this.active;
-            singleton.changes = this.changes;
+            singleton.changes = new HashSet<>();
 
             return singleton;
         }
@@ -63,13 +61,12 @@ public class ContextService implements Serializable {
             ContextService contextService = (ContextService) o;
             return Objects.equals(CTX, contextService.CTX) &&
                     Objects.equals(idCounter, contextService.idCounter) &&
-                    Objects.equals(active, contextService.active) &&
-                    Objects.equals(changes, contextService.changes);
+                    Objects.equals(active, contextService.active);
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(CTX, active, changes, idCounter);
+            return Objects.hash(CTX, active, idCounter);
         }
     }
 
@@ -121,7 +118,9 @@ public class ContextService implements Serializable {
     }
 
     public List<ActiveChange> recentChanges() {
-        return new ArrayList<ActiveChange>(changes);
+        ArrayList<ActiveChange> res = new ArrayList<>(this.changes);
+        this.changes = new HashSet<>();
+        return res;
     }
 
     private ContextService(BProgram bp, BProgramRunner rnr) {
@@ -172,8 +171,6 @@ public class ContextService implements Serializable {
     }
 
     private void updateQueries() {
-        changes = new HashSet<>();
-//        changes.clear();
         active.entrySet().forEach(entry -> {
             List<ContextEntity> entryEntities = entry.getValue();
             // Remember the list of contexts that we already reported of
