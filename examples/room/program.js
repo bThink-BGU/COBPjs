@@ -17,7 +17,6 @@ cbt("Light: On", queries.NonEmptyRoom.name, function (room) {
 cbt("Light: Off", queries.EmptyRoom.name, function (room) {
     sync({request: bp.Event("Off", room.data.light)});
 });
-/*
 
 cbt("Air-conditioner: On", "Office.Nonempty", function (office) {
     sync({request: bp.Event("On", office.airConditioner)});
@@ -25,4 +24,4 @@ cbt("Air-conditioner: On", "Office.Nonempty", function (office) {
 
 cbt("Air-conditioner: Off", "Office.Empty", function (office) {
     sync({request: bp.Event("Off", office.airConditioner)});
-});*/
+});

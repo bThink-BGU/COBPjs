@@ -17,7 +17,7 @@ queries.Minute.name = 'Time.All'
 ContextService.GetInstance().registerQuery(queries.Minute.name, queries.Minute.query)
 
 queries.NoMovement3 = {}
-queries.NoMovement3.query = ctx => isRoom(ctx.type) && !ctx.data.isEmpty && getQueryResults(queries.Minute.name).get(0).data.value - ctx.data.lastMovement >= 3
+queries.NoMovement3.query = ctx => isRoom(ctx.type) && !ctx.data.isEmpty && ContextService.GetInstance().getQueryResults(queries.Minute.name).get(0).data.value - ctx.data.lastMovement >= 3
 queries.NoMovement3.name = 'Room.NoMovement3'
 ContextService.GetInstance().registerQuery(queries.NoMovement3.name, queries.NoMovement3.query)
 
@@ -54,68 +54,68 @@ let effects = {}
 
 effects.AddTime = {}
 effects.AddTime.name = "AddTime"
-effects.AddTime.effect = EffectFunction((bp, e) => {
+effects.AddTime.effect = (bp, e) => {
     if(e.name.equals("AddTime")) {
         ContextService.GetInstance().insertEntity(e.data)
     }
-})
+}
 ContextService.GetInstance().addEffectFunction(effects.AddTime.effect)
 
 effects.Minute = {}
 effects.Minute.name = "Minute"
-effects.Minute.effect = EffectFunction((bp, e) => {
+effects.Minute.effect = (bp, e) => {
     if(e.name.equals("Minute")) {
         let time = ContextService.GetInstance().getEntity("Time")
         time.data.value++
         ContextService.GetInstance().updateEntity(time)
     }
-})
+}
 ContextService.GetInstance().addEffectFunction(effects.Minute.effect)
 
 effects.AddRoom = {}
 effects.AddRoom.name = "AddRoom"
-effects.AddRoom.effect = EffectFunction((bp, e) => {
+effects.AddRoom.effect = (bp, e) => {
     if(e.name.equals("AddRoom")) {
         ContextService.GetInstance().insertEntity(e.data)
     }
-})
+}
 ContextService.GetInstance().addEffectFunction(effects.AddRoom.effect)
 
 effects.RoomIsNonEmpty = {}
 effects.RoomIsNonEmpty.name = "RoomIsNonEmpty"
-effects.RoomIsNonEmpty.effect = EffectFunction((bp, e) => {
+effects.RoomIsNonEmpty.effect = (bp, e) => {
     if(e.name.equals("RoomIsNonEmpty")) {
         let room = ContextService.GetInstance().getEntity(e.data)
         room.data.isEmpty = false
         ContextService.GetInstance().updateEntity(room)
     }
-})
+}
 ContextService.GetInstance().addEffectFunction(effects.RoomIsNonEmpty.effect)
 
 effects.RoomIsEmpty = {}
 effects.RoomIsEmpty.name = "RoomIsEmpty"
-effects.RoomIsEmpty.effect = EffectFunction((bp, e) => {
+effects.RoomIsEmpty.effect = (bp, e) => {
     if(e.name.equals("RoomIsEmpty")) {
         let room = ContextService.GetInstance().getEntity(e.data)
         room.data.isEmpty = false
         ContextService.GetInstance().updateEntity(room)
     }
-})
+}
 ContextService.GetInstance().addEffectFunction(effects.RoomIsEmpty.effect)
 
 effects.MotionDetected = {}
 effects.MotionDetected.name = "MotionDetected"
-effects.MotionDetected.effect = EffectFunction((bp, e) => {
+effects.MotionDetected.effect = (bp, e) => {
     if(e.name.equals("MotionDetected")) {
         let room = ContextService.GetInstance().getEntity(e.data)
         room.data.lastMovement = ContextService.GetInstance().getEntity("Time").data.value
         ContextService.GetInstance().updateEntity(room)
     }
-})
+}
 ContextService.GetInstance().addEffectFunction(effects.MotionDetected.effect)
 
 bthread("populate data", function () {
     sync({request: bp.Event("AddTime", ContextEntity("Time","Time",{value:3}))}, 100)
     sync({request: bp.Event("AddRoom", ContextEntity("96/224","Room",{light:"96/224.light", isEmpty:true, lastMovement:0}))}, 100)
-    // bp.sync({request: bp.Event("AddRoom", Office("37/101"))}, 100)
+    sync({request: bp.Event("AddRoom", ContextEntity("96/225","Room",{light:"96/225.light", isEmpty:true, lastMovement:0}))}, 100)
 })

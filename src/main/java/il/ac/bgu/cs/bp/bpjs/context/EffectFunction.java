@@ -24,6 +24,5 @@ public class EffectFunction extends BProgramRunnerListenerAdapter implements Ser
         }finally {
             Context.exit();
         }
-
     }
 }

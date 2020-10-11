@@ -50,11 +50,7 @@ var CTX_Instance = ContextService.GetInstance();
 bthread("ContextHandler", function () {
     while (true) {
         var e = sync({waitFor: bp.all})
-        CTX_Instance.runEffectFunctionsInVerification(e) //NOT ACCURATE since b-threads may advance before this b-thread
         var changes = CTX_Instance.recentChanges()
-        /*        bp.log.info("last event: " + e)
-                bp.log.info("changes length: " + changes.length)
-                bp.log.info("changes: " + Arrays.toString(changes))*/
         if (changes.size() > 0) {
             sync({request: CtxEntityChanged(changes)}, 5000)
         }

@@ -1,7 +1,6 @@
 package il.ac.bgu.cs.bp.bpjs.context;
 
 import il.ac.bgu.cs.bp.bpjs.execution.BProgramRunner;
-import il.ac.bgu.cs.bp.bpjs.model.BEvent;
 import il.ac.bgu.cs.bp.bpjs.model.BProgram;
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.Function;
@@ -16,8 +15,9 @@ public class ContextService implements Serializable {
     private static ContextService singleton;
     private final BProgram bp;
     private final BProgramRunner rnr;
+    private final DfsContextualBProgramVerifier vfr;
 
-    private AtomicInteger idCounter = new AtomicInteger(0);
+    private AtomicInteger idCounter = new AtomicInteger(0); // remove b-thread name from state equality
     private Map<String, Function> queries = new HashMap<>();
     private Map<String, ContextEntity> CTX = new HashMap<>();
     private Map<String, List<ContextEntity>> active = new HashMap<>();
@@ -28,8 +28,8 @@ public class ContextService implements Serializable {
         return singleton;
     }
 
-    public static ContextService CreateInstance(BProgram bp, BProgramRunner rnr) {
-        singleton = new ContextService(bp, rnr);
+    public static ContextService CreateInstance(BProgram bp, BProgramRunner rnr, DfsContextualBProgramVerifier vrf) {
+        singleton = new ContextService(bp, rnr, vrf);
 //        bp.putInGlobalScope("CTX", singleton); //TODO return
         return singleton;
     }
@@ -60,13 +60,12 @@ public class ContextService implements Serializable {
             if (o == null || getClass() != o.getClass()) return false;
             ContextService contextService = (ContextService) o;
             return Objects.equals(CTX, contextService.CTX) &&
-                    Objects.equals(idCounter, contextService.idCounter) &&
                     Objects.equals(active, contextService.active);
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(CTX, active, idCounter);
+            return Objects.hash(CTX, active);
         }
     }
 
@@ -78,19 +77,22 @@ public class ContextService implements Serializable {
         return singleton.idCounter.incrementAndGet();
     }
 
-    public void addEffectFunction(EffectFunction function) {
-        this.effectFunctions.add(function);
+    public void addEffectFunction(Function function) {
+        EffectFunction ef = new EffectFunction(function);
+        this.effectFunctions.add(ef);
         if(rnr!=null)
-            rnr.addListener(function);
+            rnr.addListener(ef);
+        else
+            vfr.addListener(ef);
     }
 
-    public void runEffectFunctionsInVerification(BEvent selectedEvent) {
+    /*public void runEffectFunctionsInVerification(BEvent selectedEvent) {
         if(rnr == null) {
             this.effectFunctions.forEach(c -> {
                 c.eventSelected(bp, selectedEvent);
             });
         }
-    }
+    }*/
 
     public List<ContextEntity> getActive(String query) {
         return active.get(query);
@@ -123,9 +125,10 @@ public class ContextService implements Serializable {
         return res;
     }
 
-    private ContextService(BProgram bp, BProgramRunner rnr) {
+    private ContextService(BProgram bp, BProgramRunner rnr, DfsContextualBProgramVerifier vfr) {
         this.bp = bp;
         this.rnr = rnr;
+        this.vfr = vfr;
     }
 
     public void insertEntity(ContextEntity entity) {
@@ -196,14 +199,13 @@ public class ContextService implements Serializable {
         if (o == null || getClass() != o.getClass()) return false;
         ContextService contextService = (ContextService) o;
         return Objects.equals(CTX, contextService.CTX) &&
-                Objects.equals(idCounter, contextService.idCounter) &&
                 Objects.equals(active, contextService.active) &&
                 Objects.equals(changes, contextService.changes);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(CTX, idCounter, active, changes);
+        return Objects.hash(CTX, active, changes);
     }
 
     public static class ActiveChange implements Serializable {

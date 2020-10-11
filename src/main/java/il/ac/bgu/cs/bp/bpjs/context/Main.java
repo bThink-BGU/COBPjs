@@ -25,7 +25,7 @@ public class Main {
         final ContextBProgram bprog = new ContextBProgram(options.path);
         bprog.setEventSelectionStrategy(new PrioritizedBSyncEventSelectionStrategyWithDefault());
         final BProgramRunner rnr = new BProgramRunner(bprog);
-        ContextService contextService = ContextService.CreateInstance(bprog, rnr);
+        ContextService.CreateInstance(bprog, rnr, null);
 
         rnr.addListener(new PrintBProgramRunnerListener());
 
