@@ -23,6 +23,7 @@ public class ContextService implements Serializable {
     private Map<String, List<ContextEntity>> active = new HashMap<>();
     private Set<ActiveChange> changes = new HashSet<>();
     private ArrayList<EffectFunction> effectFunctions = new ArrayList<>();
+    private boolean transaction = false;
 
     public static ContextService GetInstance() {
         return singleton;
@@ -60,7 +61,7 @@ public class ContextService implements Serializable {
             if (o == null || getClass() != o.getClass()) return false;
             ContextService contextService = (ContextService) o;
             return Objects.equals(CTX, contextService.CTX) &&
-                    Objects.equals(active, contextService.active);
+                Objects.equals(active, contextService.active);
         }
 
         @Override
@@ -77,8 +78,8 @@ public class ContextService implements Serializable {
         return singleton.idCounter.incrementAndGet();
     }
 
-    public void addEffectFunction(Function function) {
-        EffectFunction ef = new EffectFunction(function);
+    public void addEffectFunction(String eventName, Function function) {
+        EffectFunction ef = new EffectFunction(function, eventName);
         this.effectFunctions.add(ef);
         if(rnr!=null)
             rnr.addListener(ef);
@@ -86,20 +87,16 @@ public class ContextService implements Serializable {
             vfr.addListener(ef);
     }
 
-    /*public void runEffectFunctionsInVerification(BEvent selectedEvent) {
-        if(rnr == null) {
-            this.effectFunctions.forEach(c -> {
-                c.eventSelected(bp, selectedEvent);
-            });
-        }
-    }*/
-
-    public List<ContextEntity> getActive(String query) {
-        return active.get(query);
+    public List<ContextEntity> getActive(String queryName) {
+        if(!active.containsKey(queryName))
+            throw new IllegalArgumentException("No query with the name " + queryName);
+        return active.get(queryName);
     }
 
-    public List<ContextEntity> getQueryResults(String query) {
-        return getQueryResults(queries.get(query));
+    public List<ContextEntity> getQueryResults(String queryName) {
+        if(!queries.containsKey(queryName))
+            throw new IllegalArgumentException("No query with the name " + queryName);
+        return getQueryResults(queries.get(queryName));
     }
 
     public List<ContextEntity> getQueryResults(Function query) {
@@ -125,6 +122,15 @@ public class ContextService implements Serializable {
         return res;
     }
 
+    public void beginTransaction() {
+        this.transaction = true;
+    }
+
+    public void endTransaction() {
+        this.transaction = false;
+        updateQueries();
+    }
+
     private ContextService(BProgram bp, BProgramRunner rnr, DfsContextualBProgramVerifier vfr) {
         this.bp = bp;
         this.rnr = rnr;
@@ -137,7 +143,7 @@ public class ContextService implements Serializable {
         }
         ContextEntity attached = entity.attachedCopy(bp);
         CTX.put(attached.id, attached);
-        updateQueries();
+        if(!transaction) updateQueries();
     }
 
     public void updateEntity(ContextEntity detachedEntity) {
@@ -145,7 +151,7 @@ public class ContextService implements Serializable {
             throw new IllegalArgumentException("Key " + detachedEntity.id + " does not exists");
         }
         CTX.get(detachedEntity.id).mergeChanges(bp, detachedEntity);
-        updateQueries();
+        if(!transaction) updateQueries();
     }
 
     public ActiveChange[] getRecentCtxEnd() {
@@ -157,7 +163,7 @@ public class ContextService implements Serializable {
             throw new IllegalArgumentException("Key " + detachedEntity.id + " does not exists");
         }
         CTX.remove(detachedEntity.id);
-        updateQueries();
+        if(!transaction) updateQueries();
     }
 
     /*public boolean hasQuery(String q) {
@@ -170,7 +176,7 @@ public class ContextService implements Serializable {
         }
         active.put(q, new ArrayList<>());
         queries.put(q, query);
-//        updateQueries();
+//        if(!transaction) updateQueries();
     }
 
     private void updateQueries() {
@@ -199,8 +205,8 @@ public class ContextService implements Serializable {
         if (o == null || getClass() != o.getClass()) return false;
         ContextService contextService = (ContextService) o;
         return Objects.equals(CTX, contextService.CTX) &&
-                Objects.equals(active, contextService.active) &&
-                Objects.equals(changes, contextService.changes);
+            Objects.equals(active, contextService.active) &&
+            Objects.equals(changes, contextService.changes);
     }
 
     @Override
@@ -222,10 +228,10 @@ public class ContextService implements Serializable {
         @Override
         public String toString() {
             return "ActiveChange{" +
-                    "query=" + query +
-                    ", entity=" + entity +
-                    ", type='" + type + '\'' +
-                    '}';
+                "query=" + query +
+                ", entity=" + entity +
+                ", type='" + type + '\'' +
+                '}';
         }
 
         @Override
@@ -234,8 +240,8 @@ public class ContextService implements Serializable {
             if (o == null || getClass() != o.getClass()) return false;
             ActiveChange that = (ActiveChange) o;
             return Objects.equals(query, that.query) &&
-                    Objects.equals(entity, that.entity) &&
-                    Objects.equals(type, that.type);
+                Objects.equals(entity, that.entity) &&
+                Objects.equals(type, that.type);
         }
 
         @Override

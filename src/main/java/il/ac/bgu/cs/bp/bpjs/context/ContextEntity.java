@@ -1,13 +1,15 @@
 package il.ac.bgu.cs.bp.bpjs.context;
 
+import java.io.Serializable;
+
 import com.google.common.base.Objects;
-import il.ac.bgu.cs.bp.bpjs.model.BProgram;
+
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.Function;
 import org.mozilla.javascript.NativeArray;
 
-import java.io.Serializable;
-import java.util.Map;
+import il.ac.bgu.cs.bp.bpjs.model.BProgram;
+import org.mozilla.javascript.NativeObject;
 
 public class ContextEntity implements Serializable {
     public final String id;
@@ -28,35 +30,45 @@ public class ContextEntity implements Serializable {
     }
 
     public void mergeChanges(BProgram bp, ContextEntity other) {
-        if(this!=other)
+        if (this != other)
             assign(bp, this.data, other.data);
     }
 
     private Object assign(BProgram bp, Object target, Object source) {
         Function fct = bp.getFromGlobalScope("assign", Function.class).get();
-        return fct.call(Context.getCurrentContext(), bp.getGlobalScope(), bp.getGlobalScope(), new Object[]{target, source});
+        return fct.call(Context.getCurrentContext(), bp.getGlobalScope(), bp.getGlobalScope(),
+            new Object[] { target, source });
     }
 
     public ContextEntity attachedCopy(BProgram bp) {
-        Object clonedData = assign(bp, new NativeArray(0), data);
+        Object clonedData = cloneData(bp, data);
         ContextEntity clone = new ContextEntity(id, type, clonedData);
+        // TODO: freeze clonedData
         clone.attached = true;
         return clone;
     }
 
+    private Object cloneData(BProgram bp, Object data) {
+        if(data instanceof NativeArray)
+            return assign(bp, new NativeArray(0), data);
+        else if(data instanceof NativeObject)
+            return assign(bp, new NativeObject(), data);
+        throw new IllegalArgumentException("Accepted NativeArray or NativeObject, don't know how to assign "+ data.getClass());
+    }
+
     @Override
     public final boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o)
+            return true;
+        if (o == null || getClass() != o.getClass())
+            return false;
         ContextEntity that = (ContextEntity) o;
         return Objects.equal(id, that.id);
     }
 
     @Override
     public String toString() {
-        return "Entity {" +
-                "id='" + id + "'" +
-                '}';
+        return "Entity {" + "id='" + id + "'" + ", type='"+type+"', data=" + data+"}";
     }
 
     @Override

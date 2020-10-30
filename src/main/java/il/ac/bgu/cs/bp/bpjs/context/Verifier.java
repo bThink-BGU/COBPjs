@@ -15,7 +15,7 @@ public class Verifier {
 		Main.options.path = "examples/room";
         System.out.println("\nRunning tests from path: " + Main.options.path);
         final ContextBProgram bprog = new ContextBProgram(Main.options.path);
-        bprog.setEventSelectionStrategy(new PrioritizedBSyncEventSelectionStrategyWithDefault());
+        bprog.setEventSelectionStrategy(new CtxEventSelectionStrategy());
         DfsContextualBProgramVerifier vfr = new DfsContextualBProgramVerifier();
         ContextService contextService = ContextService.CreateInstance(bprog, null, vfr);
         vfr.setIterationCountGap(50);

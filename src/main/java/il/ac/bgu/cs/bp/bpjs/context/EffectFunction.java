@@ -10,19 +10,23 @@ import java.io.Serializable;
 
 public class EffectFunction extends BProgramRunnerListenerAdapter implements Serializable {
     private final Function effect;
+    private final String eventName;
 
-    public EffectFunction(Function effect) {
+    public EffectFunction(Function effect, String eventName) {
         this.effect = effect;
+        this.eventName = eventName;
     }
 
 
     @Override
     public void eventSelected(BProgram bp, BEvent event) {
-        Context ctx = Context.enter();
-        try {
-            effect.call(ctx, bp.getGlobalScope(), bp.getGlobalScope(), new Object[]{bp, event});
-        }finally {
-            Context.exit();
+        if(event.name.equals(eventName)) {
+            Context ctx = Context.enter();
+            try {
+                effect.call(ctx, bp.getGlobalScope(), bp.getGlobalScope(), new Object[]{bp, event});
+            } finally {
+                Context.exit();
+            }
         }
     }
 }

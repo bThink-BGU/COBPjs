@@ -23,32 +23,38 @@
  */
 package il.ac.bgu.cs.bp.bpjs.context;
 
+import il.ac.bgu.cs.bp.bpjs.model.SyncStatement;
 import il.ac.bgu.cs.bp.bpjs.model.BEvent;
 import il.ac.bgu.cs.bp.bpjs.model.BProgramSyncSnapshot;
-import il.ac.bgu.cs.bp.bpjs.model.SyncStatement;
 import il.ac.bgu.cs.bp.bpjs.model.eventselection.AbstractEventSelectionStrategy;
 import il.ac.bgu.cs.bp.bpjs.model.eventsets.ComposableEventSet;
 import il.ac.bgu.cs.bp.bpjs.model.eventsets.EventSet;
 import il.ac.bgu.cs.bp.bpjs.model.eventsets.EventSets;
-import org.mozilla.javascript.Context;
-
-import java.util.List;
-import java.util.OptionalInt;
-import java.util.Set;
-import java.util.stream.Collectors;
-
 import static java.util.Collections.emptySet;
 import static java.util.Collections.singleton;
+
+import java.util.*;
+import java.util.stream.Collectors;
 import static java.util.stream.Collectors.toSet;
+import org.mozilla.javascript.Context;
 
-public class PrioritizedBSyncEventSelectionStrategyWithDefault extends AbstractEventSelectionStrategy {
+/**
+ * An event selection strategy that prefers events requested by BSync statements with higher priority.
+ * BSync statement priority is determined by an integer added to the BSync metadata field, like so:
+ *
+ * <code>
+ * bsync({ request:..., waitFor:... }, 2);
+ * </code>
+ *
+ * @author michael
+ */
+public class CtxEventSelectionStrategy extends AbstractEventSelectionStrategy {
 
-    public PrioritizedBSyncEventSelectionStrategyWithDefault(long seed) {
+    public CtxEventSelectionStrategy(long seed) {
         super(seed);
     }
 
-    public PrioritizedBSyncEventSelectionStrategyWithDefault() {
-    }
+    public CtxEventSelectionStrategy() { }
 
     @Override
     public Set<BEvent> selectableEvents(BProgramSyncSnapshot bpss) {
@@ -56,28 +62,37 @@ public class PrioritizedBSyncEventSelectionStrategyWithDefault extends AbstractE
         Set<SyncStatement> statements = bpss.getStatements();
         List<BEvent> externalEvents = bpss.getExternalEvents();
 
+        Set<BEvent> ctxEvents = statements.parallelStream()
+            .filter( stmt -> stmt!=null )
+            .flatMap(syncStatement -> syncStatement.getRequest().parallelStream())
+            .filter(e -> e.name.equals("CTX.EntityChanged") || e.name.equals("CTX.EndOfActionForContext"))
+            .collect(toSet());
+        if (ctxEvents.size()>0) {
+            return ctxEvents;
+        }
+
         EventSet blocked = ComposableEventSet.anyOf(statements.stream()
-                .filter( stmt -> stmt!=null )
-                .map(SyncStatement::getBlock )
-                .filter( r -> r != EventSets.none )
-                .collect( Collectors.toSet() ) );
+            .filter( stmt -> stmt!=null )
+            .map(SyncStatement::getBlock )
+            .filter( r -> r != EventSets.none )
+            .collect( Collectors.toSet() ) );
 
         OptionalInt maxValueOpt = statements.stream()
-                .filter( s -> !getRequestedAndNotBlocked(s, blocked).isEmpty() )
-                .mapToInt(this::getValue)
-                .max();
+            .filter( s -> !getRequestedAndNotBlocked(s, blocked).isEmpty() )
+            .mapToInt(this::getValue)
+            .max();
 
         try {
             Context.enter();
             if ( maxValueOpt.isPresent() ) {
                 int maxValue = maxValueOpt.getAsInt();
                 return statements.stream().filter( s -> getValue(s) == maxValue )
-                        .flatMap( s -> getRequestedAndNotBlocked(s, blocked).stream() )
-                        .collect( toSet() );
+                    .flatMap( s -> getRequestedAndNotBlocked(s, blocked).stream() )
+                    .collect( toSet() );
             } else {
                 // Can't select any internal event, defer to the external, non-blocked ones.
                 return externalEvents.stream().filter( e->!blocked.contains(e) ) // No internal events requested, defer to externals.
-                        .findFirst().map( e->singleton(e) ).orElse(emptySet());
+                    .findFirst().map( e->singleton(e) ).orElse(emptySet());
             }
         } finally {
             Context.exit();
@@ -87,8 +102,6 @@ public class PrioritizedBSyncEventSelectionStrategyWithDefault extends AbstractE
 
     private int getValue( SyncStatement stmt ) {
         return (stmt.hasData() && (stmt.getData() instanceof Number))?
-                ((Number)stmt.getData()).intValue() : 0;
+            ((Number)stmt.getData()).intValue() : 0;
     }
-
-
 }

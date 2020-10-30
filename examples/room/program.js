@@ -1,20 +1,25 @@
-cbt("MarkNonEmptyUponMotion", queries.EmptyRoom.name, function (room) {
+// -------------------–  determine if we are in a context ------------------------
+
+cbt("MarkNonEmptyUponMotion", "Room.Empty", function (room) {
     sync({ waitFor: bp.Event("MotionDetected", room.id) });
     sync({request: bp.Event("RoomIsNonEmpty", room.id)});
 });
-cbt("MarkEmptyIfNoMovement", queries.NoMovement3.name, function (room) {
+cbt("MarkEmptyIfNoMovement", 'Room.NoMovement3', function (room) {
     sync({
         request: bp.Event("RoomIsEmpty", room.id),
         waitFor: bp.Event("MotionDetected", room.id)
     });
 });
 
-cbt("Light: On", queries.NonEmptyRoom.name, function (room) {
+
+// -------------------–  what to do in a context ------------------------
+
+cbt("Light: On", "Room.Nonempty", function (room) {
     sync({
         request: bp.Event("On", room.data.light),
     });
 });
-cbt("Light: Off", queries.EmptyRoom.name, function (room) {
+cbt("Light: Off", "Room.Empty", function (room) {
     sync({request: bp.Event("Off", room.data.light)});
 });
 

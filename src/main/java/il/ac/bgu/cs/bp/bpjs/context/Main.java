@@ -23,7 +23,7 @@ public class Main {
         options = parser.getOptions(BProgramOptions.class);
         System.out.println("\nRunning example from path: " + options.path);
         final ContextBProgram bprog = new ContextBProgram(options.path);
-        bprog.setEventSelectionStrategy(new PrioritizedBSyncEventSelectionStrategyWithDefault());
+        bprog.setEventSelectionStrategy(new CtxEventSelectionStrategy());
         final BProgramRunner rnr = new BProgramRunner(bprog);
         ContextService.CreateInstance(bprog, rnr, null);
 
