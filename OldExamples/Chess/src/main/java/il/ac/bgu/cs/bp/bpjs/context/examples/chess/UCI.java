@@ -1,6 +1,5 @@
 package il.ac.bgu.cs.bp.bpjs.context.examples.chess;
 
-import il.ac.bgu.cs.bp.bpjs.context.ContextService;
 import il.ac.bgu.cs.bp.bpjs.context.examples.chess.effectFunction.AddCell;
 import il.ac.bgu.cs.bp.bpjs.context.examples.chess.effectFunction.AddPiece;
 import il.ac.bgu.cs.bp.bpjs.context.examples.chess.effectFunction.Move;

@@ -23,6 +23,7 @@
  */
 package il.ac.bgu.cs.bp.bpjs.context;
 
+import com.google.common.collect.Sets;
 import il.ac.bgu.cs.bp.bpjs.model.SyncStatement;
 import il.ac.bgu.cs.bp.bpjs.model.BEvent;
 import il.ac.bgu.cs.bp.bpjs.model.BProgramSyncSnapshot;
@@ -30,12 +31,15 @@ import il.ac.bgu.cs.bp.bpjs.model.eventselection.AbstractEventSelectionStrategy;
 import il.ac.bgu.cs.bp.bpjs.model.eventsets.ComposableEventSet;
 import il.ac.bgu.cs.bp.bpjs.model.eventsets.EventSet;
 import il.ac.bgu.cs.bp.bpjs.model.eventsets.EventSets;
+
 import static java.util.Collections.emptySet;
 import static java.util.Collections.singleton;
 
 import java.util.*;
 import java.util.stream.Collectors;
+
 import static java.util.stream.Collectors.toSet;
+
 import org.mozilla.javascript.Context;
 
 /**
@@ -50,11 +54,17 @@ import org.mozilla.javascript.Context;
  */
 public class CtxEventSelectionStrategy extends AbstractEventSelectionStrategy {
 
+    public static final int DEFAULT_PRIORITY = 0;
+
+    private static List<String> CtxEvents =
+        List.of("CTX.Changed", "CTX.EndOfActionForContext", "_____CTX_LOCK_____", "_____CTX_RELEASE_____", "log seed", "TeStory environment is ready!");
+
     public CtxEventSelectionStrategy(long seed) {
         super(seed);
     }
 
-    public CtxEventSelectionStrategy() { }
+    public CtxEventSelectionStrategy() {
+    }
 
     @Override
     public Set<BEvent> selectableEvents(BProgramSyncSnapshot bpss) {
@@ -62,37 +72,44 @@ public class CtxEventSelectionStrategy extends AbstractEventSelectionStrategy {
         Set<SyncStatement> statements = bpss.getStatements();
         List<BEvent> externalEvents = bpss.getExternalEvents();
 
+        EventSet blocked = EventSets.anyOf(statements.stream()
+            .filter(Objects::nonNull)
+            .map(SyncStatement::getBlock)
+            .filter(r -> r != EventSets.none)
+            .collect(Collectors.toSet()));
+
         Set<BEvent> ctxEvents = statements.parallelStream()
-            .filter( stmt -> stmt!=null )
-            .flatMap(syncStatement -> syncStatement.getRequest().parallelStream())
-            .filter(e -> e.name.equals("CTX.EntityChanged") || e.name.equals("CTX.EndOfActionForContext"))
+            .filter(Objects::nonNull)
+            .filter(s -> !getRequestedAndNotBlocked(s, blocked).isEmpty())
+            .flatMap(s -> getRequestedAndNotBlocked(s, blocked).stream())
+            .filter(e -> CtxEvents.contains(e.name))
             .collect(toSet());
-        if (ctxEvents.size()>0) {
+        if (ctxEvents.size() > 0) {
+            for (BEvent e : ctxEvents) {
+                if (e.name.equals("CTX.Changed"))
+                    return new HashSet<>() {{
+                        add(e);
+                    }};
+            }
             return ctxEvents;
         }
 
-        EventSet blocked = ComposableEventSet.anyOf(statements.stream()
-            .filter( stmt -> stmt!=null )
-            .map(SyncStatement::getBlock )
-            .filter( r -> r != EventSets.none )
-            .collect( Collectors.toSet() ) );
-
         OptionalInt maxValueOpt = statements.stream()
-            .filter( s -> !getRequestedAndNotBlocked(s, blocked).isEmpty() )
+            .filter(s -> !getRequestedAndNotBlocked(s, blocked).isEmpty())
             .mapToInt(this::getValue)
             .max();
 
         try {
             Context.enter();
-            if ( maxValueOpt.isPresent() ) {
+            if (maxValueOpt.isPresent()) {
                 int maxValue = maxValueOpt.getAsInt();
-                return statements.stream().filter( s -> getValue(s) == maxValue )
-                    .flatMap( s -> getRequestedAndNotBlocked(s, blocked).stream() )
-                    .collect( toSet() );
+                return statements.stream().filter(s -> getValue(s) == maxValue)
+                    .flatMap(s -> getRequestedAndNotBlocked(s, blocked).stream())
+                    .collect(toSet());
             } else {
                 // Can't select any internal event, defer to the external, non-blocked ones.
-                return externalEvents.stream().filter( e->!blocked.contains(e) ) // No internal events requested, defer to externals.
-                    .findFirst().map( e->singleton(e) ).orElse(emptySet());
+                return externalEvents.stream().filter(e -> !blocked.contains(e)) // No internal events requested, defer to externals.
+                    .findFirst().map(e -> singleton(e)).orElse(emptySet());
             }
         } finally {
             Context.exit();
@@ -100,8 +117,10 @@ public class CtxEventSelectionStrategy extends AbstractEventSelectionStrategy {
 
     }
 
-    private int getValue( SyncStatement stmt ) {
-        return (stmt.hasData() && (stmt.getData() instanceof Number))?
-            ((Number)stmt.getData()).intValue() : 0;
+    private int getValue(SyncStatement stmt) {
+        return (stmt.hasData() && (stmt.getData() instanceof Number)) ?
+            ((Number) stmt.getData()).intValue() : DEFAULT_PRIORITY;
     }
+
+
 }

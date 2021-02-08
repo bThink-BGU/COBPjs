@@ -1,5 +1,5 @@
 bthread("SimulateMinutes",function () {
-    for (let i = 4; i <= 10; i++) {
+    for (let i = 4; i <= 20; i++) {
         sync({request: bp.Event("Minute", i)},-50)
     }
 })

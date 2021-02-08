@@ -1,6 +1,5 @@
 package il.ac.bgu.cs.bp.bpjs.context.examples.room.schema.effectFunctions;
 
-import il.ac.bgu.cs.bp.bpjs.context.ContextService;
 import il.ac.bgu.cs.bp.bpjs.context.examples.room.schema.rooms.Room;
 import il.ac.bgu.cs.bp.bpjs.model.BEvent;
 

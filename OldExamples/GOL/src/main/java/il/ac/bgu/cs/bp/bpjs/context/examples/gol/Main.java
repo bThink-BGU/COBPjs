@@ -1,7 +1,6 @@
 package il.ac.bgu.cs.bp.bpjs.context.examples.gol;
 
 import com.google.common.collect.Lists;
-import il.ac.bgu.cs.bp.bpjs.context.ContextService;
 import il.ac.bgu.cs.bp.bpjs.context.examples.gol.gui.GameView;
 import il.ac.bgu.cs.bp.bpjs.context.examples.gol.schema.Cell;
 import il.ac.bgu.cs.bp.bpjs.execution.listeners.BProgramRunnerListenerAdapter;

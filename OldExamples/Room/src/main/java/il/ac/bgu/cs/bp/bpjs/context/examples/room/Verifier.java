@@ -5,7 +5,6 @@ import il.ac.bgu.cs.bp.bpjs.analysis.ExecutionTrace;
 import il.ac.bgu.cs.bp.bpjs.analysis.ExecutionTraceInspections;
 import il.ac.bgu.cs.bp.bpjs.analysis.VerificationResult;
 import il.ac.bgu.cs.bp.bpjs.analysis.listeners.PrintDfsVerifierListener;
-import il.ac.bgu.cs.bp.bpjs.context.ContextService;
 import il.ac.bgu.cs.bp.bpjs.context.examples.room.schema.effectFunctions.MarkRoomEffect;
 import il.ac.bgu.cs.bp.bpjs.context.examples.room.schema.effectFunctions.MotionStartedEffect;
 import il.ac.bgu.cs.bp.bpjs.context.examples.room.schema.effectFunctions.TickEffect;

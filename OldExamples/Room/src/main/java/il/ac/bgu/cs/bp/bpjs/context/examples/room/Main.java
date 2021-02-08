@@ -5,7 +5,6 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import il.ac.bgu.cs.bp.bpjs.context.ContextService;
 import il.ac.bgu.cs.bp.bpjs.context.examples.room.schema.effectFunctions.MarkRoomEffect;
 import il.ac.bgu.cs.bp.bpjs.context.examples.room.schema.effectFunctions.MotionStartedEffect;
 import il.ac.bgu.cs.bp.bpjs.context.examples.room.schema.effectFunctions.TickEffect;
