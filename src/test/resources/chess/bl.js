@@ -1,0 +1,3 @@
+ctx.bthread('pawn moves','Piece.Pawn', function(entity) {
+  //...
+})
