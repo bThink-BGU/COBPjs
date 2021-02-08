@@ -1,9 +1,6 @@
 package il.ac.bgu.cs.bp.bpjs.context;
 
 import il.ac.bgu.cs.bp.bpjs.BPjs;
-import il.ac.bgu.cs.bp.bpjs.exceptions.BPjsCodeEvaluationException;
-import il.ac.bgu.cs.bp.bpjs.exceptions.BPjsException;
-import il.ac.bgu.cs.bp.bpjs.exceptions.BPjsRuntimeException;
 import il.ac.bgu.cs.bp.bpjs.model.BProgram;
 import org.mozilla.javascript.*;
 
@@ -16,7 +13,6 @@ import static java.util.stream.Collectors.joining;
 
 public class ContextBProgram extends BProgram {
   private Collection<String> resourceNames;
-  private Scriptable scope;
 
   public ContextBProgram(String aResourceName) {
     this(Collections.singletonList(aResourceName), aResourceName);
@@ -29,8 +25,7 @@ public class ContextBProgram extends BProgram {
   public ContextBProgram(Collection<String> someResourceNames, String aName) {
     super(aName, new CtxEventSelectionStrategy());
     this.setStorageModificationStrategy(new ContextStorageModificationStrategy());
-    ContextProxy.bprog = this;
-    putInGlobalScope("ctx_proxy", new ContextProxy());
+    putInGlobalScope("ctx_proxy", ContextProxy.Create(this));
     resourceNames = someResourceNames;
     resourceNames.forEach(this::verifyResourceExists);
   }

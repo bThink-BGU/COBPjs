@@ -1,11 +1,7 @@
 package il.ac.bgu.cs.bp.bpjs.context;
 
-import il.ac.bgu.cs.bp.bpjs.BPjs;
-import il.ac.bgu.cs.bp.bpjs.execution.jsproxy.BProgramJsProxy;
 import il.ac.bgu.cs.bp.bpjs.model.BProgram;
 import org.mozilla.javascript.BaseFunction;
-import org.mozilla.javascript.Context;
-import org.mozilla.javascript.Scriptable;
 
 import java.io.ObjectStreamException;
 import java.io.Serializable;
@@ -16,9 +12,17 @@ public class ContextProxy implements Serializable {
   public static final Map<String, BaseFunction> queries = new HashMap<>();
   public static final Map<String, BaseFunction> effectFunctions = new HashMap<>();
 
-  public static ContextProxy proxy;
+  private static ContextProxy proxy;
   private static ContextProxySer proxySer = new ContextProxySer();
-  public static BProgram bprog;
+  public static ScriptableObjectCloner cloner;
+
+  private ContextProxy() {}
+
+  public static ContextProxy Create(BProgram bprog) {
+    proxy = new ContextProxy();
+    cloner = new ScriptableObjectCloner(bprog);
+    return proxy;
+  }
 
   private static class ContextProxySer implements Serializable {
     private Object readResolve() throws ObjectStreamException {
@@ -36,10 +40,5 @@ public class ContextProxy implements Serializable {
 
   public final Map<String, BaseFunction> effectFunctions() {
     return ContextProxy.effectFunctions;
-  }
-
-  @Override
-  public String toString() {
-    return "ContextProxy{}";
   }
 }

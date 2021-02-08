@@ -163,7 +163,7 @@ const ctx = {
         if(data) {
             this.__internal_fields.assign(entity, data)
         }
-        let clone = ScriptableObjectCloner.clone(entity)
+        let clone = ctx_proxy.cloner.clone(entity)
         // Object.freeze(clone)
         bp.store.put(key, clone)
         this.__internal_fields.release()
@@ -175,7 +175,7 @@ const ctx = {
         if (!bp.store.has(key)) {
             throw Error("Key " + entity.id + " does not exist")
         }
-        let clone = ScriptableObjectCloner.clone(entity)
+        let clone = ctx_proxy.cloner.clone(entity)
         // Object.freeze(clone)
         bp.store.put(key, clone)
         this.__internal_fields.release()
@@ -196,7 +196,7 @@ const ctx = {
         if (!bp.store.has(key)) {
             //throw Error("Entity with id '" + id + "' does not exist")
         }
-        return ScriptableObjectCloner.clone(bp.store.get(key)) //clone (serialization/deserialization) removes freezing
+        return ctx_proxy.cloner.clone(bp.store.get(key)) //clone (serialization/deserialization) removes freezing
     },
     runQuery: function(queryName_or_function) {
         let func;
@@ -211,7 +211,7 @@ const ctx = {
             return key.startsWith(String("CTX.Entity: ")) && func(val)
         }
         let ans = new Set()
-        bp.store.filter(func2).forEach((k,v)=>ans.add(ScriptableObjectCloner.clone(v)))
+        bp.store.filter(func2).forEach((k,v)=>ans.add(ctx_proxy.cloner.clone(v)))
         return ans
     },
     registerQuery: function(name, query) {
