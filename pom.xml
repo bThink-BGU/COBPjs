@@ -13,7 +13,7 @@
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<maven.compiler.source>11</maven.compiler.source>
 		<maven.compiler.target>11</maven.compiler.target>
-		<exec.mainClass>il.ac.bgu.cs.bp.bpjs.context.Verifier</exec.mainClass>
+<!--		<exec.mainClass>il.ac.bgu.cs.bp.bpjs.context.Verifier</exec.mainClass>-->
 	</properties>
 
 	<dependencies>
@@ -21,12 +21,6 @@
 			<groupId>com.github.bthink-bgu</groupId>
 			<artifactId>BPjs</artifactId>
 			<version>0.11.2-SNAPSHOT</version>
-		</dependency>
-
-		<dependency>
-			<groupId>com.github.pcj</groupId>
-			<artifactId>google-options</artifactId>
-			<version>1.0.0</version>
 		</dependency>
 	</dependencies>
 </project>

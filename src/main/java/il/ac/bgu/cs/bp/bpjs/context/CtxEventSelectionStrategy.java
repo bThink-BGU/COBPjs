@@ -23,12 +23,10 @@
  */
 package il.ac.bgu.cs.bp.bpjs.context;
 
-import com.google.common.collect.Sets;
 import il.ac.bgu.cs.bp.bpjs.model.SyncStatement;
 import il.ac.bgu.cs.bp.bpjs.model.BEvent;
 import il.ac.bgu.cs.bp.bpjs.model.BProgramSyncSnapshot;
 import il.ac.bgu.cs.bp.bpjs.model.eventselection.AbstractEventSelectionStrategy;
-import il.ac.bgu.cs.bp.bpjs.model.eventsets.ComposableEventSet;
 import il.ac.bgu.cs.bp.bpjs.model.eventsets.EventSet;
 import il.ac.bgu.cs.bp.bpjs.model.eventsets.EventSets;
 
@@ -42,16 +40,6 @@ import static java.util.stream.Collectors.toSet;
 
 import org.mozilla.javascript.Context;
 
-/**
- * An event selection strategy that prefers events requested by BSync statements with higher priority.
- * BSync statement priority is determined by an integer added to the BSync metadata field, like so:
- *
- * <code>
- * bsync({ request:..., waitFor:... }, 2);
- * </code>
- *
- * @author michael
- */
 public class CtxEventSelectionStrategy extends AbstractEventSelectionStrategy {
 
     public static final int DEFAULT_PRIORITY = 0;

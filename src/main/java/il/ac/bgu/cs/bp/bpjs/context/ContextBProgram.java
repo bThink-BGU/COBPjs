@@ -13,6 +13,7 @@ import static java.util.stream.Collectors.joining;
 
 public class ContextBProgram extends BProgram {
   private Collection<String> resourceNames;
+  private boolean debug = false;
 
   public ContextBProgram(String aResourceName) {
     this(Collections.singletonList(aResourceName), aResourceName);
@@ -28,6 +29,14 @@ public class ContextBProgram extends BProgram {
     putInGlobalScope("ctx_proxy", ContextProxy.Create(this));
     resourceNames = someResourceNames;
     resourceNames.forEach(this::verifyResourceExists);
+  }
+
+  public boolean isDebug() {
+    return debug;
+  }
+
+  public void setDebug(boolean debug) {
+    this.debug = debug;
   }
 
   @Override
