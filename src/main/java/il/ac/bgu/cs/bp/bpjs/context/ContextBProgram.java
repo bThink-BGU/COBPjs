@@ -1,6 +1,7 @@
 package il.ac.bgu.cs.bp.bpjs.context;
 
 import il.ac.bgu.cs.bp.bpjs.model.BProgram;
+import il.ac.bgu.cs.bp.bpjs.model.eventselection.EventSelectionStrategy;
 import org.mozilla.javascript.*;
 
 import java.io.IOException;
@@ -15,6 +16,10 @@ public class ContextBProgram extends BProgram {
 
   public ContextBProgram(String aResourceName) {
     this(Collections.singletonList(aResourceName), aResourceName);
+  }
+
+  public ContextBProgram(String... resourceNames) {
+    this(Arrays.asList(resourceNames));
   }
 
   public ContextBProgram(Collection<String> someResourceNames) {
