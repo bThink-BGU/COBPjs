@@ -226,17 +226,20 @@ const ctx = {
     },
     registerEffect: function(eventName, effect) {
         try{
-            const a = bp.thread.name
+            // const a = bp.thread.name
             throw 'effects must not be registered from b-threads.'
         }catch(e){
             const key = String('CTX.Effect: ' + eventName)
             if (ctx_proxy.effectFunctions.containsKey(key)) throw Error('Effect already exists for event ' +eventName)
-            ctx_proxy.effectFunctions.put(key, String(eventName))
-            bthread('Register effect: ' + eventName, function () {
-                while(true) {
-                    effect(sync({waitFor: Any(eventName)}).data)
-                }
-            })
+            ctx_proxy.effectFunctions.put(key, effect)
+            function f() {
+                bthread('Register effect: ' + eventName, function () {
+                    while(true) {
+                        ctx_proxy.effectFunctions.get(key)(sync({waitFor: Any(eventName)}).data)
+                    }
+                })
+            }
+            f()
         }
     },
     bthread: function(name, context, bt) {
@@ -255,10 +258,10 @@ const ctx = {
         bp.registerBThread("cbt: " + name,
           {interrupt: [], block: []},
           function () {
-              ctx.runQuery(context).forEach(entity =>
-                createLiveCopy("Live copy" + ": " + name + " " + entity.id, context, entity, bt))
+              ctx.runQuery(context).forEach(function(entity) {
+                createLiveCopy("Live copy" + ": " + name + " " + entity.id, context, entity, bt)})
               while (true) {
-                  sync({waitFor: CtxStartES(context)}).data.forEach(change => {
+                  sync({waitFor: CtxStartES(context)}).data.forEach(function(change) {
                       if(change.type.equals("new") && change.query.equals(context)) {
                           createLiveCopy("Live copy" + ": " + name + " " + change.entityId, context, ctx.getEntityById(change.entityId), bt)
                       }

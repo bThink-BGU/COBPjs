@@ -4,10 +4,10 @@ bthread("test", function (){
   bp.log.info('entity with id "a5": {0}',ctx.getEntityById('a5'))
 })
 
-
 ctx.registerEffect('haha', function(data) {
   ctx.insertEntity('a'+data,'b',{hahaData:data})
 })
+
 
 ctx.registerQuery('B.All', entity=>entity.type=='b')
 ctx.registerQuery('B.<5', entity=>entity.type=='b' && entity.hahaData < 5)

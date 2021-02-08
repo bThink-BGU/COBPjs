@@ -44,9 +44,6 @@ public class CtxEventSelectionStrategy extends AbstractEventSelectionStrategy {
 
     public static final int DEFAULT_PRIORITY = 0;
 
-    private static List<String> CtxEvents =
-        List.of("CTX.Changed", "CTX.EndOfActionForContext", "_____CTX_LOCK_____", "_____CTX_RELEASE_____", "log seed", "TeStory environment is ready!");
-
     public CtxEventSelectionStrategy(long seed) {
         super(seed);
     }
@@ -70,7 +67,7 @@ public class CtxEventSelectionStrategy extends AbstractEventSelectionStrategy {
             .filter(Objects::nonNull)
             .filter(s -> !getRequestedAndNotBlocked(s, blocked).isEmpty())
             .flatMap(s -> getRequestedAndNotBlocked(s, blocked).stream())
-            .filter(e -> CtxEvents.contains(e.name))
+            .filter(e -> ContextProxy.CtxEvents.contains(e.name))
             .collect(toSet());
         if (ctxEvents.size() > 0) {
             for (BEvent e : ctxEvents) {

@@ -1,6 +1,5 @@
 package il.ac.bgu.cs.bp.bpjs.context;
 
-import il.ac.bgu.cs.bp.bpjs.BPjs;
 import il.ac.bgu.cs.bp.bpjs.bprogramio.BPJSStubInputStream;
 import il.ac.bgu.cs.bp.bpjs.bprogramio.BPJSStubOutputStream;
 import il.ac.bgu.cs.bp.bpjs.bprogramio.StreamObjectStub;
@@ -13,7 +12,6 @@ import org.mozilla.javascript.ScriptableObject;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-
 
 public class ScriptableObjectCloner {
   private static StubProvider stubProvider = null;
@@ -31,7 +29,7 @@ public class ScriptableObjectCloner {
     try {
       Context.enter();
       try (BPJSStubInputStream in = new BPJSStubInputStream(new ByteArrayInputStream(bytes),
-          BPjs.getBPjsScope(),
+          bprog.getGlobalScope(),
           getStubProvider())
       ) {
         return (ScriptableObject) in.readObject();
@@ -47,7 +45,7 @@ public class ScriptableObjectCloner {
     try {
       Context.enter();
       try (ByteArrayOutputStream bytes = new ByteArrayOutputStream();
-           BPJSStubOutputStream outs = new BPJSStubOutputStream(bytes, BPjs.getBPjsScope())) {
+           BPJSStubOutputStream outs = new BPJSStubOutputStream(bytes, bprog.getGlobalScope())) {
         outs.writeObject(obj);
         outs.flush();
         return bytes.toByteArray();

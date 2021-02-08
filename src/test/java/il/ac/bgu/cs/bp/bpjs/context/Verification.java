@@ -9,6 +9,7 @@ public class Verification {
     BProgram bprog = new ContextBProgram("SampleContextualProgram.js");
     DfsBProgramVerifier vfr = new DfsBProgramVerifier();
     vfr.setProgressListener( new PrintDfsVerifierListener() );
+//    vfr.setDebugMode(true);
     try {
       vfr.verify(bprog);
     } catch (Exception e) {

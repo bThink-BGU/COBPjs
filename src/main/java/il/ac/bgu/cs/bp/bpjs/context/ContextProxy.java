@@ -6,9 +6,12 @@ import org.mozilla.javascript.BaseFunction;
 import java.io.ObjectStreamException;
 import java.io.Serializable;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class ContextProxy implements Serializable {
+  public static List<String> CtxEvents =
+      List.of("CTX.Changed", "_____CTX_LOCK_____", "_____CTX_RELEASE_____");
   public final Map<String, BaseFunction> queries = new HashMap<>();
   public final Map<String, BaseFunction> effectFunctions = new HashMap<>();
 
