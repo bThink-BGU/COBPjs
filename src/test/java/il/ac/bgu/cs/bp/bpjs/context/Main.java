@@ -6,7 +6,6 @@ import il.ac.bgu.cs.bp.bpjs.model.BProgram;
 
 public class Main {
   public static void main(final String[] args) {
-
     BProgram bprog = new ContextBProgram("SampleContextualProgram.js");
     final BProgramRunner rnr = new BProgramRunner(bprog);
     rnr.addListener(new PrintBProgramRunnerListener());
