@@ -56,7 +56,7 @@ public class ContextStorageModificationStrategy implements StorageModificationSt
   }
 
   private static Map<String, Set<NativeObject>> getQueriesEntities(MapProxy<String, Object> store, BProgramSyncSnapshot bProgramSyncSnapshot) {
-    Map<String, Set<NativeObject>> queriesEntities = ContextProxy.queries.entrySet().stream()
+    Map<String, Set<NativeObject>> queriesEntities = ContextProxy.proxy.queries.entrySet().stream()
         .collect(Collectors.toMap(
             Map.Entry::getKey,
             entry -> store.filter(

@@ -9,10 +9,10 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class ContextProxy implements Serializable {
-  public static final Map<String, BaseFunction> queries = new HashMap<>();
-  public static final Map<String, BaseFunction> effectFunctions = new HashMap<>();
+  public final Map<String, BaseFunction> queries = new HashMap<>();
+  public final Map<String, BaseFunction> effectFunctions = new HashMap<>();
 
-  private static ContextProxy proxy;
+  public static ContextProxy proxy;
   private static ContextProxySer proxySer = new ContextProxySer();
   public static ScriptableObjectCloner cloner;
 
@@ -32,13 +32,5 @@ public class ContextProxy implements Serializable {
 
   private Object writeReplace() throws ObjectStreamException {
     return proxySer;
-  }
-
-  public Map<String, BaseFunction> queries() {
-    return ContextProxy.queries;
-  }
-
-  public final Map<String, BaseFunction> effectFunctions() {
-    return ContextProxy.effectFunctions;
   }
 }
