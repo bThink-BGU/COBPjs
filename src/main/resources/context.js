@@ -5,7 +5,9 @@ importPackage(Packages.java.util);
 // BP related functions
 /////////////////////////////////////////////////////////////////////
 
-const Any = (type => bp.EventSet("Any(" + type + ")", function(e) { return e.name == type }))
+function Any(type) {
+    return bp.EventSet("Any(" + type + ")", function(e) { return e.name == type })
+}
 
 function bthread(name, f) {
     var int = []
@@ -235,7 +237,9 @@ const ctx = {
             function f() {
                 bthread('Register effect: ' + eventName, function () {
                     while(true) {
+                        ctx.beginTransaction()
                         ctx_proxy.effectFunctions.get(key)(sync({waitFor: Any(eventName)}).data)
+                        ctx.endTransaction()
                     }
                 })
             }

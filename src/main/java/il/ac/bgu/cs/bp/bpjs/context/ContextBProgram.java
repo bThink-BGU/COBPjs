@@ -1,25 +1,20 @@
 package il.ac.bgu.cs.bp.bpjs.context;
 
-import il.ac.bgu.cs.bp.bpjs.model.BProgram;
+import il.ac.bgu.cs.bp.bpjs.model.ResourceBProgram;
+import il.ac.bgu.cs.bp.bpjs.model.StorageModificationStrategy;
 import il.ac.bgu.cs.bp.bpjs.model.eventselection.EventSelectionStrategy;
-import org.mozilla.javascript.*;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.URL;
 import java.util.*;
 
 import static java.util.stream.Collectors.joining;
 
-public class ContextBProgram extends BProgram {
-  private Collection<String> resourceNames;
-
+public class ContextBProgram extends ResourceBProgram {
   public ContextBProgram(String aResourceName) {
-    this(Collections.singletonList(aResourceName), aResourceName);
+    this(Collections.singletonList(aResourceName));
   }
 
   public ContextBProgram(String... resourceNames) {
-    this(Arrays.asList(resourceNames));
+    this(List.of(resourceNames));
   }
 
   public ContextBProgram(Collection<String> someResourceNames) {
@@ -27,36 +22,29 @@ public class ContextBProgram extends BProgram {
   }
 
   public ContextBProgram(Collection<String> someResourceNames, String aName) {
-    super(aName, new CtxEventSelectionStrategy());
-    this.setStorageModificationStrategy(new ContextStorageModificationStrategy());
+    super(append(someResourceNames), aName, new CtxEventSelectionStrategy());
+    super.setStorageModificationStrategy(new ContextStorageModificationStrategy());
     putInGlobalScope("ctx_proxy", ContextProxy.Create(this));
-    resourceNames = someResourceNames;
-    resourceNames.forEach(this::verifyResourceExists);
+  }
+
+  private static Collection<String> append(Collection<String> resourceNames) {
+    return new ArrayList<>(resourceNames.size() + 1){{
+      add("context.js");
+      addAll(resourceNames);
+    }};
   }
 
   @Override
-  protected void setupProgramScope(Scriptable scope) {
-    evaluateFile("context.js");
-    resourceNames.forEach(this::evaluateFile);
-    resourceNames = null; // free memory
+  public <T extends EventSelectionStrategy> T setEventSelectionStrategy(T anEventSelectionStrategy) {
+    throw new UnsupportedOperationException("Cannot change the EventSelectionStrategy in ContextBProgram");
   }
 
-  private void evaluateFile(String name) {
-    try (InputStream resource = Thread.currentThread().getContextClassLoader().getResourceAsStream(name)) {
-      if (resource == null) {
-        throw new RuntimeException("Resource '" + name + "' not found.");
-      }
-      evaluate(resource, name);
-    } catch (IOException ex) {
-      throw new RuntimeException("Error reading resource: '" + name + "': " + ex.getMessage(), ex);
-    }
-  }
-
-  private void verifyResourceExists( String resName ) {
-    URL resUrl = Thread.currentThread().getContextClassLoader().getResource(resName);
-
-    if ( resUrl == null ) {
-      throw new IllegalArgumentException( "Cannot find resource '" + resName + "'");
-    }
+  @Override
+  public void setStorageModificationStrategy(StorageModificationStrategy storageModificationStrategy) {
+//    if(this.getStorageModificationStrategy() instanceof ContextStorageModificationStrategy) {
+      throw new UnsupportedOperationException("Cannot change the StorageModificationStrategy in ContextBProgram");
+//    } else {
+//      super.setStorageModificationStrategy(storageModificationStrategy);
+//    }
   }
 }
