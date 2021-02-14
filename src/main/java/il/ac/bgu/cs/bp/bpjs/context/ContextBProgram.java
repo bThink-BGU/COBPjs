@@ -28,7 +28,7 @@ public class ContextBProgram extends ResourceBProgram {
   }
 
   private static Collection<String> append(Collection<String> resourceNames) {
-    return new ArrayList<>(resourceNames.size() + 1){{
+    return new ArrayList<>(resourceNames.size() + 1) {{
       add("context.js");
       addAll(resourceNames);
     }};
@@ -41,10 +41,6 @@ public class ContextBProgram extends ResourceBProgram {
 
   @Override
   public void setStorageModificationStrategy(StorageModificationStrategy storageModificationStrategy) {
-//    if(this.getStorageModificationStrategy() instanceof ContextStorageModificationStrategy) {
-      throw new UnsupportedOperationException("Cannot change the StorageModificationStrategy in ContextBProgram");
-//    } else {
-//      super.setStorageModificationStrategy(storageModificationStrategy);
-//    }
+    throw new UnsupportedOperationException("Cannot change the StorageModificationStrategy in ContextBProgram");
   }
 }
