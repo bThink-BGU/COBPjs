@@ -108,7 +108,7 @@ bp.registerBThread("ContextHandler", {interrupt: [], block: []}, function () {
 })
 
 function isEndOfContext(exception) {
-    if (!(exception instanceof EventSet)) return false
+    if (!(exception instanceof il.ac.bgu.cs.bp.bpjs.model.eventsets.EventSet)) return false
     if (bp.thread.data.interrupt) {
         if (Array.isArray(bp.thread.data.interrupt)) {
             if (!bp.thread.data.interrupt.find(int => int.contains(exception))) {
