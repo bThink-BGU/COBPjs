@@ -168,67 +168,69 @@ const ctx = {
     this.__internal_fields.release()
   },
   insertEntity: function (id, type, data) {
-    this.__internal_fields.lock()
-    try {
-      const key = String("CTX.Entity: " + id)
-      if (bp.store.has(key)) {
-        throw Error("Key " + id + " already exists")
-      }
-      var entity = {id: String(id), type: String(type)}
-      if (data) {
-        this.__internal_fields.assign(entity, data)
-      }
-      let clone = ctx_proxy.cloner.clone(entity)
-      // Object.freeze(clone)
-      bp.store.put(key, clone)
-      this.__internal_fields.release()
-      return clone
-    } finally {
-      this.__internal_fields.release()
+    this.beginTransaction()
+    const key = String("CTX.Entity: " + id)
+    if (bp.store.has(key)) {
+      throw Error("Key " + id + " already exists")
     }
+    var entity = {id: String(id), type: String(type)}
+    if (data) {
+      this.__internal_fields.assign(entity, data)
+    }
+    let clone = ctx_proxy.cloner.clone(entity)
+    // Object.freeze(clone)
+    bp.store.put(key, clone)
+    this.endTransaction()
+    return clone
   },
   updateEntity: function (entity) {
-    this.__internal_fields.lock()
-    try {
-      const key = String("CTX.Entity: " + entity.id)
-      if (!bp.store.has(key)) {
-        throw Error("Key " + entity.id + " does not exist")
-      }
-      let clone = ctx_proxy.cloner.clone(entity)
-      // Object.freeze(clone)
-      bp.store.put(key, clone)
-      this.__internal_fields.release()
-      return clone
-    } finally {
-      this.__internal_fields.release()
+    this.beginTransaction()
+    const key = String("CTX.Entity: " + entity.id)
+    if (!bp.store.has(key)) {
+      throw Error("Key " + entity.id + " does not exist")
     }
+    let clone = ctx_proxy.cloner.clone(entity)
+    // Object.freeze(clone)
+    bp.store.put(key, clone)
+    // this.__internal_fields.release()
+    this.endTransaction()
+    return clone
   },
   removeEntity: function (entity) {
-    this.__internal_fields.lock()
-    try {
-      const key = String("CTX.Entity: " + entity.id)
-      if (!bp.store.has(key)) {
-        throw Error("Cannot remove entity, key " + entity.id + " does not exist")
-      }
-      bp.store.remove(key)
-    } finally {
-      this.__internal_fields.release()
+    this.beginTransaction()
+    const key = String("CTX.Entity: " + entity.id)
+    if (!bp.store.has(key)) {
+      throw Error("Cannot remove entity, key " + entity.id + " does not exist")
     }
+    bp.store.remove(key)
+    this.endTransaction()
   },
   getEntityById: function (id) {
-    this.__internal_fields.lock()
+    let inBThread = true
     try {
-      // bp.log.info('getEntityById id {0}', id)
-      const key = String("CTX.Entity: " + id)
-      if (!bp.store.has(key)) {
-        //throw Error("Entity with id '" + id + "' does not exist")
-      }
-      return ctx_proxy.cloner.clone(bp.store.get(key)) //clone (serialization/deserialization) removes freezing
-    } finally {
-      this.__internal_fields.release()
+      let a = bp.thread.name
+    } catch (e) {
+      inBThread = false
     }
+    if (inBThread)
+      this.beginTransaction()
+    // bp.log.info('getEntityById id {0}', id)
+    const key = String("CTX.Entity: " + id)
+    if (!bp.store.has(key)) {
+    }
+    let res = ctx_proxy.cloner.clone(bp.store.get(key)) //clone (serialization/deserialization) removes freezing
+    if (inBThread)
+      this.endTransaction()
+    //throw Error("Entity with id '" + id + "' does not exist")
+    return res
   },
   runQuery: function (queryName_or_function) {
+    let inBThread = true
+    try {
+      let a = bp.thread.name
+    } catch (e) {
+      inBThread = false
+    }
     let func;
     if (typeof (queryName_or_function) === 'string') {
       const key = String(queryName_or_function)
@@ -241,13 +243,12 @@ const ctx = {
       return key.startsWith(String("CTX.Entity: ")) && func(val)
     }
     let ans = new Set()
-    try {
-      this.__internal_fields.lock()
-      bp.store.filter(func2).forEach((k, v) => ans.add(ctx_proxy.cloner.clone(v)))
-      return ans
-    } finally {
-      this.__internal_fields.release()
-    }
+    if (inBThread)
+      this.beginTransaction()
+    bp.store.filter(func2).forEach((k, v) => ans.add(ctx_proxy.cloner.clone(v)))
+    if (inBThread)
+      this.endTransaction()
+    return ans
   },
   registerQuery: function (name, query) {
     try {
@@ -271,8 +272,9 @@ const ctx = {
       function f() {
         bthread('Register effect: ' + eventName, function () {
           while (true) {
+            let data = sync({waitFor: Any(eventName)}).data
             ctx.beginTransaction()
-            ctx_proxy.effectFunctions.get(key)(sync({waitFor: Any(eventName)}).data)
+            ctx_proxy.effectFunctions.get(key)(data)
             ctx.endTransaction()
           }
         })
@@ -301,11 +303,12 @@ const ctx = {
           createLiveCopy("Live copy" + ": " + name + " " + entity.id, context, entity, bt)
         })
         while (true) {
-          sync({waitFor: CtxStartES(context)}).data.forEach(function (change) {
+          let changes = sync({waitFor: CtxStartES(context)}).data.toArray()
+          for(let change of changes) {
             if (change.type.equals("new") && change.query.equals(context)) {
               createLiveCopy("Live copy" + ": " + name + " " + change.entityId, context, ctx.getEntityById(change.entityId), bt)
             }
-          })
+          }
         }
       })
   },

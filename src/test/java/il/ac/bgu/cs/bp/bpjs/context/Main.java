@@ -9,8 +9,8 @@ public class Main {
   public static void main(final String[] args) {
 
     /** Choose the desired COBP program... */
-    BProgram bprog = new ContextBProgram("SampleContextualProgram.js");
-//    BProgram bprog = new ContextBProgram("chess/dal.js", "chess/bl.js");
+//    BProgram bprog = new ContextBProgram("SampleContextualProgram.js");
+    BProgram bprog = new ContextBProgram("chess/dal.js", "chess/bl.js");
 
     final BProgramRunner rnr = new BProgramRunner(bprog);
 
