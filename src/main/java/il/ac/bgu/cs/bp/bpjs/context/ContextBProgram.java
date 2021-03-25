@@ -36,7 +36,8 @@ public class ContextBProgram extends ResourceBProgram {
 
   @Override
   public <T extends EventSelectionStrategy> T setEventSelectionStrategy(T anEventSelectionStrategy) {
-    throw new UnsupportedOperationException("Cannot change the EventSelectionStrategy in ContextBProgram");
+    ((CtxEventSelectionStrategy)getEventSelectionStrategy()).setEventSelectionStrategy(anEventSelectionStrategy);
+    return anEventSelectionStrategy;
   }
 
   @Override
