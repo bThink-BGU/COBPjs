@@ -27,6 +27,9 @@ import il.ac.bgu.cs.bp.bpjs.model.SyncStatement;
 import il.ac.bgu.cs.bp.bpjs.model.BEvent;
 import il.ac.bgu.cs.bp.bpjs.model.BProgramSyncSnapshot;
 import il.ac.bgu.cs.bp.bpjs.model.eventselection.AbstractEventSelectionStrategy;
+import il.ac.bgu.cs.bp.bpjs.model.eventselection.EventSelectionResult;
+import il.ac.bgu.cs.bp.bpjs.model.eventselection.EventSelectionStrategy;
+import il.ac.bgu.cs.bp.bpjs.model.eventselection.SimpleEventSelectionStrategy;
 import il.ac.bgu.cs.bp.bpjs.model.eventsets.EventSet;
 import il.ac.bgu.cs.bp.bpjs.model.eventsets.EventSets;
 
@@ -40,15 +43,25 @@ import static java.util.stream.Collectors.toSet;
 
 import org.mozilla.javascript.Context;
 
-public class CtxEventSelectionStrategy extends AbstractEventSelectionStrategy {
+public final class CtxEventSelectionStrategy extends AbstractEventSelectionStrategy {
 
-    public static final int DEFAULT_PRIORITY = 0;
+    private EventSelectionStrategy strategy;
 
     public CtxEventSelectionStrategy(long seed) {
         super(seed);
+        strategy = new SimpleEventSelectionStrategy(seed);
     }
 
     public CtxEventSelectionStrategy() {
+        this(new SimpleEventSelectionStrategy());
+    }
+
+    public CtxEventSelectionStrategy(EventSelectionStrategy eventSelectionStrategy) {
+        strategy = eventSelectionStrategy;
+    }
+
+    public void setEventSelectionStrategy(EventSelectionStrategy strategy) {
+        this.strategy = strategy;
     }
 
     @Override
@@ -79,33 +92,11 @@ public class CtxEventSelectionStrategy extends AbstractEventSelectionStrategy {
             return ctxEvents;
         }
 
-        OptionalInt maxValueOpt = statements.stream()
-            .filter(s -> !getRequestedAndNotBlocked(s, blocked).isEmpty())
-            .mapToInt(this::getValue)
-            .max();
-
-        try {
-            Context.enter();
-            if (maxValueOpt.isPresent()) {
-                int maxValue = maxValueOpt.getAsInt();
-                return statements.stream().filter(s -> getValue(s) == maxValue)
-                    .flatMap(s -> getRequestedAndNotBlocked(s, blocked).stream())
-                    .collect(toSet());
-            } else {
-                // Can't select any internal event, defer to the external, non-blocked ones.
-                return externalEvents.stream().filter(e -> !blocked.contains(e)) // No internal events requested, defer to externals.
-                    .findFirst().map(e -> singleton(e)).orElse(emptySet());
-            }
-        } finally {
-            Context.exit();
-        }
-
+        return strategy.selectableEvents(bpss);
     }
 
-    private int getValue(SyncStatement stmt) {
-        return (stmt.hasData() && (stmt.getData() instanceof Number)) ?
-            ((Number) stmt.getData()).intValue() : DEFAULT_PRIORITY;
+    @Override
+    public Optional<EventSelectionResult> select(BProgramSyncSnapshot bpss, Set<BEvent> selectableEvents) {
+        return strategy.select(bpss, selectableEvents);
     }
-
-
 }
