@@ -8,8 +8,9 @@ function getCell(i, j) {
 }
 
 function getLineCells(l) {
-  return [getCell(l.c1.i,l.c1.j), getCell(l.c2.i,l.c2.j), getCell(l.c3.i,l.c3.j)]
+  return [getCell(l.c1.i, l.c1.j), getCell(l.c2.i, l.c2.j), getCell(l.c3.i, l.c3.j)]
 }
+
 //#endregion HELPER FUNCTIONS
 
 //#region EventSets
@@ -89,7 +90,7 @@ bthread("DetectOWin", "Line.All", function (l) {
 // Player O strategy to add a the third O to win
 bthread("AddThirdO", "Line.All", function (l) {
   const cells = getLineCells(l)
-  const events = cells.map(c=>Event("O", c))
+  const events = cells.map(c => Event("O", c))
   sync({waitFor: events})
   sync({waitFor: events})
   sync({request: events}, 50)
@@ -98,8 +99,8 @@ bthread("AddThirdO", "Line.All", function (l) {
 // Player O strategy to prevent the third X of player X
 bthread("PreventThirdX", "Line.All", function (l) {
   const cells = getLineCells(l)
-  const OEvents = cells.map(c=>Event("O", c))
-  const XEvents = cells.map(c=>Event("X", c))
+  const OEvents = cells.map(c => Event("O", c))
+  const XEvents = cells.map(c => Event("X", c))
   sync({waitFor: XEvents})
   sync({waitFor: XEvents})
   sync({request: OEvents})
@@ -168,44 +169,47 @@ bthread("Sides", "Cell.Sides", function (c) {
   sync({request: Event("O", c)}, 10)
 })
 
-/*const forks22 = [[getCell(1, 2), getCell(2, 0)], [getCell(2, 1), getCell(0, 2)], [getCell(1, 2), getCell(2, 1)]]
-const forks02 = [[getCell(1, 2), getCell(0, 0)], [getCell(0, 1), getCell(2, 2)], [getCell(1, 2), getCell(0, 1)]]
-const forks20 = [[getCell(1, 0), getCell(2, 2)], [getCell(2, 1), getCell(0, 0)], [getCell(2, 1), getCell(1, 0)]]
-const forks00 = [[getCell(0, 1), getCell(2, 0)], [getCell(1, 0), getCell(0, 2)], [getCell(0, 1), getCell(1, 0)]]
+bthread("init forks", function () {
+  sync({waitFor: Any('CTX.Changed')})
+  const forks22 = [[getCell(1, 2), getCell(2, 0)], [getCell(2, 1), getCell(0, 2)], [getCell(1, 2), getCell(2, 1)]]
+  const forks02 = [[getCell(1, 2), getCell(0, 0)], [getCell(0, 1), getCell(2, 2)], [getCell(1, 2), getCell(0, 1)]]
+  const forks20 = [[getCell(1, 0), getCell(2, 2)], [getCell(2, 1), getCell(0, 0)], [getCell(2, 1), getCell(1, 0)]]
+  const forks00 = [[getCell(0, 1), getCell(2, 0)], [getCell(1, 0), getCell(0, 2)], [getCell(0, 1), getCell(1, 0)]]
 
-const forksdiag = [[getCell(0, 2), getCell(2, 0)]]
+  const forksdiag = [[getCell(0, 2), getCell(2, 0)]]
 
-const permsforks = [[0, 1], [1, 0]]*/
+  const permsforks = [[0, 1], [1, 0]]
 
-/*forks22.forEach(function (f) {
-  permsforks.forEach(function (p) {
-    addFork22PermutationBthreads(f[p[0]], f[p[1]])
+  forks22.forEach(function (f) {
+    permsforks.forEach(function (p) {
+      addFork22PermutationBthreads(f[p[0]], f[p[1]])
+    })
+  })
+
+  forks02.forEach(function (f) {
+    permsforks.forEach(function (p) {
+      addFork02PermutationBthreads(f[p[0]], f[p[1]])
+    })
+  })
+
+  forks20.forEach(function (f) {
+    permsforks.forEach(function (p) {
+      addFork20PermutationBthreads(f[p[0]], f[p[1]])
+    })
+  })
+
+  forks00.forEach(function (f) {
+    permsforks.forEach(function (p) {
+      addFork00PermutationBthreads(f[p[0]], f[p[1]])
+    })
+  })
+
+  forksdiag.forEach(function (f) {
+    permsforks.forEach(function (p) {
+      addForkdiagPermutationBthreads(f[p[0]], f[p[1]])
+    })
   })
 })
-
-forks02.forEach(function (f) {
-  permsforks.forEach(function (p) {
-    addFork02PermutationBthreads(f[p[0]], f[p[1]])
-  })
-})
-
-forks20.forEach(function (f) {
-  permsforks.forEach(function (p) {
-    addFork20PermutationBthreads(f[p[0]], f[p[1]])
-  })
-})
-
-forks00.forEach(function (f) {
-  permsforks.forEach(function (p) {
-    addFork00PermutationBthreads(f[p[0]], f[p[1]])
-  })
-})
-
-forksdiag.forEach(function (f) {
-  permsforks.forEach(function (p) {
-    addForkdiagPermutationBthreads(f[p[0]], f[p[1]])
-  })
-})*/
 //#endregion PLAYER O STRATEGY
 
 
