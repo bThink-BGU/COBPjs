@@ -221,6 +221,7 @@ const ctx = {
     // bp.log.info('getEntityById id {0}', id)
     const key = String("CTX.Entity: " + id)
     if (!bp.store.has(key)) {
+      throw Error("Key " + key + " does not exist")
     }
     let res = ctx_proxy.cloner.clone(bp.store.get(key)) //clone (serialization/deserialization) removes freezing
     if (inBThread)
