@@ -1,4 +1,7 @@
 //#region HELPER FUNCTIONS
+function Event(name, data) {
+  return bp.Event(name, data)
+}
 
 function getCell(i, j) {
   return ctx.getEntityById("cell(" + i + "," + j + ")")
@@ -22,8 +25,7 @@ const OEvents = bp.EventSet("OEvents", function (e) {
   return e.name.equals("O")
 })
 const EndGame = bp.EventSet("EndGame", function (e) {
-  // return ["OWin","XWin","Draw"].filter(a=>a==e.name).length>0
-  return ['OWin','XWin','Draw'].includes(String(e.name))
+  return e.name.equals("OWin") || e.name.equals("XWin") || e.name.equals("Draw")
 })
 
 //#endregion EventSets
@@ -67,7 +69,7 @@ bthread("DetectXWin", "Line.All", function (l) {
   for (let c = 0; c < 3; c++) {
     sync({waitFor: events})
   }
-  sync({request: Event('XWin')}, 100)
+  sync({request: [Event('XWin')]}, 100)
 })
 
 // Represents when O wins
@@ -77,7 +79,7 @@ bthread("DetectOWin", "Line.All", function (l) {
   for (let c = 0; c < 3; c++) {
     sync({waitFor: events})
   }
-  sync({request: Event('OWin')}, 100)
+  sync({request: [Event('OWin')]}, 100)
 })
 
 //#endregion GAME RULES

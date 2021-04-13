@@ -12,8 +12,12 @@ function Any(type) {
   })
 }
 
+function Event(name, data) {
+  return bp.Event(name, data)
+}
+
 function bthread(name, f, c) {
-  if(c) {
+  if (c) {
     ctx.bthread(name, f, c) // ctx.bthread should have been called
     return
   }
@@ -25,6 +29,7 @@ function bthread(name, f, c) {
   bp.registerBThread(name,
     {interrupt: int, block: []},
     function () {
+      sync({waitFor: Event('Context population completed.')})
       f();
     })
 }
@@ -304,18 +309,29 @@ const ctx = {
     bp.registerBThread("cbt: " + name,
       {interrupt: [], block: []},
       function () {
+        sync({waitFor: Event('Context population completed.')})
         ctx.runQuery(context).forEach(function (entity) {
           createLiveCopy("Live copy" + ": " + name + " " + entity.id, context, entity, bt)
         })
         while (true) {
           let changes = sync({waitFor: CtxStartES(context)}).data.toArray()
-          for(let change of changes) {
+          for (let change of changes) {
             if (change.type.equals("new") && change.query.equals(context)) {
               createLiveCopy("Live copy" + ": " + name + " " + change.entityId, context, ctx.getEntityById(change.entityId), bt)
             }
           }
         }
       })
+  },
+  populateContext: function (f) {
+    bp.store.put('hasPopulateData', 0)
+    bp.registerBThread("Populate context", {interrupt: [], block: []}, function () {
+      ctx.beginTransaction()
+      f()
+      ctx.endTransaction()
+      bp.store.remove('hasPopulateData')
+      sync({request: Event('Context population completed.')})
+    })
   },
   duringAfterContext: function (during, after) {
     try {
@@ -330,3 +346,11 @@ const ctx = {
 Object.freeze(ctx)
 
 bp.store.put("transaction", 0)
+
+bp.registerBThread("Initialization", {interrupt: [], block: []}, function () {
+  sync({request: Event('Begin initialization.')})
+  if (bp.store.has('hasPopulateData')) {
+    sync({waitFor: Event('Context population completed.')})
+  }
+  sync({request: Event('Context population completed.')})
+})
