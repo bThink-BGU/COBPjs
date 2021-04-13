@@ -1,8 +1,37 @@
+const forks = [
+  {
+    name: '22',
+    x: [[{i: 1, j: 2}, {i: 2, j: 0}], [{i: 2, j: 1}, {i: 0, j: 2}], [{i: 1, j: 2}, {i: 2, j: 1}]],
+    block: [{i: 2, j: 2}, {i: 0, j: 2}, {i: 2, j: 0}]
+  },
+  {
+    name: '02',
+    x: [[{i: 1, j: 2}, {i: 0, j: 0}], [{i: 0, j: 1}, {i: 2, j: 2}], [{i: 1, j: 2}, {i: 0, j: 1}]],
+    block: [{i: 0, j: 2}, {i: 0, j: 0}, {i: 2, j: 2}]
+  },
+  {
+    name: '20',
+    x: [[{i: 1, j: 0}, {i: 2, j: 2}], [{i: 2, j: 1}, {i: 0, j: 0}], [{i: 2, j: 1}, {i: 1, j: 0}]],
+    block: [{i: 2, j: 0}, {i: 0, j: 0}, {i: 2, j: 2}]
+  },
+  {
+    name: '00',
+    x: [[{i: 0, j: 1}, {i: 2, j: 0}], [{i: 1, j: 0}, {i: 0, j: 2}], [{i: 0, j: 1}, {i: 1, j: 0}]],
+    block: [{i: 0, j: 0}, {i: 0, j: 2}, {i: 2, j: 0}]
+  },
+  {
+    name: 'diag',
+    x: [[{i: 0, j: 2}, {i: 2, j: 0}]],
+    block: [{i: 0, j: 1}, {i: 1, j: 0}, {i: 2, j: 1}, {i: 1, j: 2}]
+  }
+]
+
 ctx.registerQuery("Cell.All", entity => entity.type.equals('cell'))
 ctx.registerQuery("Cell.Center", entity => entity.id.equals('cell(1,1)'))
 ctx.registerQuery("Cell.Corner", entity => ['cell(0,0)', 'cell(2,0)', 'cell(0,2)', 'cell(2,2)'].indexOf(entity.id) >= 0)
 ctx.registerQuery("Cell.Sides", entity => ['cell(0,1)', 'cell(1,0)', 'cell(2,1)', 'cell(1,2)'].indexOf(entity.id) >= 0)
 ctx.registerQuery("Line.All", entity => entity.type.equals('line'))
+ctx.registerQuery("Fork.All", entity => entity.type.equals('fork'))
 
 ctx.populateContext(() => {
   for (let i = 0; i < 3; i++) {
@@ -14,4 +43,9 @@ ctx.populateContext(() => {
   }
   ctx.insertEntity('line_diag_0', 'line', {c1: {i: 0, j: 0}, c2: {i: 1, j: 1}, c3: {i: 2, j: 2}})
   ctx.insertEntity('line_diag_1', 'line', {c1: {i: 2, j: 0}, c2: {i: 1, j: 1}, c3: {i: 0, j: 2}})
+
+  forks.forEach(function (f) {
+    for (let i = 0; i < f.x.length; i++)
+      ctx.insertEntity(f.name + '_' + i, 'fork', {x: f.x[i], block: f.block})
+  })
 })

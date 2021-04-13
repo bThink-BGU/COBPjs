@@ -1,5 +1,4 @@
 //#region HELPER FUNCTIONS
-
 function getCell(i, j) {
   return ctx.getEntityById("cell(" + i + "," + j + ")")
 }
@@ -13,17 +12,16 @@ function getLineCells(l) {
 //#region EventSets
 // Represents Enforce Turns
 const move = bp.EventSet("MoveEvents", function (e) {
-  return e.name.equals("O") || e.name.equals("X")
+  return ['X', 'O'].includes(String(e.name))
 })
 const XEvents = bp.EventSet("XEvents", function (e) {
-  return e.name.equals("X")
+  return e.name == "X"
 })
 const OEvents = bp.EventSet("OEvents", function (e) {
-  return e.name.equals("O")
+  return e.name == "O"
 })
 const EndGame = bp.EventSet("EndGame", function (e) {
-  // return ["OWin","XWin","Draw"].filter(a=>a==e.name).length>0
-  return ['OWin','XWin','Draw'].includes(String(e.name))
+  return ['OWin', 'XWin', 'Draw'].includes(String(e.name))
 })
 
 //#endregion EventSets
@@ -35,9 +33,6 @@ bthread("block X,O on nonempty cell", "Cell.All", function (c) {
   sync({waitFor: [Event("X", c), Event("O", c)]})
   sync({block: [Event("X", c), Event("O", c)]})
 })
-/*bthread("block X,O on nonempty cell", "Cell.NonEmpty", function (c) {
-  sync({block: [Event("X", c), Event("O", c)]})
-})*/
 
 bthread("EnforceTurnsXO", function () {
   while (true) {
@@ -49,7 +44,7 @@ bthread("EnforceTurnsXO", function () {
 // Represents when the game ends
 bthread("block moves on endgame", function () {
   sync({waitFor: EndGame})
-  sync({block: move})
+  sync({block: bp.all})
 })
 
 // Represents when it is a draw
@@ -104,53 +99,17 @@ bthread("PreventThirdX", "Line.All", function (l) {
   sync({request: OEvents})
 })
 
-//#region fork functions
-// Player O strategy to prevent the Fork22 of player X
-function addFork22PermutationBthreads(c1, c2) { //
-  bthread("PreventFork22X_" + c1 + "_" + c2, function () {
-    sync({waitFor: [Event("X", c1)]})
-    sync({waitFor: [Event("X", c2)]})
-    sync({request: [Event("O", getCell(2, 2)), Event("O", getCell(0, 2)), Event("O", getCell(2, 0))]}, 30)
-  })
-}
-
-// Player O strategy to prevent the Fork02 of player X
-function addFork02PermutationBthreads(c1, c2) { //
-  bthread("PreventFork02X_" + c1 + "_" + c2, function () {
-    sync({waitFor: [Event("X", c1)]})
-    sync({waitFor: [Event("X", c2)]})
-    sync({request: [Event("O", getCell(0, 2)), Event("O", getCell(0, 0)), Event("O", getCell(2, 2))]}, 30)
-  })
-}
-
-// Player O strategy to prevent the Fork20 of player X
-function addFork20PermutationBthreads(c1, c2) { //
-  bthread("PreventFork20X_" + c1 + "_" + c2, function () {
-    sync({waitFor: [Event("X", c1)]})
-    sync({waitFor: [Event("X", c2)]})
-    sync({request: [Event("O", getCell(2, 0)), Event("O", getCell(0, 0)), Event("O", getCell(2, 2))]}, 30)
-  })
-}
-
-// Player O strategy to prevent the Fork00 of player X
-function addFork00PermutationBthreads(c1, c2) { //
-  bthread("PreventFork20X_" + c1 + "_" + c2, function () {
-    sync({waitFor: [Event("X", c1)]})
-    sync({waitFor: [Event("X", c2)]})
-    sync({request: [Event("O", getCell(0, 0)), Event("O", getCell(0, 2)), Event("O", getCell(2, 0))]}, 30)
-  })
-}
-
-// Player O strategy to prevent the Forkdiagonal of player X
-function addForkdiagPermutationBthreads(c1, c2) { //
-  bthread("PreventForkdiagX_" + c1 + "_" + c2, function () {
-    sync({waitFor: [Event("X", c1)]})
-    sync({waitFor: [Event("X", c2)]})
-    sync({request: [Event("O", getCell(0, 1)), Event("O", getCell(1, 0)), Event("O", getCell(2, 1)), Event("O", getCell(1, 2))]}, 30)
-  })
-}
-
-//#endregion fork functions
+// Player O strategy to prevent fork of player X
+bthread("fork", 'Fork.All', function (f) {
+  let e1 = Event("X", getCell(f.x[0].i, f.x[0].j))
+  let e2 = Event("X", getCell(f.x[1].i, f.x[1].j))
+  let O = [];
+  for(let i=0; i< f.block.length; i++)
+    O.push(Event("O", getCell(f.block[i].i, f.block[i].j)))
+  sync({waitFor: [e1, e2]})
+  sync({waitFor: [e1, e2]})
+  sync({request: O}, 30)
+})
 
 // Preference to put O on the center
 bthread("Center", "Cell.Center", function (c) {
@@ -167,47 +126,6 @@ bthread("Sides", "Cell.Sides", function (c) {
   sync({request: Event("O", c)}, 10)
 })
 
-bthread("init forks", function () {
-  sync({waitFor: Any('CTX.Changed')})
-  const forks22 = [[getCell(1, 2), getCell(2, 0)], [getCell(2, 1), getCell(0, 2)], [getCell(1, 2), getCell(2, 1)]]
-  const forks02 = [[getCell(1, 2), getCell(0, 0)], [getCell(0, 1), getCell(2, 2)], [getCell(1, 2), getCell(0, 1)]]
-  const forks20 = [[getCell(1, 0), getCell(2, 2)], [getCell(2, 1), getCell(0, 0)], [getCell(2, 1), getCell(1, 0)]]
-  const forks00 = [[getCell(0, 1), getCell(2, 0)], [getCell(1, 0), getCell(0, 2)], [getCell(0, 1), getCell(1, 0)]]
-
-  const forksdiag = [[getCell(0, 2), getCell(2, 0)]]
-
-  const permsforks = [[0, 1], [1, 0]]
-
-  forks22.forEach(function (f) {
-    permsforks.forEach(function (p) {
-      addFork22PermutationBthreads(f[p[0]], f[p[1]])
-    })
-  })
-
-  forks02.forEach(function (f) {
-    permsforks.forEach(function (p) {
-      addFork02PermutationBthreads(f[p[0]], f[p[1]])
-    })
-  })
-
-  forks20.forEach(function (f) {
-    permsforks.forEach(function (p) {
-      addFork20PermutationBthreads(f[p[0]], f[p[1]])
-    })
-  })
-
-  forks00.forEach(function (f) {
-    permsforks.forEach(function (p) {
-      addFork00PermutationBthreads(f[p[0]], f[p[1]])
-    })
-  })
-
-  forksdiag.forEach(function (f) {
-    permsforks.forEach(function (p) {
-      addForkdiagPermutationBthreads(f[p[0]], f[p[1]])
-    })
-  })
-})
 //#endregion PLAYER O STRATEGY
 
 

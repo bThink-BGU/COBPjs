@@ -13,7 +13,9 @@ function Any(type) {
 }
 
 function Event(name, data) {
-  return bp.Event(name, data)
+  if(data)
+    return bp.Event(name, data)
+  return bp.Event(name)
 }
 
 function bthread(name, f, c) {
@@ -154,9 +156,9 @@ const ctx = {
       }
       return target
     },
-    CtxEntityChanged: changes => bp.Event('CTX.Changed', changes),
-    lock_event: bp.Event('_____CTX_LOCK_____', {hidden: true}),
-    release_event: bp.Event('_____CTX_RELEASE_____', {hidden: true}),
+    CtxEntityChanged: changes => Event('CTX.Changed', changes),
+    lock_event: Event('_____CTX_LOCK_____', {hidden: true}),
+    release_event: Event('_____CTX_RELEASE_____', {hidden: true}),
     lock: function () {
       let t = bp.store.get("transaction") + 1
       bp.store.put("transaction", t)
@@ -326,6 +328,7 @@ const ctx = {
   populateContext: function (f) {
     bp.store.put('hasPopulateData', 0)
     bp.registerBThread("Populate context", {interrupt: [], block: []}, function () {
+      sync({waitFor: Event('Begin initialization.')})
       ctx.beginTransaction()
       f()
       ctx.endTransaction()
@@ -349,8 +352,6 @@ bp.store.put("transaction", 0)
 
 bp.registerBThread("Initialization", {interrupt: [], block: []}, function () {
   sync({request: Event('Begin initialization.')})
-  if (bp.store.has('hasPopulateData')) {
-    sync({waitFor: Event('Context population completed.')})
-  }
+  if (!bp.store.has('hasPopulateData'))
   sync({request: Event('Context population completed.')})
 })
