@@ -12,7 +12,11 @@ function Any(type) {
   })
 }
 
-function bthread(name, f) {
+function bthread(name, f, c) {
+  if(c) {
+    ctx.bthread(name, f, c) // ctx.bthread should have been called
+    return
+  }
   var int = []
   try {
     int = bp.thread.data.interrupt
