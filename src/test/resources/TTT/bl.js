@@ -75,7 +75,7 @@ bthread("DetectXWin", "Line.All", function (l) {
 // Represents when O wins
 bthread("DetectOWin", "Line.All", function (l) {
   let cells = getLineCells(l)
-  const events = cells.map(c => Event("X", c))
+  const events = cells.map(c => Event("O", c))
   for (let c = 0; c < 3; c++) {
     sync({waitFor: events})
   }
