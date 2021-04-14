@@ -207,11 +207,11 @@ const ctx = {
     this.endTransaction()
     return clone
   },
-  removeEntity: function (entity) {
+  removeEntity: function (entity_or_id) {
     this.beginTransaction()
-    const key = String("CTX.Entity: " + entity.id)
+    const key = String("CTX.Entity: " + (entity_or_id.id ? entity_or_id.id : entity_or_id))
     if (!bp.store.has(key)) {
-      throw Error("Cannot remove entity, key " + entity.id + " does not exist")
+      throw Error("Cannot remove entity, key " + key + " does not exist")
     }
     bp.store.remove(key)
     this.endTransaction()

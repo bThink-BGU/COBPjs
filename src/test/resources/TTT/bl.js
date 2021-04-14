@@ -106,6 +106,7 @@ bthread("fork", 'Fork.All', function (f) {
   let O = [];
   for(let i=0; i< f.block.length; i++)
     O.push(Event("O", getCell(f.block[i].i, f.block[i].j)))
+
   sync({waitFor: [e1, e2]})
   sync({waitFor: [e1, e2]})
   sync({request: O}, 30)
