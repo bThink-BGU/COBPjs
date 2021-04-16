@@ -18,7 +18,7 @@ public class ContextBProgram extends ResourceBProgram {
   }
 
   public ContextBProgram(Collection<String> someResourceNames) {
-    this(someResourceNames, someResourceNames.stream().collect(joining("+")));
+    this(someResourceNames, String.join("+", someResourceNames));
   }
 
   public ContextBProgram(Collection<String> someResourceNames, String aName) {

@@ -29,6 +29,13 @@ const EndGame = bp.EventSet("EndGame", function (e) {
 //#region GAME RULES
 
 //block X,O on nonempty cell
+bthread("Click to X", "Cell.All", function (c) {
+  // bp.log.info("Click("+c.i+","+c.j+")")
+  sync({waitFor: Event("Click("+c.i+","+c.j+")")})
+  sync({request: Event("X", c)})
+})
+
+//block X,O on nonempty cell
 bthread("block X,O on nonempty cell", "Cell.All", function (c) {
   sync({waitFor: [Event("X", c), Event("O", c)]})
   sync({block: [Event("X", c), Event("O", c)]})
@@ -128,8 +135,3 @@ bthread("Sides", "Cell.Sides", function (c) {
 })
 
 //#endregion PLAYER O STRATEGY
-
-
-bthread("simulate x", "Cell.All", function (cell) {
-  sync({request: Event("X", cell)})
-})
