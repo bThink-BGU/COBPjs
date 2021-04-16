@@ -4,6 +4,7 @@ import il.ac.bgu.cs.bp.bpjs.context.HotCold.HotColdActuator;
 import il.ac.bgu.cs.bp.bpjs.context.TicTacToe.TicTacToeGameMain;
 import il.ac.bgu.cs.bp.bpjs.execution.BProgramRunner;
 import il.ac.bgu.cs.bp.bpjs.model.BProgram;
+import il.ac.bgu.cs.bp.bpjs.model.eventselection.PrioritizedBSyncEventSelectionStrategy;
 
 import java.net.URISyntaxException;
 import java.nio.file.Path;
@@ -45,7 +46,8 @@ public class Main {
       TicTacToeGameMain.main(bprog, rnr, useUI);
       return;
     } else if (example == Example.HotCold) {
-      bprog.setWaitForExternalEvents(true);
+      bprog.setEventSelectionStrategy(new PrioritizedBSyncEventSelectionStrategy());
+//      bprog.setWaitForExternalEvents(true);
       rnr.addListener(new HotColdActuator());
     }
     rnr.run();
