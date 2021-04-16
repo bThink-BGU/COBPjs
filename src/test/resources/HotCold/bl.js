@@ -39,3 +39,12 @@ bthread('Interleave', 'Room.Kitchen',
       sync({waitFor: Event('hot', entity), block: Event('cold', entity)})
     }
   })
+
+bthread('Simulate Press', 'Room.WithTaps',
+  function (entity) {
+    for (let j = 0; j < 3; j++) {
+      sync({request: Event('press', entity)})
+      for (let i = 0; i < 3; i++)
+        sync({waitFor: Event('hot', entity)})
+    }
+  })

@@ -8,7 +8,7 @@ public class HotColdActuator extends BProgramRunnerListenerAdapter {
   @Override
   public void eventSelected(BProgram bp, BEvent e) {
     if(e.name.equals("hot") || e.name.equals("cold")) {
-      System.out.print("Pouring " + e.name + " water.");
+      System.out.print("Actuator pour " + e.name + " water.");
     }
   }
 }
