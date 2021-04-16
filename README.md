@@ -38,5 +38,5 @@ This repository contains a javascript-based [Context-Oriented Behavioral Program
 ## Documentation
 * [BPjs Documentation](http://bpjs.readthedocs.io/en/master/).
 * [COBP Paper](https://www.sciencedirect.com/science/article/pii/S095058492030094X) introducing COBP, COLSC, and COBPjs.
-* [SampleContextualProgram.js](src/test/resources/SampleContextualProgram.js) includes many idioms of the language.
+* [SampleProgram](src/test/resources/SampleProgram) sample usage of many language idioms.
 * [Tic-Tac-Toe](src/test/resources/TTT) introduces a COBP implementation of the game. 
