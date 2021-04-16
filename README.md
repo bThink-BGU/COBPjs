@@ -29,7 +29,7 @@ This repository contains a javascript-based [Context-Oriented Behavioral Program
     <dependency>
         <groupId>com.github.bThink-BGU</groupId>
         <artifactId>BPjs-Context</artifactId>
-        <version>1.0.1</version>
+        <version>0.1.7</version>
     </dependency>
     ...
 </dependencies>
