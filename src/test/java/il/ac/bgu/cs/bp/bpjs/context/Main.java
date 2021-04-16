@@ -19,6 +19,15 @@ public class Main {
    */
   private static final Example example = Example.TicTacToe;
 
+  /** internal context events are: "CTX.Changed", "_____CTX_LOCK_____", "_____CTX_RELEASE_____"
+   * You can filter these event from printing on console using the Level:
+   * Level.ALL : print all
+   * Level.NONE : print none
+   * Level.CtxChanged: print only CTX.Changed events (i.e., filter the transaction lock/release events)
+   */
+  private static final Level logLevel = Level.CtxChanged;
+
+
   public static void main(final String[] args) throws URISyntaxException {
     var files =
         Arrays.stream(Objects.requireNonNull(Path.of(Objects.requireNonNull(Thread.currentThread().getContextClassLoader().getResource(example.name())).toURI()).toFile().listFiles()))
@@ -26,15 +35,7 @@ public class Main {
             .collect(Collectors.toList());
     BProgram bprog = new ContextBProgram(files);
     final BProgramRunner rnr = new BProgramRunner(bprog);
-    rnr.addListener(new PrintBProgramRunnerListener());
-
-    /** internal context events are: "CTX.Changed", "_____CTX_LOCK_____", "_____CTX_RELEASE_____"
-     * You can filter these event from printing on console using the Level:
-     * Level.ALL : print all
-     * Level.NONE : print none
-     * Level.CtxChanged: print only CTX.Changed events (i.e., filter the transaction lock/release events)
-     */
-    rnr.addListener(new PrintCOBProgramRunnerListener(Level.CtxChanged));
+    rnr.addListener(new PrintCOBProgramRunnerListener(logLevel));
 
     if (example == Example.TicTacToe) {
       boolean useUI = true;

@@ -5,14 +5,14 @@ import il.ac.bgu.cs.bp.bpjs.model.BEvent;
 import il.ac.bgu.cs.bp.bpjs.model.BProgram;
 
 public class PrintCOBProgramRunnerListener extends PrintBProgramRunnerListener {
-  private Level level;
+  private final Level level;
 
   public PrintCOBProgramRunnerListener(Level level) {
     this.level = level;
   }
 
   /**
-   * Default level = Level.ALL
+   * Default level = Level.CtxChanged
    */
   public PrintCOBProgramRunnerListener() {
     this(Level.CtxChanged);
