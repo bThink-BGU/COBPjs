@@ -1,4 +1,4 @@
-package il.ac.bgu.cs.bp.bpjs.context.hotcold;
+package il.ac.bgu.cs.bp.bpjs.context.HotCold;
 
 import il.ac.bgu.cs.bp.bpjs.execution.listeners.BProgramRunnerListenerAdapter;
 import il.ac.bgu.cs.bp.bpjs.model.BEvent;
@@ -8,7 +8,7 @@ public class HotColdActuator extends BProgramRunnerListenerAdapter {
   @Override
   public void eventSelected(BProgram bp, BEvent e) {
     if(e.name.equals("hot") || e.name.equals("cold")) {
-      System.out.printf("Pouring " + e.name + " water.");
+      System.out.print("Pouring " + e.name + " water.");
     }
   }
 }

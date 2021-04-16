@@ -1,8 +1,8 @@
 package il.ac.bgu.cs.bp.bpjs.context;
 
+import il.ac.bgu.cs.bp.bpjs.context.HotCold.HotColdActuator;
 import il.ac.bgu.cs.bp.bpjs.context.TicTacToe.TicTacToeGameMain;
 import il.ac.bgu.cs.bp.bpjs.execution.BProgramRunner;
-import il.ac.bgu.cs.bp.bpjs.execution.listeners.PrintBProgramRunnerListener;
 import il.ac.bgu.cs.bp.bpjs.model.BProgram;
 
 import java.net.URISyntaxException;
@@ -17,9 +17,12 @@ public class Main {
   /**
    * Choose the desired COBP program...
    */
-  private static final Example example = Example.TicTacToe;
+  private static final Example example =
+//      Example.HotCold;
+      Example.TicTacToe;
 
-  /** internal context events are: "CTX.Changed", "_____CTX_LOCK_____", "_____CTX_RELEASE_____"
+  /**
+   * internal context events are: "CTX.Changed", "_____CTX_LOCK_____", "_____CTX_RELEASE_____"
    * You can filter these event from printing on console using the Level:
    * Level.ALL : print all
    * Level.NONE : print none
@@ -40,8 +43,12 @@ public class Main {
     if (example == Example.TicTacToe) {
       boolean useUI = true;
       TicTacToeGameMain.main(bprog, rnr, useUI);
-    } else
-      rnr.run();
+      return;
+    } else if (example == Example.HotCold) {
+      bprog.setWaitForExternalEvents(true);
+      rnr.addListener(new HotColdActuator());
+    }
+    rnr.run();
   }
 
   private enum Example {
