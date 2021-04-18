@@ -43,3 +43,4 @@ This repository contains a javascript-based [Context-Oriented Behavioral Program
 * [Tic-Tac-Toe](src/test/resources/TTT) introduces a COBP implementation of the game. 
 * [BPjs documentation and tutorials](http://bpjs.readthedocs.io/en/master/) - a great starting point for BP.
 * [Behavioral Programming](http://www.b-prog.org/) - introduces behavioral programming.
+* [BPjs Google group](https://groups.google.com/forum/#!forum/bpjs)
