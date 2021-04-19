@@ -11,7 +11,7 @@ import java.util.Map;
 
 public class ContextProxy implements Serializable {
   public static List<String> CtxEvents =
-      List.of("CTX.Changed", "_____CTX_LOCK_____", "_____CTX_RELEASE_____");
+      List.of("CTX.Changed", "_____CTX_LOCK_____", "_____CTX_RELEASE_____", "CTX.Initialization: Start", "CTX.Initialization: Completed");
   public final Map<String, BaseFunction> queries = new HashMap<>();
   public final Map<String, BaseFunction> effectFunctions = new HashMap<>();
 

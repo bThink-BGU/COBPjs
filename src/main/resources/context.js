@@ -31,7 +31,7 @@ function bthread(name, f, c) {
   bp.registerBThread(name,
     {interrupt: int, block: []},
     function () {
-      sync({waitFor: Event('Context population completed.')})
+      sync({waitFor: Event('CTX.Initialization: Completed')})
       f();
     })
 }
@@ -311,7 +311,7 @@ const ctx = {
     bp.registerBThread("cbt: " + name,
       {interrupt: [], block: []},
       function () {
-        sync({waitFor: Event('Context population completed.')})
+        sync({waitFor: Event('CTX.Initialization: Completed')})
         ctx.runQuery(context).forEach(function (entity) {
           createLiveCopy("Live copy" + ": " + name + " " + entity.id, context, entity, bt)
         })
@@ -328,12 +328,12 @@ const ctx = {
   populateContext: function (f) {
     bp.store.put('hasPopulateData', 0)
     bp.registerBThread("Populate context", {interrupt: [], block: []}, function () {
-      sync({waitFor: Event('Begin initialization.')})
+      sync({waitFor: Event('CTX.Initialization: Start')})
       ctx.beginTransaction()
       f()
       ctx.endTransaction()
       bp.store.remove('hasPopulateData')
-      sync({request: Event('Context population completed.')})
+      sync({request: Event('CTX.Initialization: Completed')})
     })
   },
   duringAfterContext: function (during, after) {
@@ -351,7 +351,7 @@ Object.freeze(ctx)
 bp.store.put("transaction", 0)
 
 bp.registerBThread("Initialization", {interrupt: [], block: []}, function () {
-  sync({request: Event('Begin initialization.')})
+  sync({request: Event('CTX.Initialization: Start')})
   if (!bp.store.has('hasPopulateData'))
-  sync({request: Event('Context population completed.')})
+  sync({request: Event('CTX.Initialization: Completed')})
 })
