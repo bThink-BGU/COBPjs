@@ -14,7 +14,7 @@ This repository contains a javascript-based [Context-Oriented Behavioral Program
 ---
 
 ## Getting COBPjs
-* For Maven projects: Add [JitPack](https://jitpack.io) repository and COBPjs dependency. Note that the version number changes.
+* For Maven projects: Add [JitPack](https://jitpack.io) repository:
 
 ````xml
 <repositories>
@@ -23,15 +23,15 @@ This repository contains a javascript-based [Context-Oriented Behavioral Program
         <url>https://jitpack.io</url>
     </repository>
 </repositories>
-...
+````
+Also add COBPjs dependency. Note that the version number changes....
+````xml
 <dependencies>
-    ...
     <dependency>
         <groupId>com.github.bThink-BGU</groupId>
         <artifactId>BPjs-Context</artifactId>
-        <version>0.1.8</version>
+        <version>0.1.9</version>
     </dependency>
-    ...
 </dependencies>
 ````
 
