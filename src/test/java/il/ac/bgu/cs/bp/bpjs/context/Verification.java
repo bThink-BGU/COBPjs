@@ -25,6 +25,7 @@ public class Verification {
             .collect(Collectors.toList());
     BProgram bprog = new ContextBProgram(files);
     DfsBProgramVerifier vfr = new DfsBProgramVerifier();
+    vfr.setMaxTraceLength(2000);
     vfr.setProgressListener( new PrintDfsVerifierListener() );
 //    vfr.setDebugMode(true);
     try {

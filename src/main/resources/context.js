@@ -1,4 +1,3 @@
-
 /* global bp, ctx_proxy */
 
 function deepFreeze(object) {
@@ -51,6 +50,7 @@ bthread("ContextHandler", function () {
     if (changes && changes.length > 0) {
       sync({request: ctx.__internal_fields.CtxEntityChanged(changes), block: ctx.__internal_fields.lock_event})
     }
+    changes = []
   }
 })
 
@@ -114,7 +114,7 @@ const ctx = {
     this.__internal_fields.release()
   },
   Entity: function (id, type, data) {
-    var entity = {id: String(id), type: String(type)}
+    let entity = {id: String(id), type: String(type)}
     if (data) {
       this.__internal_fields.assign(entity, data)
     }
@@ -149,12 +149,7 @@ const ctx = {
     this.endTransaction()
   },
   getEntityById: function (id) {
-    let inBThread = true
-    try {
-      let a = bp.thread.name
-    } catch (e) {
-      inBThread = false
-    }
+    let inBThread = isInBThread()
     if (inBThread)
       this.beginTransaction()
     // bp.log.info('getEntityById id {0}', id)
@@ -255,17 +250,19 @@ const ctx = {
     }
     bthread("cbt: " + name,
       function () {
-        const res = ctx.runQuery(context)
+        let res = ctx.runQuery(context)
         for (let i = 0; i < res.length; i++) {
           createLiveCopy(String("Live copy" + ": " + name + " " + res[i].id), context, res[i], bt)
         }
+        res = [] // reset bthread state for verification
         while (true) {
           let changes = sync({waitFor: CtxStartES(context)}).data
-          for (let change of changes) {
-            if (change.type.equals("new") && change.query.equals(context)) {
-              createLiveCopy(String("Live copy" + ": " + name + " " + change.entityId), context, ctx.getEntityById(change.entityId), bt)
+          for (let i = 0; i < changes.length; i++) {
+            if (changes[i].type.equals("new") && changes[i].query.equals(context)) {
+              createLiveCopy(String("Live copy" + ": " + name + " " + changes[i].entityId), context, ctx.getEntityById(changes[i].entityId), bt)
             }
           }
+          changes = undefined
         }
       })
   },
@@ -283,21 +280,10 @@ const ctx = {
   }
 }
 
-Object.freeze(ctx)
-
-bp.store.put("transaction", 0)
-
-ctx.registerQuery('CurrentPages', entity => entity.id == 'CurrentPages')
-ctx.registerEffect('Page', function (data) {
-  let p = ctx.getEntityById("CurrentPages")
-  p[data.session] = data.name
-  ctx.updateEntity(p)
-})
-
-ctx.populateContext([
-  ctx.Entity('CurrentPages', 'CurrentPages')
-])
-
 bthread('Context population', function () {
   sync({request: bp.Event('Context population completed')})
 })
+
+Object.freeze(ctx)
+
+bp.store.put("transaction", 0)
