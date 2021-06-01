@@ -7,10 +7,14 @@ ctx.populateContext([
 
 // Specifies the contexts/layers preconditions
 ctx.registerQuery('Night',
-  entity => entity.id == 'night')
+  function (entity) {
+    return entity.id == 'night'
+  })
 ctx.registerQuery('Room.WithTaps',
-  entity => entity.type == 'room' &&
-    ['kitchen', 'bathroom'].includes(entity.subtype))
+  function (entity) {
+    return entity.type == 'room' &&
+      entity.subtype == 'kitchen' || entity.subtype == 'bathroom'
+  })
 
 // Specify the effect of certain events on the context
 ctx.registerEffect('night begins', function (data) {
@@ -21,5 +25,7 @@ ctx.registerEffect('night ends', function (data) {
 })
 
 ctx.registerQuery('Room.Kitchen',
-  entity => entity.type == 'room' &&
-    'kitchen' == entity.subtype)
+  function (entity) {
+    return entity.type == 'room' &&
+      'kitchen' == entity.subtype
+  })

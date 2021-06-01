@@ -19,12 +19,10 @@ function deepFreeze(object) {
 }
 
 const CtxInternalEvents = bp.EventSet("Ctx.InternalEvents", function (e) {
-  return ["CTX.Changed", "_____CTX_LOCK_____", "_____CTX_RELEASE_____"].includes(e.name)
+  return ctx_proxy.CtxEvents.contains(String(e.name))
 })
 
-const NonCtxInternalEvents = bp.EventSet("Ctx.NonInternalEvents", function (e) {
-  return !CtxInternalEvents.contains(e)
-})
+const NonCtxInternalEvents = CtxInternalEvents.negate()
 
 function CtxEndES(query, id) {
   return bp.EventSet('CtxEndES', function (e) {
@@ -257,7 +255,6 @@ const ctx = {
     }
     bthread("cbt: " + name,
       function () {
-        sync({waitFor: bp.Event('Context population completed.')})
         const res = ctx.runQuery(context)
         for (let i = 0; i < res.length; i++) {
           createLiveCopy(String("Live copy" + ": " + name + " " + res[i].id), context, res[i], bt)
@@ -302,5 +299,5 @@ ctx.populateContext([
 ])
 
 bthread('Context population', function () {
-  sync({request: bp.Event('Context population completed.')})
+  sync({request: bp.Event('Context population completed')})
 })

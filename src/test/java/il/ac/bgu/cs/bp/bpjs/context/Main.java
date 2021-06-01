@@ -54,7 +54,7 @@ public class Main {
     rnr.run();
   }
 
-  private enum Example {
+  enum Example {
     Chess, TicTacToe, HotCold, SampleProgram
   }
 }
