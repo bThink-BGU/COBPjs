@@ -1,4 +1,5 @@
-/* global bp, ctx_proxy */
+/* global bp, ctx_proxy, Packages, EventSets */ // <-- Turn off warnings
+// importPackage(Packages.il.ac.bgu.cs.bp.bpjs.model.eventsets);
 
 function deepFreeze(object) {
   // Retrieve the property names defined on object
