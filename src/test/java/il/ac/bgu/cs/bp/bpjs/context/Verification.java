@@ -6,7 +6,7 @@ import il.ac.bgu.cs.bp.bpjs.model.BProgram;
 
 public class Verification {
   public static void main(final String[] args) {
-    BProgram bprog = new ContextBProgram("SampleProgram/SampleContextualProgram.js");
+    BProgram bprog = new ContextBProgram("SampleProgram/bl.js", "SampleProgram/dal.js");
     DfsBProgramVerifier vfr = new DfsBProgramVerifier();
     vfr.setProgressListener( new PrintDfsVerifierListener() );
 //    vfr.setDebugMode(true);

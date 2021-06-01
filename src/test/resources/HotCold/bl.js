@@ -1,20 +1,22 @@
 // Requirement $\ref{r_vacuum}$
 bthread('night activation/deactivation',
   function () {
-    sync({waitFor: Event('time', '21:00')})
-    sync({request: Event('night begins')})
-    sync({waitFor: Event('time', '08:00')})
-    sync({request: Event('night ends')})
+    while (true) {
+      sync({waitFor: Event('time', '21:00')})
+      sync({request: Event('night begins')})
+      sync({waitFor: Event('time', '08:00')})
+      sync({request: Event('night ends')})
+    }
   })
 
 // Requirement $\ref{r_vacuum}$
-bthread('no vacuuming at night', 'Night',
+ctx.bthread('no vacuuming at night', 'Night',
   function (entity) {
     sync({block: Event('vacuum')})
   })
 
 // Requirement $\ref{r_cold}$
-bthread('Add Cold Three Times', 'Room.WithTaps',
+ctx.bthread('Add Cold Three Times', 'Room.WithTaps',
   function (entity) {
     sync({waitFor: Event('press', entity)})
     sync({request: Event('cold', entity)})
@@ -23,7 +25,7 @@ bthread('Add Cold Three Times', 'Room.WithTaps',
   })
 
 // Requirement $\ref{r_hot}$
-bthread('Add Hot Three Times', 'Room.WithTaps',
+ctx.bthread('Add Hot Three Times', 'Room.WithTaps',
   function (entity) {
     sync({waitFor: Event('press', entity)})
     sync({request: Event('hot', entity)})
@@ -32,7 +34,7 @@ bthread('Add Hot Three Times', 'Room.WithTaps',
   })
 
 // Requirement $\ref{kitchen}$
-bthread('Interleave', 'Room.Kitchen',
+ctx.bthread('Interleave', 'Room.Kitchen',
   function (entity) {
     while (true) {
       sync({waitFor: Event('cold', entity), block: Event('hot', entity)})
@@ -40,11 +42,23 @@ bthread('Interleave', 'Room.Kitchen',
     }
   })
 
-bthread('Simulate Press', 'Room.WithTaps',
+ctx.bthread('Simulate Press', 'Room.WithTaps',
   function (entity) {
     for (let j = 0; j < 3; j++) {
-      sync({request: Event('press', entity)})
-      for (let i = 0; i < 3; i++)
-        sync({waitFor: Event('hot', entity)})
+      bp.enqueueExternalEvent(Event('press', entity))
     }
-  })
+})
+
+bthread('Simulate day/night', function () {
+  for (let j = 0; j < 3; j++) {
+    bp.enqueueExternalEvent(Event('time', '21:00'))
+    bp.enqueueExternalEvent(Event('time', '08:00'))
+  }
+})
+
+bthread('Simulate vacuum', function () {
+  for (let j = 0; j < 3; j++) {
+    bp.enqueueExternalEvent(Event('vacuum'))
+    bp.enqueueExternalEvent(Event('vacuum end'))
+  }
+})

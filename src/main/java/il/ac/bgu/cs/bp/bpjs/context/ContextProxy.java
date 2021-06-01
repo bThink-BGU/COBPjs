@@ -11,18 +11,19 @@ import java.util.Map;
 
 public class ContextProxy implements Serializable {
   public static List<String> CtxEvents =
-      List.of("CTX.Changed", "_____CTX_LOCK_____", "_____CTX_RELEASE_____", "CTX.Initialization: Start", "CTX.Initialization: Completed");
+      List.of("CTX.Changed", "_____CTX_LOCK_____", "_____CTX_RELEASE_____");
   public final Map<String, BaseFunction> queries = new HashMap<>();
   public final Map<String, BaseFunction> effectFunctions = new HashMap<>();
 
   public static ContextProxy proxy;
-  private static ContextProxySer proxySer = new ContextProxySer();
+  private static ContextProxySer proxySer;
   public static ScriptableObjectCloner cloner;
 
   private ContextProxy() {}
 
   public static ContextProxy Create(BProgram bprog) {
     proxy = new ContextProxy();
+    proxySer = new ContextProxySer();
     cloner = new ScriptableObjectCloner(bprog);
     return proxy;
   }

@@ -3,6 +3,7 @@ package il.ac.bgu.cs.bp.bpjs.context;
 import il.ac.bgu.cs.bp.bpjs.context.HotCold.HotColdActuator;
 import il.ac.bgu.cs.bp.bpjs.context.TicTacToe.TicTacToeGameMain;
 import il.ac.bgu.cs.bp.bpjs.execution.BProgramRunner;
+import il.ac.bgu.cs.bp.bpjs.execution.listeners.PrintBProgramRunnerListener;
 import il.ac.bgu.cs.bp.bpjs.model.BProgram;
 import il.ac.bgu.cs.bp.bpjs.model.eventselection.PrioritizedBSyncEventSelectionStrategy;
 
@@ -19,8 +20,8 @@ public class Main {
    * Choose the desired COBP program...
    */
   private static final Example example =
-//      Example.HotCold;
-      Example.TicTacToe;
+      Example.HotCold;
+//      Example.TicTacToe;
 
   /**
    * internal context events are: "CTX.Changed", "_____CTX_LOCK_____", "_____CTX_RELEASE_____"
@@ -39,7 +40,7 @@ public class Main {
             .collect(Collectors.toList());
     BProgram bprog = new ContextBProgram(files);
     final BProgramRunner rnr = new BProgramRunner(bprog);
-    rnr.addListener(new PrintCOBProgramRunnerListener(logLevel));
+    rnr.addListener(new PrintCOBProgramRunnerListener(logLevel, new PrintBProgramRunnerListener()));
 
     if (example == Example.TicTacToe) {
       boolean useUI = true;

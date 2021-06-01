@@ -1,5 +1,6 @@
 package il.ac.bgu.cs.bp.bpjs.context;
 
+import il.ac.bgu.cs.bp.bpjs.BPjs;
 import il.ac.bgu.cs.bp.bpjs.execution.jsproxy.MapProxy;
 import il.ac.bgu.cs.bp.bpjs.internal.ScriptableUtils;
 import il.ac.bgu.cs.bp.bpjs.model.BProgramSyncSnapshot;
@@ -38,7 +39,7 @@ public class ContextStorageModificationStrategy implements StorageModificationSt
     changes.addAll(newQueriesEntities.entrySet().stream().flatMap(entry -> entry.getValue().stream().map(entity -> new ContextChange(entry.getKey(), "new", (String) entity.get("id")))).collect(Collectors.toList()));
     changes.addAll(removedQueriesEntities.entrySet().stream().flatMap(entry -> entry.getValue().stream().map(entity -> new ContextChange(entry.getKey(), "end", (String) entity.get("id")))).collect(Collectors.toList()));
 
-    updates.put("Context changes", new MapProxy.PutValue<>(changes));
+    updates.put("Context changes", new MapProxy.PutValue<>(changes.toArray()));
     return success;
   }
 
@@ -76,7 +77,7 @@ public class ContextStorageModificationStrategy implements StorageModificationSt
     Object bp  = bpjsScope.get("bp", bpjsScope);
     BProgramProxyForEffects proxy = new BProgramProxyForEffects(store);
     boolean bpChanged = false;
-    Context cx = Context.enter();
+    Context cx = BPjs.enterRhinoContext();
     try {
       bpjsScope.put("bp", bpjsScope, Context.javaToJS(proxy, bpjsScope));
       bpChanged = true;

@@ -1,5 +1,6 @@
 package il.ac.bgu.cs.bp.bpjs.context;
 
+import il.ac.bgu.cs.bp.bpjs.BPjs;
 import il.ac.bgu.cs.bp.bpjs.bprogramio.BPJSStubInputStream;
 import il.ac.bgu.cs.bp.bpjs.bprogramio.BPJSStubOutputStream;
 import il.ac.bgu.cs.bp.bpjs.bprogramio.StreamObjectStub;
@@ -22,12 +23,13 @@ public class ScriptableObjectCloner {
   }
 
   public ScriptableObject clone(ScriptableObject obj) {
-    return deserialize(serialize(obj));
+    byte[] ser = serialize(obj);
+    return deserialize(ser);
   }
 
   private ScriptableObject deserialize(byte[] bytes) {
     try {
-      Context.enter();
+      BPjs.enterRhinoContext();
       try (BPJSStubInputStream in = new BPJSStubInputStream(new ByteArrayInputStream(bytes),
           bprog.getGlobalScope(),
           getStubProvider())
@@ -43,7 +45,7 @@ public class ScriptableObjectCloner {
 
   private byte[] serialize(ScriptableObject obj) {
     try {
-      Context.enter();
+      BPjs.enterRhinoContext();
       try (ByteArrayOutputStream bytes = new ByteArrayOutputStream();
            BPJSStubOutputStream outs = new BPJSStubOutputStream(bytes, bprog.getGlobalScope())) {
         outs.writeObject(obj);
