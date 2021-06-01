@@ -91,7 +91,9 @@ const ctx = {
       }
       return target
     },
-    CtxEntityChanged: changes => bp.Event('CTX.Changed', changes),
+    CtxEntityChanged: function (changes) {
+      return bp.Event('CTX.Changed', changes)
+    },
     lock_event: bp.Event('_____CTX_LOCK_____', {hidden: true}),
     release_event: bp.Event('_____CTX_RELEASE_____', {hidden: true}),
     lock: function () {

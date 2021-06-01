@@ -1,15 +1,5 @@
-function Any(type) {
-  return bp.EventSet("Any(" + type + ")", function (e) {
-    return String(e.name) == String(type)
-  })
-}
-
-function Event(name, data) {
-  if(data)
-    return bp.Event(name, data)
-  return bp.Event(name)
-}
-
+/* global bp, Packages, EventSets */ // <-- Turn off warnings
+importPackage(Packages.il.ac.bgu.cs.bp.bpjs.model.eventsets);
 
 /**
  * Tests if `o` is a javascript Set
@@ -196,4 +186,16 @@ function testInBThread(caller, expectInBThread) {
     throw new Error(String("The function " + caller + " must be called by a b-thread"))
   if (!expectInBThread && isInBThread())
     throw new Error(String("The function " + caller + " must be called from the global scope"))
+}
+
+function Any(type) {
+  return bp.EventSet("Any(" + type + ")", function (e) {
+    return String(e.name) == String(type)
+  })
+}
+
+function Event(name, data) {
+  if(data)
+    return bp.Event(name, data)
+  return bp.Event(name)
 }

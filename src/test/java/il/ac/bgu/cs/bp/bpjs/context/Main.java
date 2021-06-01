@@ -19,7 +19,8 @@ public class Main {
    * Choose the desired COBP program...
    */
   private static final Example example =
-      Example.HotCold;
+//      Example.HotCold;
+      Example.SampleProgram;
 //      Example.TicTacToe;
 
   /**

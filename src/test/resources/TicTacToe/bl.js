@@ -3,6 +3,14 @@ function getCell(i, j) {
   return ctx.getEntityById("cell(" + i + "," + j + ")")
 }
 
+function cellsToEvents(event, cells) {
+  return cells.map(c => cellToEvent(event, c))
+}
+
+function cellToEvent(event, cell) {
+  return Event(event, cell)
+}
+
 function getLineCells(l) {
   return [getCell(l.c1.i, l.c1.j), getCell(l.c2.i, l.c2.j), getCell(l.c3.i, l.c3.j)]
 }
@@ -29,14 +37,14 @@ const EndGame = bp.EventSet("EndGame", function (e) {
 //#region GAME RULES
 
 //block X,O on nonempty cell
-bthread("Click to X", "Cell.All", function (c) {
+ctx.bthread("Click to X", "Cell.All", function (c) {
   // bp.log.info("Click("+c.i+","+c.j+")")
-  sync({waitFor: Event("Click("+c.i+","+c.j+")")})
+  sync({waitFor: Event("Click(" + c.i + "," + c.j + ")")})
   sync({request: Event("X", c)})
 })
 
 //block X,O on nonempty cell
-bthread("block X,O on nonempty cell", "Cell.All", function (c) {
+ctx.bthread("block X,O on nonempty cell", "Cell.All", function (c) {
   sync({waitFor: [Event("X", c), Event("O", c)]})
   sync({block: [Event("X", c), Event("O", c)]})
 })
@@ -63,9 +71,9 @@ bthread("DetectDraw", function () {
 })
 
 // Represents when X wins
-bthread("DetectXWin", "Line.All", function (l) {
+ctx.bthread("DetectXWin", "Line.All", function (l) {
   let cells = getLineCells(l)
-  const events = cells.map(c => Event("X", c))
+  const events = cellsToEvents('X', cells)
   for (let c = 0; c < 3; c++) {
     sync({waitFor: events})
   }
@@ -73,9 +81,9 @@ bthread("DetectXWin", "Line.All", function (l) {
 })
 
 // Represents when O wins
-bthread("DetectOWin", "Line.All", function (l) {
+ctx.bthread("DetectOWin", "Line.All", function (l) {
   let cells = getLineCells(l)
-  const events = cells.map(c => Event("O", c))
+  const events = cellsToEvents('O', cells)
   for (let c = 0; c < 3; c++) {
     sync({waitFor: events})
   }
@@ -88,31 +96,33 @@ bthread("DetectOWin", "Line.All", function (l) {
 //#region PLAYER O STRATEGY
 
 // Player O strategy to add a the third O to win
-bthread("AddThirdO", "Line.All", function (l) {
+ctx.bthread("AddThirdO", "Line.All", function (l) {
   const cells = getLineCells(l)
-  const events = cells.map(c => Event("O", c))
+  const events = cellsToEvents('O', cells)
   sync({waitFor: events})
   sync({waitFor: events})
   sync({request: events}, 50)
 })
 
 // Player O strategy to prevent the third X of player X
-bthread("PreventThirdX", "Line.All", function (l) {
+ctx.bthread("PreventThirdX", "Line.All", function (l) {
   const cells = getLineCells(l)
-  const OEvents = cells.map(c => Event("O", c))
-  const XEvents = cells.map(c => Event("X", c))
+  const OEvents = cellsToEvents('O', cells)
+  const XEvents = cellsToEvents('X', cells)
   sync({waitFor: XEvents})
   sync({waitFor: XEvents})
   sync({request: OEvents})
 })
 
 // Player O strategy to prevent fork of player X
-bthread("fork", 'Fork.All', function (f) {
+ctx.bthread("fork", 'Fork.All', function (f) {
   let e1 = Event("X", getCell(f.x[0].i, f.x[0].j))
   let e2 = Event("X", getCell(f.x[1].i, f.x[1].j))
   let O = [];
-  for(let i=0; i< f.block.length; i++)
-    O.push(Event("O", getCell(f.block[i].i, f.block[i].j)))
+  for (let i = 0; i < f.block.length; i++) {
+    let c = getCell(f.block[i].i, f.block[i].j)
+    O.push(Event("O", c))
+  }
 
   sync({waitFor: [e1, e2]})
   sync({waitFor: [e1, e2]})
@@ -120,17 +130,17 @@ bthread("fork", 'Fork.All', function (f) {
 })
 
 // Preference to put O on the center
-bthread("Center", "Cell.Center", function (c) {
+ctx.bthread("Center", "Cell.Center", function (c) {
   sync({request: Event("O", c)}, 35)
 })
 
 // Preference to put O on the corners
-bthread("Corner", "Cell.Corner", function (c) {
+ctx.bthread("Corner", "Cell.Corner", function (c) {
   sync({request: Event("O", c)}, 20)
 })
 
 // Preference to put O on the sides
-bthread("Sides", "Cell.Sides", function (c) {
+ctx.bthread("Sides", "Cell.Sides", function (c) {
   sync({request: Event("O", c)}, 10)
 })
 

@@ -2,8 +2,8 @@
  * A b-thread that is not bound to any context
  */
 bthread("test", function () {
-  sync({request: bp.Event("haha", 5)})
-  sync({request: bp.Event("haha", 3)})
+  sync({request: Event("haha", 5)})
+  sync({request: Event("haha", 3)})
   bp.log.info('entity with id "a5": {0}', ctx.getEntityById('a5'))
 })
 
@@ -12,15 +12,15 @@ bthread("test", function () {
  * A live copy of this b-thread will be spawned for each new answer to the query 'B.All'.
  * The answer will be passed to the {@param entity} parameter of the function.
  */
-bthread('do something with b objects', 'B.All', function (entity) {
+ctx.bthread('do something with b objects', 'B.All', function (entity) {
   bp.log.info('{0}: {1}', bp.thread.name, entity)
-  sync({request: bp.Event("doB")})
+  sync({request: Event("doB")})
 })
 
 /**
  * A b-thread that is bound to the {@name B.<5} query.
  */
-bthread('do something with b objects with hahaData smaller than 5', 'B.<5', function (entity) {
+ctx.bthread('do something with b objects with hahaData smaller than 5', 'B.<5', function (entity) {
   bp.log.info('{0}: {1}', bp.thread.name, entity)
-  sync({request: bp.Event("doB")})
+  sync({request: Event("doB")})
 })

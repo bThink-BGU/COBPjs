@@ -15,8 +15,9 @@ public class Verification {
    * Choose the desired COBP program...
    */
   private static final Main.Example example =
-      Main.Example.HotCold;
-  //      Example.TicTacToe;
+      Main.Example.SampleProgram;
+//      Main.Example.HotCold;
+//      Main.Example.TicTacToe;
 
   public static void main(final String[] args) throws URISyntaxException {
     var files =
@@ -26,7 +27,7 @@ public class Verification {
     BProgram bprog = new ContextBProgram(files);
     DfsBProgramVerifier vfr = new DfsBProgramVerifier();
     vfr.setMaxTraceLength(2000);
-    vfr.setProgressListener( new PrintDfsVerifierListener() );
+    vfr.setProgressListener(new PrintDfsVerifierListener());
 //    vfr.setDebugMode(true);
     try {
       vfr.verify(bprog);
