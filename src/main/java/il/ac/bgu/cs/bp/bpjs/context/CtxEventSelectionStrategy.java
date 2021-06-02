@@ -60,6 +60,10 @@ public final class CtxEventSelectionStrategy extends AbstractEventSelectionStrat
                     return new HashSet<>() {{
                         add(e);
                     }};
+                if (e.name.equals("Context population completed"))
+                    return new HashSet<>() {{
+                        add(e);
+                    }};
             }
             return ctxEvents;
         }
