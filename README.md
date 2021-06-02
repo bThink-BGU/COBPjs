@@ -30,7 +30,7 @@ Also add COBPjs dependency. Note that the version number changes....
     <dependency>
         <groupId>com.github.bThink-BGU</groupId>
         <artifactId>BPjs-Context</artifactId>
-        <version>0.1.9</version>
+        <version>0.1.10</version>
     </dependency>
 </dependencies>
 ````
@@ -40,7 +40,8 @@ Also add COBPjs dependency. Note that the version number changes....
 * [A presentation at MORSE18](https://youtu.be/eqwhFPQfDjk) introduces COLSC and the paper "A Context-Based Behavioral Language for IoT".
 * [COLSC paper](http://ceur-ws.org/Vol-2245/morse_paper_6.pdf) introduces the LCS implementation for COBP.
 * [SampleProgram](src/test/resources/SampleProgram) sample usage of many language idioms.
-* [Tic-Tac-Toe](src/test/resources/TTT) introduces a COBP implementation of the game. 
+* [Tic-Tac-Toe](src/test/resources/TicTacToe) introduces a COBP implementation of the game.
+* [Hot-Cold](src/test/resources/HotCold) introduces a COBP implementation of an extended hot cold example.
 * [BPjs documentation and tutorials](http://bpjs.readthedocs.io/en/master/) - a great starting point for BP.
 * [Behavioral Programming](http://www.b-prog.org/) - introduces behavioral programming.
 * [BPjs Google group](https://groups.google.com/forum/#!forum/bpjs)

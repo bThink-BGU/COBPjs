@@ -4,7 +4,8 @@
 bthread("test", function () {
   sync({request: Event("haha", 5)})
   sync({request: Event("haha", 3)})
-  bp.log.info('entity with id "a5": {0}', ctx.getEntityById('a5'))
+  let entity = ctx.getEntityById('a5')
+  bp.log.info('entity with id "a5": {0}', entity)
 })
 
 /**

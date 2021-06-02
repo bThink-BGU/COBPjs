@@ -27,18 +27,18 @@ const NonCtxInternalEvents = CtxInternalEvents.negate()
 function CtxEndES(query, id) {
   return bp.EventSet('CtxEndES', function (e) {
     return e.name.equals('CTX.Changed') &&
-      e.data.filter(function (change) {
+      e.data.parallelStream().filter(function (change) {
         return change.type.equals('end') && change.query.equals(query) && change.entityId.equals(id)
-      }).length > 0
+      }).count() > 0
   })
 }
 
 function CtxStartES(query) {
   return bp.EventSet('CtxStartES', function (e) {
     return e.name.equals('CTX.Changed') &&
-      e.data.filter(function (change) {
+      e.data.parallelStream().filter(function (change) {
         return change.type.equals("new") && change.query.equals(query)
-      }).length > 0
+      }).count() > 0
   })
 }
 
@@ -48,7 +48,7 @@ bthread("ContextHandler", function () {
     sync({waitFor: ctx.__internal_fields.release_event, block: ctx.__internal_fields.lock_event})
     let changes = bp.store.get(String("Context changes"))
     bp.store.remove(String("Context changes"))
-    if (changes && changes.length > 0) {
+    if (changes && changes.size() > 0) {
       sync({request: ctx.__internal_fields.CtxEntityChanged(changes), block: ctx.__internal_fields.lock_event})
     }
     changes = []
@@ -259,7 +259,7 @@ const ctx = {
         }
         res = [] // reset bthread state for verification
         while (true) {
-          let changes = sync({waitFor: CtxStartES(context)}).data
+          let changes = sync({waitFor: CtxStartES(context)}).data.toArray()
           for (let i = 0; i < changes.length; i++) {
             if (changes[i].type.equals("new") && changes[i].query.equals(context)) {
               createLiveCopy(String("Live copy" + ": " + name + " " + changes[i].entityId), context, ctx.getEntityById(changes[i].entityId), bt)

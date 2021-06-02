@@ -39,7 +39,7 @@ public class ContextStorageModificationStrategy implements StorageModificationSt
     changes.addAll(newQueriesEntities.entrySet().stream().flatMap(entry -> entry.getValue().stream().map(entity -> new ContextChange(entry.getKey(), "new", (String) entity.get("id")))).collect(Collectors.toList()));
     changes.addAll(removedQueriesEntities.entrySet().stream().flatMap(entry -> entry.getValue().stream().map(entity -> new ContextChange(entry.getKey(), "end", (String) entity.get("id")))).collect(Collectors.toList()));
 
-    updates.put("Context changes", new MapProxy.PutValue<>(changes.toArray()));
+    updates.put("Context changes", new MapProxy.PutValue<>(changes));
     return success;
   }
 

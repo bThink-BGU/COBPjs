@@ -6,6 +6,7 @@ import il.ac.bgu.cs.bp.bpjs.model.BProgram;
 
 import java.net.URISyntaxException;
 import java.nio.file.Path;
+import java.text.MessageFormat;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -30,7 +31,16 @@ public class Verification {
     vfr.setProgressListener(new PrintDfsVerifierListener());
 //    vfr.setDebugMode(true);
     try {
-      vfr.verify(bprog);
+      var res = vfr.verify(bprog);
+      System.out.println(MessageFormat.format(
+          "States = {0}\n" +
+              "Edges = {1}\n" +
+              "Time = {2}",
+              res.getScannedStatesCount(), res.getScannedEdgesCount(), res.getTimeMillies()));
+      if (res.isViolationFound())
+        System.out.println(MessageFormat.format("Found violation: {0}", res.getViolation().get()));
+      else
+        System.out.println("No violation found");
     } catch (Exception e) {
       e.printStackTrace();
       System.exit(1);
