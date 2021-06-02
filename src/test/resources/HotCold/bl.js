@@ -1,8 +1,7 @@
 // Requirement $\ref{r_vacuum}$
 bthread('monitor night hours',
   function () {
-    const days = 1
-    for (let j = 0; j < days; j++) {
+    while (true) {
       sync({waitFor: Event('time', '21:00')})
       sync({request: Event('night begins'), block: Event('night begins').negate()})
       sync({waitFor: Event('time', '08:00')})
@@ -49,27 +48,23 @@ ctx.bthread('Interleave', 'Room.Kitchen',
 
 ctx.bthread('Simulate Press', 'Room.WithTaps',
   function (entity) {
-    const rounds = 1
-    for (let j = 0; j < rounds; j++) {
+    while (true) {
       sync({request: Event('press', entity)})
-      if (j < rounds - 1) {
-        for (let i = 0; i < 6; i++) {
-          sync({waitFor: [Event('cold', entity), Event('hot', entity)]})
-        }
+      for (let i = 0; i < 6; i++) {
+        sync({waitFor: [Event('cold', entity), Event('hot', entity)]})
       }
     }
   })
 
 bthread('Simulate day/night', function () {
-  for (let j = 0; j < 1; j++) {
+  while (true) {
     sync({request: Event('time', '21:00')})
     sync({request: Event('time', '08:00')})
   }
 })
 
 bthread('Simulate vacuum', function () {
-  for (let j = 0; j < 1; j++) {
+  while (true) {
     sync({request: Event('vacuum')})
-    // sync({request: Event('vacuum end')})
   }
 })

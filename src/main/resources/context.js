@@ -203,7 +203,7 @@ const ctx = {
     ctx_proxy.effectFunctions.put(key, effect)
 
     function f() {
-      bthread('Register effect: ' + eventName, function () {
+      bthread('Effect: ' + eventName, function () {
         while (true) {
           let data = sync({waitFor: Any(eventName)}).data
           ctx.beginTransaction()
