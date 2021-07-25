@@ -207,7 +207,9 @@ const ctx = {
         while (true) {
           let data = sync({waitFor: Any(eventName)}).data
           ctx.beginTransaction()
+          startIgnoreBThread()
           ctx_proxy.effectFunctions.get(key)(data)
+          endIgnoreBThread()
           ctx.endTransaction()
         }
       })

@@ -122,6 +122,7 @@ function interrupt(es, fn) {
  *
  */
 function sync(stmt, syncData) {
+  testInBThread('sync', true)
   function appendToPart(stmt, field) {
     if (bp.thread.data[field].length === 0) {
       return;
@@ -160,6 +161,16 @@ function sync(stmt, syncData) {
 
 }
 
+let ignoreBThread = false
+
+function startIgnoreBThread() {
+  ignoreBThread = true
+}
+
+function endIgnoreBThread() {
+  ignoreBThread = false
+}
+
 
 /**
  * Returns true iff the function has been called by a b-thread
@@ -168,7 +179,8 @@ function sync(stmt, syncData) {
 function isInBThread() {
   try {
     let a = bp.thread.name
-    return true
+    // BUG: if we remove this comment - it fails!
+    return true && !ignoreBThread
   } catch (ignored) {
     return false
   }
