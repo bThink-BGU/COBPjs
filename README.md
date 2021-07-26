@@ -46,7 +46,7 @@ Examples for such programs are in the [src/test](src/test/resources) directory.
 
 ## Running a COBP Program
 Running a COBP program is similar to the execution of a BP program:
-```javascript
+```java
 BProgram bprog = new ContextBProgram("dal.js", "bl.js"); //you can change the files names...
 BProgramRunner rnr = new BProgramRunner(bprog);
 rnr.addListener(new PrintCOBProgramRunnerListener(Level.CtxChanged, new PrintBProgramRunnerListener()));
