@@ -56,7 +56,7 @@ In BP, we usually use the ```PrintBProgramRunnerListener``` for printing to the 
 * Level.NONE : does not print context events
 * Level.CtxChanged: prints only CTX.Changed events (i.e., filter the transaction lock/release events)
 
-An example for a main file is [here](https://github.com/bThink-BGU/BPjs-Context/blob/master/src/test/java/il/ac/bgu/cs/bp/bpjs/context/Main.java).
+There is a full example for a main file - [here](https://github.com/bThink-BGU/BPjs-Context/blob/master/src/test/java/il/ac/bgu/cs/bp/bpjs/context/Main.java).
 
 ## Documentation & Relevant links
 * [COBP Paper](https://www.sciencedirect.com/science/article/pii/S095058492030094X) introducing COBP, COLSC, and COBPjs.
