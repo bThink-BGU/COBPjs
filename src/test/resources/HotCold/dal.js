@@ -17,10 +17,10 @@ ctx.registerQuery('Room.WithTaps',
   })
 
 // Specify the effect of certain events on the context
-ctx.registerEffect('night begins', function (data) {
+ctx.registerEffect('time 21:00', function (data) {
   ctx.insertEntity(ctx.Entity('night', 'system'))
 })
-ctx.registerEffect('night ends', function (data) {
+ctx.registerEffect('time 08:00', function (data) {
   ctx.removeEntity('night')
 })
 

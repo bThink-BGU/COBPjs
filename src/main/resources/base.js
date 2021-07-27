@@ -156,8 +156,13 @@ function sync(stmt, syncData) {
     }
   }
 
-  return syncData ? bp.sync(stmt, syncData) : bp.sync(stmt);
-
+  let ret = syncData ? bp.sync(stmt, syncData) : bp.sync(stmt);
+  const key1 = String('CTX.Effect: ' + ret.name)
+  const key2 = String('CTX.EndOfActionEffect: ' + ret.name)
+  if ((ctx_proxy.effectFunctions.containsKey(key1) || ctx_proxy.effectFunctions.containsKey(key2)) && !bp.thread.data.effect) {
+    bp.sync({waitFor: ctx.__internal_fields.release_event})
+  }
+  return ret
 }
 
 
@@ -195,7 +200,7 @@ function Any(type) {
 }
 
 function Event(name, data) {
-  if(data)
+  if (data)
     return bp.Event(name, data)
   return bp.Event(name)
 }

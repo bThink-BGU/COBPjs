@@ -69,17 +69,6 @@ function isEndOfContext(exception) {
 
 const ctx = {
   __internal_fields: {
-    insertEntityNotSynchronized: function (entity) {
-      const key = String("CTX.Entity: " + entity.id)
-      if (bp.store.has(key)) {
-        throw new Error("Key " + entity.id + " already exists")
-      }
-      // bp.log.info("e to clone {0}", entity)
-      let clone = ctx_proxy.cloner.clone(entity)
-      // Object.freeze(clone)
-      bp.store.put(key, clone)
-      return clone
-    },
     assign: function (target, source) {
       for (let property in source) {
         let val = source[property]
@@ -109,6 +98,18 @@ const ctx = {
       if (t == 0)
         sync({request: this.release_event})
     },
+    isEffectFunction: function () { return bp.thread.data.effect === true },
+    insertEntityUnsafe: function (entity) {
+      const key = String("CTX.Entity: " + entity.id)
+      if (bp.store.has(key)) {
+        throw new Error("Key " + entity.id + " already exists")
+      }
+      // bp.log.info("e to clone {0}", entity)
+      let clone = ctx_proxy.cloner.clone(entity)
+      // Object.freeze(clone)
+      bp.store.put(key, clone)
+      return clone
+    }
   },
   beginTransaction: function () {
     this.__internal_fields.lock()
@@ -124,13 +125,15 @@ const ctx = {
     return entity
   },
   insertEntity: function (entity) {
-    this.beginTransaction()
-    let clone = this.__internal_fields.insertEntityNotSynchronized(entity)
-    this.endTransaction()
-    return clone
+    if(!this.__internal_fields.isEffectFunction())
+      throw new Error('ctx.insertEntity must be called from an effect function')
+
+    return this.__internal_fields.insertEntityUnsafe(entity)
   },
   updateEntity: function (entity) {
-    this.beginTransaction()
+    if(!this.__internal_fields.isEffectFunction())
+      throw new Error('ctx.updateEntity must be called from an effect function')
+
     const key = String("CTX.Entity: " + entity.id)
     if (!bp.store.has(key)) {
       throw new Error("Key " + entity.id + " does not exist")
@@ -138,36 +141,28 @@ const ctx = {
     let clone = ctx_proxy.cloner.clone(entity)
     // Object.freeze(clone)
     bp.store.put(key, clone)
-    // this.__internal_fields.release()
-    this.endTransaction()
     return clone
   },
   removeEntity: function (entity_or_id) {
-    this.beginTransaction()
+    if(!this.__internal_fields.isEffectFunction())
+      throw new Error('ctx.removeEntity must be called from an effect function')
+
     const key = String("CTX.Entity: " + (entity_or_id.id ? entity_or_id.id : entity_or_id))
     if (!bp.store.has(key)) {
       throw new Error("Cannot remove entity, key " + key + " does not exist")
     }
     bp.store.remove(key)
-    this.endTransaction()
   },
   getEntityById: function (id) {
-    let inBThread = isInBThread()
-    if (inBThread)
-      this.beginTransaction()
     // bp.log.info('getEntityById id {0}', id)
     const key = String("CTX.Entity: " + id)
     if (!bp.store.has(key)) {
       throw new Error("Key " + key + " does not exist")
     }
-    let res = ctx_proxy.cloner.clone(bp.store.get(key)) //clone (serialization/deserialization) removes freezing
-    if (inBThread)
-      this.endTransaction()
+    return ctx_proxy.cloner.clone(bp.store.get(key)) //clone (serialization/deserialization) removes freezing
     //throw new Error("Entity with id '" + id + "' does not exist")
-    return res
   },
   runQuery: function (queryName_or_function) {
-    let inBThread = isInBThread()
     let func;
     if (typeof (queryName_or_function) === 'string') {
       const key = String(queryName_or_function)
@@ -177,13 +172,8 @@ const ctx = {
       func = queryName_or_function
     }
     let ans = []
-    if (inBThread)
-      this.beginTransaction()
     bp.store.filter((key, val) => key.startsWith(String("CTX.Entity: ")) && func(val))
       .values().forEach(v => ans.push(ctx_proxy.cloner.clone(v)))
-
-    if (inBThread)
-      this.endTransaction()
     return ans
   },
   registerQuery: function (name, query) {
@@ -198,16 +188,19 @@ const ctx = {
     }
     testInBThread('registerEffect', false)
 
-    const key = String('CTX.Effect: ' + eventName)
-    if (ctx_proxy.effectFunctions.containsKey(key)) throw new Error('Effect already exists for event ' + eventName)
-    ctx_proxy.effectFunctions.put(key, effect)
+    const key1 = String('CTX.Effect: ' + eventName)
+    const key2 = String('CTX.EndOfActionEffect: ' + eventName)
+    if (ctx_proxy.effectFunctions.containsKey(key1) || ctx_proxy.effectFunctions.containsKey(key2))
+      throw new Error('Effect already exists for event ' + eventName)
+    ctx_proxy.effectFunctions.put(key1, effect)
 
     function f() {
       bthread('Effect: ' + eventName, function () {
+        bp.thread.data.effect = true
         while (true) {
           let data = sync({waitFor: Any(eventName)}).data
           ctx.beginTransaction()
-          ctx_proxy.effectFunctions.get(key)(data)
+          ctx_proxy.effectFunctions.get(key1)(data)
           ctx.endTransaction()
         }
       })
@@ -215,29 +208,32 @@ const ctx = {
 
     f()
   },
-  registerEndOfActionEffect: function (action, effect) {
-    if (!(typeof action === 'string' || action instanceof String)) {
+  /*registerEndOfActionEffect: function (eventName, effect) {
+    if (!(typeof eventName === 'string' || eventName instanceof String)) {
       throw new Error('The first parameter of registerEndOfActionEffect must be an action name')
     }
     testInBThread('registerEndOfActionEffect', false)
 
-    const key = String('CTX.EndOfActionEffect: ' + action)
-    if (ctx_proxy.effectFunctions.containsKey(key)) throw new Error('Effect already exists for action ' + action)
-    ctx_proxy.effectFunctions.put(key, action)
+    const key1 = String('CTX.Effect: ' + eventName)
+    const key2 = String('CTX.EndOfActionEffect: ' + eventName)
+    if (ctx_proxy.effectFunctions.containsKey(key1) || ctx_proxy.effectFunctions.containsKey(key2))
+      throw new Error('Effect already exists for event ' + eventName)
+    ctx_proxy.effectFunctions.put(key2, effect)
 
     function func(data) {
-      bthread(action + "_EndOfActionForContext_" + data.s, function () {
+      bthread(eventName + "_EndOfActionForContext_" + data.s, function () {
+        bp.thread.data.effect = true
         sync({waitFor: EndOfAction({session: data.s, hidden: true})})
-        effect(data)
+        ctx_proxy.effectFunctions.get(key2)(data)
       })
     }
 
-    bthread("EndOfActionForContext_" + action, function () {
+    bthread("EndOfActionForContext_" + eventName, function () {
       while (true) {
-        func(sync({waitFor: Any(action)}).data)
+        func(sync({waitFor: Any(eventName)}).data)
       }
     })
-  },
+  },*/
   bthread: function (name, context, bt) {
     const createLiveCopy = function (name, query, entity, bt) {
       bthread(name,
@@ -279,7 +275,7 @@ const ctx = {
   },
   populateContext: function (entities) {
     testInBThread('populateContext', false)
-    entities.forEach(e => this.__internal_fields.insertEntityNotSynchronized(e))
+    entities.forEach(e => this.__internal_fields.insertEntityUnsafe(e))
   }
 }
 

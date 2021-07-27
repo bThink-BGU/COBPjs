@@ -1,15 +1,4 @@
 // Requirement $\ref{r_vacuum}$
-bthread('monitor night hours',
-  function () {
-    while (true) {
-      sync({waitFor: Event('time', '21:00')})
-      sync({request: Event('night begins'), block: Event('night begins').negate()})
-      sync({waitFor: Event('time', '08:00')})
-      sync({request: Event('night ends'), block: Event('night ends').negate()})
-    }
-  })
-
-// Requirement $\ref{r_vacuum}$
 ctx.bthread('no vacuuming at night', 'Night',
   function (entity) {
     sync({block: Event('vacuum')})
@@ -19,7 +8,7 @@ ctx.bthread('no vacuuming at night', 'Night',
 ctx.bthread('Add Cold Three Times', 'Room.WithTaps',
   function (entity) {
     while (true) {
-      sync({waitFor: Event('press', entity.id)})
+      sync({waitFor: Event('press', entity)})
       sync({request: Event('cold', entity)})
       sync({request: Event('cold', entity)})
       sync({request: Event('cold', entity)})
@@ -30,7 +19,7 @@ ctx.bthread('Add Cold Three Times', 'Room.WithTaps',
 ctx.bthread('Add Hot Three Times', 'Room.WithTaps',
   function (entity) {
     while (true) {
-      sync({waitFor: Event('press', entity.id)})
+      sync({waitFor: Event('press', entity)})
       sync({request: Event('hot', entity)})
       sync({request: Event('hot', entity)})
       sync({request: Event('hot', entity)})
@@ -58,8 +47,8 @@ ctx.bthread('Simulate Press', 'Room.WithTaps',
 
 bthread('Simulate day/night', function () {
   while (true) {
-    sync({request: Event('time', '21:00')})
-    sync({request: Event('time', '08:00')})
+    sync({request: Event('time 21:00')})
+    sync({request: Event('time 08:00')})
   }
 })
 
