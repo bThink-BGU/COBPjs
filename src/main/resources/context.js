@@ -242,8 +242,10 @@ const ctx = {
           try {
             bt(entity)
           } catch (e) {
-            // TODO wrap the error message instead of rethrowing
-            if (!isEndOfContext(e)) throw new Error("Exception in b-thread " + name + ". Error message: " + e)
+            if (!isEndOfContext(e)) {
+              bp.log.info("Exception in b-thread " + name)
+              throw e
+            }
           }
         })
     }
