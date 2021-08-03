@@ -98,7 +98,9 @@ const ctx = {
       if (t == 0)
         sync({request: this.release_event})
     },
-    isEffectFunction: function () { return bp.thread.data.effect === true },
+    isEffectFunction: function () {
+      return bp.thread.data.effect === true
+    },
     insertEntityUnsafe: function (entity) {
       const key = String("CTX.Entity: " + entity.id)
       if (bp.store.has(key)) {
@@ -125,13 +127,13 @@ const ctx = {
     return entity
   },
   insertEntity: function (entity) {
-    if(!this.__internal_fields.isEffectFunction())
+    if (!this.__internal_fields.isEffectFunction())
       throw new Error('ctx.insertEntity must be called from an effect function')
 
     return this.__internal_fields.insertEntityUnsafe(entity)
   },
   updateEntity: function (entity) {
-    if(!this.__internal_fields.isEffectFunction())
+    if (!this.__internal_fields.isEffectFunction())
       throw new Error('ctx.updateEntity must be called from an effect function')
 
     const key = String("CTX.Entity: " + entity.id)
@@ -144,7 +146,7 @@ const ctx = {
     return clone
   },
   removeEntity: function (entity_or_id) {
-    if(!this.__internal_fields.isEffectFunction())
+    if (!this.__internal_fields.isEffectFunction())
       throw new Error('ctx.removeEntity must be called from an effect function')
 
     const key = String("CTX.Entity: " + (entity_or_id.id ? entity_or_id.id : entity_or_id))
@@ -243,6 +245,13 @@ const ctx = {
             bt(entity)
           } catch (e) {
             if (!isEndOfContext(e)) {
+              if (e instanceof il.ac.bgu.cs.bp.bpjs.execution.tasks.FailedAssertionException) {
+                if (e.getMessage().equals("StoppingAcceptingState"))
+                  AcceptingState.Stopping()
+                else if (e.getMessage().equals("ContinuingAcceptingState"))
+                  AcceptingState.Continuing()
+                else throw e
+              }
               bp.log.info("Exception in b-thread " + name)
               throw e
             }
