@@ -75,7 +75,7 @@ const ctx = {
         if (source[property] instanceof org.mozilla.javascript.ConsString) {
           val = String(val)
         } else if (Array.isArray(source[property])) {
-          bp.log.warn("Type of property {0} is array, which is not recommended. Consider using java.util.HashSet. Entity is {1}.", property, source)
+          bp.log.warn("Property {0} is an array. If the order of the array's elements is not important, you should use java.util.HashSet. Entity is {1}.", property, source)
         }
         target[property] = val
       }
@@ -245,14 +245,7 @@ const ctx = {
             bt(entity)
           } catch (e) {
             if (!isEndOfContext(e)) {
-              if (e instanceof il.ac.bgu.cs.bp.bpjs.execution.tasks.FailedAssertionException) {
-                if (e.getMessage().equals("StoppingAcceptingState"))
-                  AcceptingState.Stopping()
-                else if (e.getMessage().equals("ContinuingAcceptingState"))
-                  AcceptingState.Continuing()
-                else throw e
-              }
-              bp.log.info("Exception in b-thread " + name)
+              if(e.javaException) ctx_proxy.rethrowException(e.javaException)
               throw e
             }
           }

@@ -22,6 +22,11 @@ public class ContextProxy implements Serializable {
   private ContextProxy() {
   }
 
+  @SuppressWarnings("unused")
+  public static void rethrowException(Throwable t) throws Throwable {
+    throw t;
+  }
+
   public static ContextProxy Create(BProgram bprog) {
     proxy = new ContextProxy();
     proxySer = new ContextProxySer();
