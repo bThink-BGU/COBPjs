@@ -30,7 +30,7 @@ Also add COBPjs dependency. Note that the version number changes....
     <dependency>
         <groupId>com.github.bThink-BGU</groupId>
         <artifactId>BPjs-Context</artifactId>
-        <version>0.2.4</version>
+        <version>0.2.5</version>
     </dependency>
 </dependencies>
 ````
