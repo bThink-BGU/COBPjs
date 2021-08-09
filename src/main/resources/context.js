@@ -22,6 +22,10 @@ const CtxInternalEvents = bp.EventSet("Ctx.InternalEvents", function (e) {
   return ctx_proxy.CtxEvents.contains(String(e.name))
 })
 
+const AnyCtxEntityChanged = bp.EventSet("Ctx.AnyCtxEntityChanged", function (e) {
+  return e.name.equals(String("CTX.Changed"))
+})
+
 const NonCtxInternalEvents = CtxInternalEvents.negate()
 
 function CtxEndES(query, id) {
@@ -41,19 +45,6 @@ function CtxStartES(query) {
       }).count() > 0
   })
 }
-
-bthread("ContextHandler", function () {
-  while (true) {
-    sync({waitFor: ctx.__internal_fields.lock_event})
-    sync({waitFor: ctx.__internal_fields.release_event, block: ctx.__internal_fields.lock_event})
-    let changes = bp.store.get(String("Context changes"))
-    bp.store.remove(String("Context changes"))
-    if (changes && changes.size() > 0) {
-      sync({request: ctx.__internal_fields.CtxEntityChanged(changes), block: ctx.__internal_fields.lock_event})
-    }
-    changes = []
-  }
-})
 
 function isEndOfContext(exception) {
   if (!(exception instanceof EventSet)) return false
@@ -84,20 +75,6 @@ const ctx = {
     CtxEntityChanged: function (changes) {
       return bp.Event('CTX.Changed', changes)
     },
-    lock_event: bp.Event('_____CTX_LOCK_____', {hidden: true}),
-    release_event: bp.Event('_____CTX_RELEASE_____', {hidden: true}),
-    lock: function () {
-      let t = bp.store.get("transaction") + 1
-      bp.store.put("transaction", t)
-      if (t == 1)
-        sync({request: this.lock_event})
-    },
-    release: function () {
-      let t = bp.store.get("transaction") - 1
-      bp.store.put("transaction", t)
-      if (t == 0)
-        sync({request: this.release_event})
-    },
     isEffectFunction: function () {
       return bp.thread.data.effect === true
     },
@@ -112,12 +89,6 @@ const ctx = {
       bp.store.put(key, clone)
       return clone
     }
-  },
-  beginTransaction: function () {
-    this.__internal_fields.lock()
-  },
-  endTransaction: function () {
-    this.__internal_fields.release()
   },
   Entity: function (id, type, data) {
     let entity = {id: String(id), type: String(type)}
@@ -201,9 +172,8 @@ const ctx = {
         bp.thread.data.effect = true
         while (true) {
           let data = sync({waitFor: Any(eventName)}).data
-          ctx.beginTransaction()
           ctx_proxy.effectFunctions.get(key1)(data)
-          ctx.endTransaction()
+          sync({request: ctx.__internal_fields.CtxEntityChanged(ctx_proxy.getContextChanges(bp.store))})
         }
       })
     }
@@ -288,5 +258,3 @@ bthread('Context population', function () {
 })
 
 Object.freeze(ctx)
-
-bp.store.put("transaction", 0)

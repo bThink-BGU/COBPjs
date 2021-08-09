@@ -160,7 +160,7 @@ function sync(stmt, syncData) {
   const key1 = String('CTX.Effect: ' + ret.name)
   const key2 = String('CTX.EndOfActionEffect: ' + ret.name)
   if ((ctx_proxy.effectFunctions.containsKey(key1) || ctx_proxy.effectFunctions.containsKey(key2)) && !bp.thread.data.effect) {
-    bp.sync({waitFor: ctx.__internal_fields.release_event, interrupt:stmt.interrupt})
+    bp.sync({waitFor: AnyCtxEntityChanged, interrupt:stmt.interrupt})
   }
   return ret
 }
