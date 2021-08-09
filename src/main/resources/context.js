@@ -258,5 +258,3 @@ bthread('Context population', function () {
 })
 
 Object.freeze(ctx)
-
-bp.store.put("transaction", 0)
