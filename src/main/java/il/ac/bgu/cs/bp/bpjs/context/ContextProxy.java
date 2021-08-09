@@ -30,8 +30,9 @@ public class ContextProxy implements Serializable {
     throw t;
   }
 
-  public HashSet<ContextChangesCalculator.ContextChange> getContextChanges(MapProxy modificationMap) {
-
+  @SuppressWarnings("unused")
+  public HashSet<ContextChangesCalculator.ContextChange> getContextChanges(MapProxy<String, Object> modificationMap) {
+    return ccc.calculateChanges(modificationMap);
   }
 
   public static ContextProxy Create(BProgram bprog) {
@@ -42,6 +43,8 @@ public class ContextProxy implements Serializable {
   }
 
   private static class ContextProxySer implements Serializable {
+    private static final long serialVersionUID = -7901897016797999371L;
+
     private Object readResolve() throws ObjectStreamException {
       return proxy;
     }

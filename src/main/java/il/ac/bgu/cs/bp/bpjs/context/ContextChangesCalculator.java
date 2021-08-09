@@ -1,13 +1,9 @@
 package il.ac.bgu.cs.bp.bpjs.context;
 
 import il.ac.bgu.cs.bp.bpjs.BPjs;
-import il.ac.bgu.cs.bp.bpjs.execution.jsproxy.DirectMapProxy;
+import il.ac.bgu.cs.bp.bpjs.execution.jsproxy.CtxDirectMapProxy;
 import il.ac.bgu.cs.bp.bpjs.execution.jsproxy.MapProxy;
 import il.ac.bgu.cs.bp.bpjs.internal.ScriptableUtils;
-import il.ac.bgu.cs.bp.bpjs.model.BProgramSyncSnapshot;
-import il.ac.bgu.cs.bp.bpjs.model.BThreadSyncSnapshot;
-import il.ac.bgu.cs.bp.bpjs.model.StorageConsolidationResult;
-import il.ac.bgu.cs.bp.bpjs.model.StorageModificationStrategy;
 import org.mozilla.javascript.BaseFunction;
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.NativeObject;
@@ -21,17 +17,16 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 public class ContextChangesCalculator {
-  public HashSet<ContextChange> calculateChanges(Map<String,Object> mapProxy) {
+  public HashSet<ContextChange> calculateChanges(MapProxy<String,Object> mapProxy) {
     Map<String, MapProxy.Modification<Object>> updates = mapProxy.getModifications();
     if (updates.isEmpty() || updates.keySet().stream().noneMatch(k->k.startsWith("CTX.Entity: "))) return new HashSet<>();
-    DirectMapProxy<String, Object> currentMap = new DirectMapProxy<>(mapProxy);
-    MapProxy<String, Object> currentStore = new MapProxy<>(currentMap);
-    MapProxy<String, Object> nextStore = new MapProxy<>(currentMap, updates);
+    CtxDirectMapProxy<String, Object> currentStore = new CtxDirectMapProxy<>(mapProxy);
+    MapProxy<String, Object> nextStore = mapProxy;
     HashSet<ContextChange> changes = new HashSet<>();
 
     //region Entities
-    Map<String, Set<NativeObject>> currentQueriesEntities = getQueriesEntities(currentStore, bProgramSyncSnapshot);
-    Map<String, Set<NativeObject>> nextQueriesEntities = getQueriesEntities(nextStore, bProgramSyncSnapshot);
+    Map<String, Set<NativeObject>> currentQueriesEntities = getQueriesEntities(currentStore);
+    Map<String, Set<NativeObject>> nextQueriesEntities = getQueriesEntities(nextStore);
 
     Map<String, Set<NativeObject>> newQueriesEntities = subtractCurrentEntitiesMaps(nextQueriesEntities, currentQueriesEntities);
     Map<String, Set<NativeObject>> removedQueriesEntities = subtractCurrentEntitiesMaps(currentQueriesEntities, nextQueriesEntities);
@@ -39,8 +34,7 @@ public class ContextChangesCalculator {
     changes.addAll(newQueriesEntities.entrySet().stream().flatMap(entry -> entry.getValue().stream().map(entity -> new ContextChange(entry.getKey(), "new", (String) entity.get("id")))).collect(Collectors.toList()));
     changes.addAll(removedQueriesEntities.entrySet().stream().flatMap(entry -> entry.getValue().stream().map(entity -> new ContextChange(entry.getKey(), "end", (String) entity.get("id")))).collect(Collectors.toList()));
 
-    updates.put("Context changes", new MapProxy.PutValue<>(changes));
-    return success;
+    return changes;
   }
 
   private static Map<String, Set<NativeObject>> subtractCurrentEntitiesMaps(Map<String, Set<NativeObject>> queriesEntities1, Map<String, Set<NativeObject>> queriesEntities2) {
@@ -56,40 +50,31 @@ public class ContextChangesCalculator {
     return newQueriesEntities;
   }
 
-  private static Map<String, Set<NativeObject>> getQueriesEntities(MapProxy<String, Object> store, BProgramSyncSnapshot bProgramSyncSnapshot) {
+  private static Map<String, Set<NativeObject>> getQueriesEntities(MapProxy<String, Object> store) {
     Map<String, Set<NativeObject>> queriesEntities = ContextProxy.proxy.queries.entrySet().stream()
         .collect(Collectors.toMap(
             Map.Entry::getKey,
             entry -> store.filter(
                 (key, value) -> key.startsWith("CTX.Entity: ") &&
-                    runQuery(value, entry.getValue(), bProgramSyncSnapshot, store)
+                    runQuery(value, entry.getValue(), store)
             ).values().stream().map(v -> (NativeObject) v).collect(Collectors.toSet())));
     return queriesEntities;
   }
 
-  @Override
-  public StorageConsolidationResult resolve(StorageConsolidationResult.Conflict conflict, BProgramSyncSnapshot bProgramSyncSnapshot, Set<BThreadSyncSnapshot> set) {
-    return conflict;
-  }
-
-  private static boolean runQuery(Object value, BaseFunction func, BProgramSyncSnapshot bpss, MapProxy<String, Object> store) {
-    Scriptable bpjsScope = bpss.getBProgram().getGlobalScope();
-    Object bp  = bpjsScope.get("bp", bpjsScope);
+  private static boolean runQuery(Object value, BaseFunction func, MapProxy<String, Object> store) {
+    Scriptable bpjsScope = BPjs.makeBPjsSubScope();
     BProgramProxyForEffects proxy = new BProgramProxyForEffects(store);
-    boolean bpChanged = false;
     Context cx = BPjs.enterRhinoContext();
     try {
       bpjsScope.put("bp", bpjsScope, Context.javaToJS(proxy, bpjsScope));
-      bpChanged = true;
       return (boolean) func.call(cx, bpjsScope, bpjsScope, new Object[]{value});
     } finally {
-      if(bpChanged)
-        bpjsScope.put("bp", bpjsScope, bp);
       Context.exit();
     }
   }
 
   public static class ContextChange implements Serializable {
+    private static final long serialVersionUID = 4949558465562651801L;
     public final String query;
     public final String type;
     public final String entityId;
