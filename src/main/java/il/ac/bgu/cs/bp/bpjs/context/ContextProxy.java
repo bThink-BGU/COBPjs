@@ -1,11 +1,13 @@
 package il.ac.bgu.cs.bp.bpjs.context;
 
+import il.ac.bgu.cs.bp.bpjs.execution.jsproxy.MapProxy;
 import il.ac.bgu.cs.bp.bpjs.model.BProgram;
 import org.mozilla.javascript.BaseFunction;
 
 import java.io.ObjectStreamException;
 import java.io.Serializable;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
@@ -14,6 +16,7 @@ public class ContextProxy implements Serializable {
       List.of("CTX.Changed", "_____CTX_LOCK_____", "_____CTX_RELEASE_____", "Context population completed");
   public final Map<String, BaseFunction> queries = new HashMap<>();
   public final Map<String, BaseFunction> effectFunctions = new HashMap<>();
+  private final ContextChangesCalculator ccc = new ContextChangesCalculator();
 
   public static ContextProxy proxy;
   private static ContextProxySer proxySer;
@@ -23,8 +26,12 @@ public class ContextProxy implements Serializable {
   }
 
   @SuppressWarnings("unused")
-  public static void rethrowException(Throwable t) throws Throwable {
+  public void rethrowException(Throwable t) throws Throwable {
     throw t;
+  }
+
+  public HashSet<ContextChangesCalculator.ContextChange> getContextChanges(MapProxy modificationMap) {
+
   }
 
   public static ContextProxy Create(BProgram bprog) {
