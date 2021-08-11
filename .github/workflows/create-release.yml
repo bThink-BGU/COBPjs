@@ -46,7 +46,7 @@ jobs:
           
       - name: Set SHA version
         id: vars
-        run: echo "::set-output name=sha_short::$(git rev-parse --short HEAD)"
+        run: echo "::set-output name=sha_short::$(git rev-parse HEAD)"
           
       - name: Create release
         id: create_release
