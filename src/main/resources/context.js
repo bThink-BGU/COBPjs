@@ -227,7 +227,7 @@ const ctx = {
         for (let i = 0; i < res.length; i++) {
           createLiveCopy(String("Live copy" + ": " + name + " " + res[i].id), context, res[i], bt)
         }
-        res = [] // reset bthread state for verification
+        res = undefined
         while (true) {
           let changes = sync({waitFor: CtxStartES(context)}).data.toArray()
           for (let i = 0; i < changes.length; i++) {
@@ -256,5 +256,16 @@ const ctx = {
 bthread('Context population', function () {
   sync({request: bp.Event('Context population completed')})
 })
+
+/*bthread("assert no continuation before CTX.Update", function() {
+  while (true) {
+    let e = sync({waitFor:bp.all}).name
+    const key1 = String('CTX.Effect: ' + e)
+    const key2 = String('CTX.EndOfActionEffect: ' + e)
+    if (ctx_proxy.effectFunctions.containsKey(key1) || ctx_proxy.effectFunctions.containsKey(key2)) {
+      bp.log.info("HERE")
+    }
+  }
+})*/
 
 Object.freeze(ctx)
