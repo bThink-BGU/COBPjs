@@ -6,8 +6,6 @@ import il.ac.bgu.cs.bp.bpjs.model.eventselection.EventSelectionStrategy;
 
 import java.util.*;
 
-import static java.util.stream.Collectors.joining;
-
 public class ContextBProgram extends ResourceBProgram {
   public ContextBProgram(String aResourceName) {
     this(Collections.singletonList(aResourceName));
@@ -23,8 +21,7 @@ public class ContextBProgram extends ResourceBProgram {
 
   public ContextBProgram(Collection<String> someResourceNames, String aName) {
     super(append(someResourceNames), aName, new CtxEventSelectionStrategy());
-    super.setStorageModificationStrategy(new ContextStorageModificationStrategy());
-    putInGlobalScope("ctx_proxy", ContextProxy.Create(this));
+    putInGlobalScope("ctx_proxy", new ContextProxy());
   }
 
   private static Collection<String> append(Collection<String> resourceNames) {
