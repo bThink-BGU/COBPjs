@@ -16,8 +16,8 @@ public class Verification {
    * Choose the desired COBP program...
    */
   private static final Main.Example example =
-      Main.Example.SampleProgram;
-//      Main.Example.HotCold;
+//      Main.Example.SampleProgram;
+      Main.Example.HotCold;
 //      Main.Example.TicTacToe;
 
   public static void main(final String[] args) throws URISyntaxException {

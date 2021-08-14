@@ -6,34 +6,28 @@ import il.ac.bgu.cs.bp.bpjs.bprogramio.BPJSStubOutputStream;
 import il.ac.bgu.cs.bp.bpjs.bprogramio.StreamObjectStub;
 import il.ac.bgu.cs.bp.bpjs.bprogramio.StubProvider;
 import il.ac.bgu.cs.bp.bpjs.execution.jsproxy.BProgramJsProxy;
-import il.ac.bgu.cs.bp.bpjs.model.BProgram;
 import org.mozilla.javascript.Context;
+import org.mozilla.javascript.Scriptable;
 import org.mozilla.javascript.ScriptableObject;
+import org.mozilla.javascript.serialize.ScriptableInputStream;
+import org.mozilla.javascript.serialize.ScriptableOutputStream;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
 public class ScriptableObjectCloner {
-  private static StubProvider stubProvider = null;
-  private BProgram bprog;
-
-  public ScriptableObjectCloner(BProgram bprog) {
-    this.bprog = bprog;
-  }
 
   public ScriptableObject clone(ScriptableObject obj) {
-    byte[] ser = serialize(obj);
-    return deserialize(ser);
+    var scope = obj.getParentScope();
+    byte[] ser = serialize(obj, scope);
+    return deserialize(ser, scope);
   }
 
-  private ScriptableObject deserialize(byte[] bytes) {
+  private ScriptableObject deserialize(byte[] bytes, Scriptable scope) {
     try {
       BPjs.enterRhinoContext();
-      try (BPJSStubInputStream in = new BPJSStubInputStream(new ByteArrayInputStream(bytes),
-          bprog.getGlobalScope(),
-          getStubProvider())
-      ) {
+      try (var in = new ScriptableInputStream(new ByteArrayInputStream(bytes), scope)) {
         return (ScriptableObject) in.readObject();
       } catch (ClassNotFoundException | IOException ex) {
         throw new RuntimeException("Error reading a serialized b-thread: " + ex.getMessage(), ex);
@@ -43,11 +37,11 @@ public class ScriptableObjectCloner {
     }
   }
 
-  private byte[] serialize(ScriptableObject obj) {
+  private byte[] serialize(ScriptableObject obj, Scriptable scope) {
     try {
       BPjs.enterRhinoContext();
       try (ByteArrayOutputStream bytes = new ByteArrayOutputStream();
-           BPJSStubOutputStream outs = new BPJSStubOutputStream(bytes, bprog.getGlobalScope())) {
+           ScriptableOutputStream outs = new ScriptableOutputStream(bytes, scope)) {
         outs.writeObject(obj);
         outs.flush();
         return bytes.toByteArray();
@@ -57,18 +51,5 @@ public class ScriptableObjectCloner {
     } finally {
       Context.exit();
     }
-  }
-
-  private StubProvider getStubProvider() {
-    final BProgramJsProxy bpProxy = new BProgramJsProxy(bprog);
-    if (stubProvider == null) {
-      stubProvider = (StreamObjectStub stub) -> {
-        if (stub == StreamObjectStub.BP_PROXY) {
-          return bpProxy;
-        }
-        throw new IllegalArgumentException("Unknown stub " + stub);
-      };
-    }
-    return stubProvider;
   }
 }

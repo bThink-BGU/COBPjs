@@ -17,7 +17,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 public class ContextChangesCalculator {
-  public HashSet<ContextChange> calculateChanges(MapProxy<String,Object> mapProxy) {
+  public HashSet<ContextChange> calculateChanges(MapProxy<String,Object> mapProxy, ContextProxy proxy) {
     Map<String, MapProxy.Modification<Object>> updates = mapProxy.getModifications();
     if (updates.isEmpty() || updates.keySet().stream().noneMatch(k->k.startsWith("CTX.Entity: "))) return new HashSet<>();
     CtxDirectMapProxy<String, Object> currentStore = new CtxDirectMapProxy<>(mapProxy);
@@ -25,8 +25,8 @@ public class ContextChangesCalculator {
     HashSet<ContextChange> changes = new HashSet<>();
 
     //region Entities
-    Map<String, Set<NativeObject>> currentQueriesEntities = getQueriesEntities(currentStore);
-    Map<String, Set<NativeObject>> nextQueriesEntities = getQueriesEntities(nextStore);
+    Map<String, Set<NativeObject>> currentQueriesEntities = getQueriesEntities(currentStore, proxy);
+    Map<String, Set<NativeObject>> nextQueriesEntities = getQueriesEntities(nextStore, proxy);
 
     Map<String, Set<NativeObject>> newQueriesEntities = subtractCurrentEntitiesMaps(nextQueriesEntities, currentQueriesEntities);
     Map<String, Set<NativeObject>> removedQueriesEntities = subtractCurrentEntitiesMaps(currentQueriesEntities, nextQueriesEntities);
@@ -50,8 +50,8 @@ public class ContextChangesCalculator {
     return newQueriesEntities;
   }
 
-  private static Map<String, Set<NativeObject>> getQueriesEntities(MapProxy<String, Object> store) {
-    Map<String, Set<NativeObject>> queriesEntities = ContextProxy.proxy.queries.entrySet().stream()
+  private static Map<String, Set<NativeObject>> getQueriesEntities(MapProxy<String, Object> store, ContextProxy proxy) {
+    Map<String, Set<NativeObject>> queriesEntities = proxy.queries.entrySet().stream()
         .collect(Collectors.toMap(
             Map.Entry::getKey,
             entry -> store.filter(
