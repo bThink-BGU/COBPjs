@@ -160,7 +160,16 @@ function sync(stmt, syncData) {
   const key1 = String('CTX.Effect: ' + ret.name)
   const key2 = String('CTX.EndOfActionEffect: ' + ret.name)
   if ((ctx_proxy.effectFunctions.containsKey(key1) || ctx_proxy.effectFunctions.containsKey(key2)) && !bp.thread.data.effect) {
-    bp.sync({waitFor: Any('CTX.Changed'), interrupt:stmt.interrupt})
+    let changes = bp.store.get('CTX.Changes')
+    let query = bp.thread.data.query
+    let id = bp.thread.data.id
+    if (query &&
+      changes.parallelStream().filter(function (change) {
+        return change.type.equals('end') && change.query.equals(query) && change.entityId.equals(id)
+      }).count() > 0) {
+
+      ctx_proxy.throwEndOfContext()
+    }
   }
   return ret
 }

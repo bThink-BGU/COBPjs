@@ -18,18 +18,22 @@ import static java.util.stream.Collectors.toSet;
 public final class CtxEventSelectionStrategy extends AbstractEventSelectionStrategy {
 
     private EventSelectionStrategy strategy;
+    private final ContextProxy proxy;
+    private final ContextChangesCalculator ccc = new ContextChangesCalculator();
 
-    public CtxEventSelectionStrategy(long seed) {
+    public CtxEventSelectionStrategy(long seed, ContextProxy proxy) {
         super(seed);
         strategy = new SimpleEventSelectionStrategy(seed);
+        this.proxy = proxy;
     }
 
-    public CtxEventSelectionStrategy() {
-        this(new SimpleEventSelectionStrategy());
+    public CtxEventSelectionStrategy(ContextProxy proxy) {
+        this(new SimpleEventSelectionStrategy(), proxy);
     }
 
-    public CtxEventSelectionStrategy(EventSelectionStrategy eventSelectionStrategy) {
+    public CtxEventSelectionStrategy(EventSelectionStrategy eventSelectionStrategy, ContextProxy proxy) {
         strategy = eventSelectionStrategy;
+        this.proxy = proxy;
     }
 
     public void setEventSelectionStrategy(EventSelectionStrategy strategy) {
@@ -38,7 +42,6 @@ public final class CtxEventSelectionStrategy extends AbstractEventSelectionStrat
 
     @Override
     public Set<BEvent> selectableEvents(BProgramSyncSnapshot bpss) {
-
         Set<SyncStatement> statements = bpss.getStatements();
         List<BEvent> externalEvents = bpss.getExternalEvents();
 
@@ -73,6 +76,13 @@ public final class CtxEventSelectionStrategy extends AbstractEventSelectionStrat
 
     @Override
     public Optional<EventSelectionResult> select(BProgramSyncSnapshot bpss, Set<BEvent> selectableEvents) {
-        return strategy.select(bpss, selectableEvents);
+        var event = strategy.select(bpss, selectableEvents);
+        if(event.isPresent()) {
+            BEvent e = event.get().getEvent();
+            if(proxy.effectFunctions.containsKey(e.name)) {
+                ccc.calculateChanges(bpss.getDataStore(), proxy, e);
+            }
+        }
+        return event;
     }
 }

@@ -22,41 +22,11 @@ const CtxInternalEvents = bp.EventSet("Ctx.InternalEvents", function (e) {
   return ctx_proxy.CtxEvents.contains(String(e.name))
 })
 
-const AnyCtxEntityChanged = bp.EventSet("Ctx.AnyCtxEntityChanged", function (e) {
+const ContextChanged = bp.EventSet("CTX.ContextChanged", function (e) {
   return e.name.equals(String("CTX.Changed"))
 })
 
 const NonCtxInternalEvents = CtxInternalEvents.negate()
-
-function CtxEndES(query, id) {
-  return bp.EventSet('CtxEndES', function (e) {
-    return e.name.equals('CTX.Changed') &&
-      e.data.parallelStream().filter(function (change) {
-        return change.type.equals('end') && change.query.equals(query) && change.entityId.equals(id)
-      }).count() > 0
-  })
-}
-
-function CtxStartES(query) {
-  return bp.EventSet('CtxStartES', function (e) {
-    return e.name.equals('CTX.Changed') &&
-      e.data.parallelStream().filter(function (change) {
-        return change.type.equals("new") && change.query.equals(query)
-      }).count() > 0
-  })
-}
-
-function isEndOfContext(exception) {
-  if (!(exception instanceof EventSet)) return false
-  if (bp.thread.data.interrupt) {
-    if (Array.isArray(bp.thread.data.interrupt)) {
-      if (!bp.thread.data.interrupt.find(function(int) { return int.contains(exception)})) {
-        return false
-      }
-    } else if (!bp.thread.data.interrupt.contains(exception)) return false
-  } else return false
-  return true
-}
 
 const ctx = {
   __internal_fields: {
@@ -146,8 +116,10 @@ const ctx = {
       func = queryName_or_function
     }
     let ans = []
-    let filtered = bp.store.filter(function (key, val) {return key.startsWith(String("CTX.Entity: ")) && func(val)}).values().toArray()
-    for(let i =0; i<filtered.length; i++)
+    let filtered = bp.store.filter(function (key, val) {
+      return key.startsWith(String("CTX.Entity: ")) && func(val)
+    }).values().toArray()
+    for (let i = 0; i < filtered.length; i++)
       ans.push(ctx_proxy.clone(filtered[i]))
     return ans
   },
@@ -175,51 +147,28 @@ const ctx = {
         while (true) {
           let data = sync({waitFor: Any(eventName)}).data
           ctx_proxy.effectFunctions.get(key1)(data)
-          sync({request: ctx.__internal_fields.CtxEntityChanged(ctx_proxy.getContextChanges(bp.store))})
         }
       })
     }
 
     f()
   },
-  /*registerEndOfActionEffect: function (eventName, effect) {
-    if (!(typeof eventName === 'string' || eventName instanceof String)) {
-      throw new Error('The first parameter of registerEndOfActionEffect must be an action name')
-    }
-    testInBThread('registerEndOfActionEffect', false)
-
-    const key1 = String('CTX.Effect: ' + eventName)
-    const key2 = String('CTX.EndOfActionEffect: ' + eventName)
-    if (ctx_proxy.effectFunctions.containsKey(key1) || ctx_proxy.effectFunctions.containsKey(key2))
-      throw new Error('Effect already exists for event ' + eventName)
-    ctx_proxy.effectFunctions.put(key2, effect)
-
-    function func(data) {
-      bthread(eventName + "_EndOfActionForContext_" + data.s, function () {
-        bp.thread.data.effect = true
-        sync({waitFor: EndOfAction({session: data.s, hidden: true})})
-        ctx_proxy.effectFunctions.get(key2)(data)
-      })
-    }
-
-    bthread("EndOfActionForContext_" + eventName, function () {
-      while (true) {
-        func(sync({waitFor: Any(eventName)}).data)
-      }
-    })
-  },*/
   bthread: function (name, context, bt) {
     const createLiveCopy = function (name, query, entity, bt) {
       bthread(name,
-        {query: query, seed: entity.id, interrupt: [CtxEndES(query, entity.id)]},
+        {query: query, seed: entity.id},
         function () {
           try {
             bt(entity)
           } catch (e) {
-            if (!isEndOfContext(e)) {
-              if(e.javaException) ctx_proxy.rethrowException(e.javaException)
-              throw e
+            if (e.javaException) {
+              if (e instanceof EndOfContextException) {
+                return
+              } else {
+                if (e.javaException) ctx_proxy.rethrowException(e.javaException)
+              }
             }
+            throw e
           }
         })
     }
@@ -231,7 +180,11 @@ const ctx = {
         }
         res = undefined
         while (true) {
-          let changes = sync({waitFor: CtxStartES(context)}).data.toArray()
+          sync({waitFor: ContextChanged})
+          let changes = bp.store.get("CTX.Changes").parallelStream()
+            .filter(function (change) {
+              return change.type.equals("new") && change.query.equals(context)
+            });
           for (let i = 0; i < changes.length; i++) {
             if (changes[i].type.equals("new") && changes[i].query.equals(context)) {
               createLiveCopy(String("Live copy" + ": " + name + " " + changes[i].entityId), context, ctx.getEntityById(changes[i].entityId), bt)
@@ -251,7 +204,7 @@ const ctx = {
   },
   populateContext: function (entities) {
     testInBThread('populateContext', false)
-    for(let i=0; i<entities.length; i++)
+    for (let i = 0; i < entities.length; i++)
       this.__internal_fields.insertEntityUnsafe(entities[i])
   }
 }

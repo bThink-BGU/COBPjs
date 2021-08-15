@@ -1,28 +1,42 @@
 package il.ac.bgu.cs.bp.bpjs.context;
 
 import il.ac.bgu.cs.bp.bpjs.BPjs;
-import il.ac.bgu.cs.bp.bpjs.execution.jsproxy.CtxDirectMapProxy;
 import il.ac.bgu.cs.bp.bpjs.execution.jsproxy.MapProxy;
 import il.ac.bgu.cs.bp.bpjs.internal.ScriptableUtils;
+import il.ac.bgu.cs.bp.bpjs.model.BEvent;
 import org.mozilla.javascript.BaseFunction;
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.NativeObject;
 import org.mozilla.javascript.Scriptable;
 
 import java.io.Serializable;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class ContextChangesCalculator {
-  public HashSet<ContextChange> calculateChanges(MapProxy<String,Object> mapProxy, ContextProxy proxy) {
-    Map<String, MapProxy.Modification<Object>> updates = mapProxy.getModifications();
-    if (updates.isEmpty() || updates.keySet().stream().noneMatch(k->k.startsWith("CTX.Entity: "))) return new HashSet<>();
-    CtxDirectMapProxy<String, Object> currentStore = new CtxDirectMapProxy<>(mapProxy);
-    MapProxy<String, Object> nextStore = mapProxy;
+  public MapProxy<String, Object> executeEffect(Map<String, Object> store, BaseFunction func, Object data) {
+    Scriptable bpjsScope = BPjs.makeBPjsSubScope();
+    MapProxy<String, Object> mapProxy = new MapProxy<>(store);
+    BProgramProxyForEffects proxy = new BProgramProxyForEffects(mapProxy);
+    Context cx = BPjs.enterRhinoContext();
+    try {
+      bpjsScope.put("bp", bpjsScope, Context.javaToJS(proxy, bpjsScope));
+      func.call(cx, bpjsScope, bpjsScope, new Object[]{data});
+      return mapProxy;
+    } finally {
+      Context.exit();
+    }
+  }
+
+  public void calculateChanges(Map<String,Object> store, ContextProxy proxy, BEvent event) {
+    MapProxy<String, Object> nextStore = executeEffect(store, proxy.effectFunctions.get(event.name), event.maybeData);
+    Map<String, MapProxy.Modification<Object>> updates = nextStore.getModifications();
+    MapProxy<String, Object> currentStore = new MapProxy<>(store);
     HashSet<ContextChange> changes = new HashSet<>();
+    store.put("CTX.Changes", changes);
+    if (updates.isEmpty() || updates.keySet().stream().noneMatch(k->k.startsWith("CTX.Entity: "))) {
+      return;
+    }
 
     //region Entities
     Map<String, Set<NativeObject>> currentQueriesEntities = getQueriesEntities(currentStore, proxy);
@@ -33,8 +47,6 @@ public class ContextChangesCalculator {
 
     changes.addAll(newQueriesEntities.entrySet().stream().flatMap(entry -> entry.getValue().stream().map(entity -> new ContextChange(entry.getKey(), "new", (String) entity.get("id")))).collect(Collectors.toList()));
     changes.addAll(removedQueriesEntities.entrySet().stream().flatMap(entry -> entry.getValue().stream().map(entity -> new ContextChange(entry.getKey(), "end", (String) entity.get("id")))).collect(Collectors.toList()));
-
-    return changes;
   }
 
   private static Map<String, Set<NativeObject>> subtractCurrentEntitiesMaps(Map<String, Set<NativeObject>> queriesEntities1, Map<String, Set<NativeObject>> queriesEntities2) {

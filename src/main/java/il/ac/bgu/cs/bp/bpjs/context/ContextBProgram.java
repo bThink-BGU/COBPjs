@@ -20,8 +20,11 @@ public class ContextBProgram extends ResourceBProgram {
   }
 
   public ContextBProgram(Collection<String> someResourceNames, String aName) {
-    super(append(someResourceNames), aName, new CtxEventSelectionStrategy());
-    putInGlobalScope("ctx_proxy", new ContextProxy());
+    super(append(someResourceNames), aName, null);
+    var proxy = new ContextProxy();
+    var ess = new CtxEventSelectionStrategy(proxy);
+    super.setEventSelectionStrategy(ess);
+    putInGlobalScope("ctx_proxy", proxy);
   }
 
   private static Collection<String> append(Collection<String> resourceNames) {
@@ -41,5 +44,6 @@ public class ContextBProgram extends ResourceBProgram {
   @Override
   public void setStorageModificationStrategy(StorageModificationStrategy storageModificationStrategy) {
     throw new UnsupportedOperationException("Cannot change the StorageModificationStrategy in ContextBProgram");
+    // COBP makes its own usage and rules regarding storage. Do not mix different usages.
   }
 }
