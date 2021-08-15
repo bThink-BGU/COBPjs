@@ -27,7 +27,8 @@ public class ContextProxy implements Serializable {
   public final Map<String, BaseFunction> queries = new HashMap<>();
   public final Map<String, BaseFunction> effectFunctions = new HashMap<>();
   private static final ScriptableObjectCloner cloner = new ScriptableObjectCloner();
-  private final AtomicBoolean effectFinished = new AtomicBoolean(false);
+  private static final ContextChangesCalculator ccc = new ContextChangesCalculator();
+  private boolean effectFinished = false;
 
   @SuppressWarnings("unused")
   public void rethrowException(Throwable t) throws Throwable {
@@ -38,22 +39,15 @@ public class ContextProxy implements Serializable {
     return t instanceof EndOfContextException;
   }
 
-  public synchronized void waitForEffect() throws InterruptedException {
-    while(!effectFinished.get()) {
-      System.out.println("hereeeeee");
-      this.wait();
+  public synchronized void waitForEffect(MapProxy<String, Object> mapProxy, BEvent event) {
+    if(!effectFinished) {
+      ccc.calculateChanges(mapProxy,this, event);
+      effectFinished = true;
     }
   }
 
-  public synchronized void effectFinished() {
-    System.out.println("freeeee");
-    effectFinished.set(true);
-    this.notifyAll();
-  }
-
   public synchronized void resetEffect() {
-    effectFinished.set(false);
-    this.notifyAll();
+    effectFinished = false;
   }
 
   public boolean shouldWake(NativeObject jsRWB, BEvent event) {

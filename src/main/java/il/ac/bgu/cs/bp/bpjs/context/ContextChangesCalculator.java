@@ -1,21 +1,20 @@
 package il.ac.bgu.cs.bp.bpjs.context;
 
 import il.ac.bgu.cs.bp.bpjs.BPjs;
+import il.ac.bgu.cs.bp.bpjs.execution.jsproxy.ContextDirectMapProxy;
 import il.ac.bgu.cs.bp.bpjs.execution.jsproxy.MapProxy;
 import il.ac.bgu.cs.bp.bpjs.internal.ScriptableUtils;
 import il.ac.bgu.cs.bp.bpjs.model.BEvent;
-import il.ac.bgu.cs.bp.bpjs.model.StorageModificationStrategy;
 import org.mozilla.javascript.BaseFunction;
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.NativeObject;
-import org.mozilla.javascript.Scriptable;
 
 import java.io.Serializable;
 import java.util.*;
 import java.util.stream.Collectors;
 
 public class ContextChangesCalculator {
-  public MapProxy<String, Object> executeEffect(Map<String, Object> store, BaseFunction func, Object data) {
+  public MapProxy<String, Object> executeEffect(ContextDirectMapProxy<String, Object> store, BaseFunction func, Object data) {
     MapProxy<String, Object> mapProxy = new MapProxy<>(store);
     BProgramProxyForEffects proxy = new BProgramProxyForEffects(mapProxy);
     Context cx = BPjs.enterRhinoContext();
@@ -31,10 +30,10 @@ public class ContextChangesCalculator {
     }
   }
 
-  public void calculateChanges(Map<String, Object> store, ContextProxy proxy, BEvent event) {
-    MapProxy<String, Object> nextStore = executeEffect(store, proxy.effectFunctions.get("CTX.Effect: " + event.name), event.maybeData);
+  public void calculateChanges(MapProxy<String, Object> store, ContextProxy proxy, BEvent event) {
+    ContextDirectMapProxy<String, Object> currentStore = new ContextDirectMapProxy<>(store);
+    MapProxy<String, Object> nextStore = executeEffect(currentStore, proxy.effectFunctions.get("CTX.Effect: " + event.name), event.maybeData);
     Map<String, MapProxy.Modification<Object>> updates = nextStore.getModifications();
-    MapProxy<String, Object> currentStore = new MapProxy<>(store);
     HashSet<ContextChange> changes = new HashSet<>();
     store.put("CTX.Changes", changes);
     if (updates.isEmpty() || updates.keySet().stream().noneMatch(k -> k.startsWith("CTX.Entity: "))) {

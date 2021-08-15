@@ -134,18 +134,6 @@ const ctx = {
     if (ctx_proxy.effectFunctions.containsKey(key1) || ctx_proxy.effectFunctions.containsKey(key2))
       throw new Error('Effect already exists for event ' + eventName)
     ctx_proxy.effectFunctions.put(key1, effect)
-    function f() {
-      bthread('Effect: ' + eventName, function () {
-        while (true) {
-          let data = bp.sync({waitFor: Any(eventName)}).data
-          bp.log.info("effect here")
-          ctx_proxy.effectFunctions.get(key1)(data)
-          ctx_proxy.effectFinished()
-        }
-      })
-    }
-
-    f()
   },
   bthread: function (name, context, bt) {
     const createLiveCopy = function (name, query, entity, bt) {
