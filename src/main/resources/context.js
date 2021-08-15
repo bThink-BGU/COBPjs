@@ -1,5 +1,6 @@
 /* global bp, ctx_proxy, Packages, EventSets */ // <-- Turn off warnings
 // importPackage(Packages.il.ac.bgu.cs.bp.bpjs.model.eventsets);
+importPackage(Packages.il.ac.bgu.cs.bp.bpjs.context.EndOfContextException);
 
 function deepFreeze(object) {
   // Retrieve the property names defined on object
