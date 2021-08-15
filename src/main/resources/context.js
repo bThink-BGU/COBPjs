@@ -1,6 +1,5 @@
 /* global bp, ctx_proxy, Packages, EventSets */ // <-- Turn off warnings
 // importPackage(Packages.il.ac.bgu.cs.bp.bpjs.model.eventsets);
-importPackage(Packages.il.ac.bgu.cs.bp.bpjs.context.EndOfContextException);
 
 function deepFreeze(object) {
   // Retrieve the property names defined on object
@@ -24,7 +23,7 @@ const CtxInternalEvents = bp.EventSet("Ctx.InternalEvents", function (e) {
 })
 
 const ContextChanged = bp.EventSet("CTX.ContextChanged", function (e) {
-  return e.name.equals(String("CTX.Changed"))
+  return ctx_proxy.effectFunctions.containsKey(String("CTX.Effect: " + e.name))
 })
 
 const NonCtxInternalEvents = CtxInternalEvents.negate()
@@ -45,9 +44,6 @@ const ctx = {
     },
     CtxEntityChanged: function (changes) {
       return bp.Event('CTX.Changed', changes)
-    },
-    isEffectFunction: function () {
-      return bp.thread.data.effect === true
     },
     insertEntityUnsafe: function (entity) {
       const key = String("CTX.Entity: " + entity.id)
@@ -70,14 +66,12 @@ const ctx = {
     return entity
   },
   insertEntity: function (entity) {
-    if (!this.__internal_fields.isEffectFunction())
-      throw new Error('ctx.insertEntity must be called from an effect function')
+    testInBThread('insertEntity', false)
 
     return this.__internal_fields.insertEntityUnsafe(entity)
   },
   updateEntity: function (entity) {
-    if (!this.__internal_fields.isEffectFunction())
-      throw new Error('ctx.updateEntity must be called from an effect function')
+    testInBThread('updateEntity', false)
 
     const key = String("CTX.Entity: " + entity.id)
     if (!bp.store.has(key)) {
@@ -89,8 +83,7 @@ const ctx = {
     return clone
   },
   removeEntity: function (entity_or_id) {
-    if (!this.__internal_fields.isEffectFunction())
-      throw new Error('ctx.removeEntity must be called from an effect function')
+    testInBThread('removeEntity', false)
 
     const key = String("CTX.Entity: " + (entity_or_id.id ? entity_or_id.id : entity_or_id))
     if (!bp.store.has(key)) {
@@ -141,18 +134,6 @@ const ctx = {
     if (ctx_proxy.effectFunctions.containsKey(key1) || ctx_proxy.effectFunctions.containsKey(key2))
       throw new Error('Effect already exists for event ' + eventName)
     ctx_proxy.effectFunctions.put(key1, effect)
-
-    function f() {
-      bthread('Effect: ' + eventName, function () {
-        bp.thread.data.effect = true
-        while (true) {
-          let data = sync({waitFor: Any(eventName)}).data
-          ctx_proxy.effectFunctions.get(key1)(data)
-        }
-      })
-    }
-
-    f()
   },
   bthread: function (name, context, bt) {
     const createLiveCopy = function (name, query, entity, bt) {
@@ -163,7 +144,7 @@ const ctx = {
             bt(entity)
           } catch (e) {
             if (e.javaException) {
-              if (e instanceof EndOfContextException) {
+              if (ctx_proxy.isEndOfContextException(e.javaException)) {
                 return
               } else {
                 if (e.javaException) ctx_proxy.rethrowException(e.javaException)
@@ -182,11 +163,15 @@ const ctx = {
         res = undefined
         while (true) {
           sync({waitFor: ContextChanged})
+          // bp.log.info("changesA {0}: {1}", context, bp.store.get("CTX.Changes"))
           let changes = bp.store.get("CTX.Changes").parallelStream()
             .filter(function (change) {
               return change.type.equals("new") && change.query.equals(context)
-            });
+            }).toArray();
+          // bp.log.info("changesB {0}: {1}", context, changes)
           for (let i = 0; i < changes.length; i++) {
+            // bp.log.info("changesC {0}: {1}", context, changes[i])
+            // bp.log.info(bp.store.keys())
             if (changes[i].type.equals("new") && changes[i].query.equals(context)) {
               createLiveCopy(String("Live copy" + ": " + name + " " + changes[i].entityId), context, ctx.getEntityById(changes[i].entityId), bt)
             }

@@ -69,7 +69,7 @@ public class BProgramProxyForEffects implements Serializable {
   }
 
   public BThreadDataProxy getThread() {
-    throw new IllegalAccessError("Cannot call this function within an effect function");
+    return null;
   }
   public String getJavaThreadName() {
     throw new IllegalAccessError("Cannot call this function within an effect function");

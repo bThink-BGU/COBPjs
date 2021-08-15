@@ -123,9 +123,6 @@ function interrupt(es, fn) {
  */
 function sync(stmt, syncData) {
   function appendToPart(stmt, field) {
-    if (bp.thread.data[field].length === 0) {
-      return;
-    }
     if (Array.isArray(stmt[field])) {
       stmt[field] = stmt[field].concat(bp.thread.data[field]);
     } else {
@@ -144,34 +141,32 @@ function sync(stmt, syncData) {
   appendToPart(stmt, 'waitFor');
   appendToPart(stmt, 'block');
   appendToPart(stmt, 'interrupt');
+  appendToPart(stmt, 'request');
 
-  if (bp.thread.data.request.length > 0) {
-    if (stmt.request) {
-      if (!Array.isArray(stmt.request)) {
-        stmt.request = [stmt.request];
+  while (true) {
+    stmt.waitFor.push(ContextChanged)
+    let ret = syncData ? bp.sync(stmt, syncData) : bp.sync(stmt);
+    const key1 = String('CTX.Effect: ' + ret.name)
+    if (ctx_proxy.effectFunctions.containsKey(key1)) {
+      let changes = bp.store.get('CTX.Changes')
+      let query = bp.thread.data.query
+      let id = bp.thread.data.seed
+      if (query &&
+        changes.parallelStream().filter(function (change) {
+          // bp.log.info("filtering {0}, name: {1}, id: {2}, query: {3}, result: {4}", change, bp.thread.name, id, query, change.type.equals('end') && change.query.equals(query) && change.entityId.equals(id))
+          return change.type.equals('end') && change.query.equals(query) && change.entityId.equals(id)
+        }).count() > 0) {
+        // bp.log.info("bp keys: {0}", bp.store.keys())
+        ctx_proxy.throwEndOfContext()
       }
-      stmt.request = stmt.request.concat(bp.thread.data.request);
+      stmt.waitFor.pop()
+      if(ctx_proxy.shouldWake(stmt, ret)) {
+        return ret
+      }
     } else {
-      stmt.request = bp.thread.data.request;
+      return ret
     }
   }
-
-  let ret = syncData ? bp.sync(stmt, syncData) : bp.sync(stmt);
-  const key1 = String('CTX.Effect: ' + ret.name)
-  const key2 = String('CTX.EndOfActionEffect: ' + ret.name)
-  if ((ctx_proxy.effectFunctions.containsKey(key1) || ctx_proxy.effectFunctions.containsKey(key2)) && !bp.thread.data.effect) {
-    let changes = bp.store.get('CTX.Changes')
-    let query = bp.thread.data.query
-    let id = bp.thread.data.id
-    if (query &&
-      changes.parallelStream().filter(function (change) {
-        return change.type.equals('end') && change.query.equals(query) && change.entityId.equals(id)
-      }).count() > 0) {
-
-      ctx_proxy.throwEndOfContext()
-    }
-  }
-  return ret
 }
 
 

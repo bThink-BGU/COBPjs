@@ -79,7 +79,7 @@ public final class CtxEventSelectionStrategy extends AbstractEventSelectionStrat
         var event = strategy.select(bpss, selectableEvents);
         if(event.isPresent()) {
             BEvent e = event.get().getEvent();
-            if(proxy.effectFunctions.containsKey(e.name)) {
+            if(proxy.effectFunctions.containsKey("CTX.Effect: " +e.name)) {
                 ccc.calculateChanges(bpss.getDataStore(), proxy, e);
             }
         }
