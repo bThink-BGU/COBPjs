@@ -29,6 +29,7 @@ public class Verification {
     DfsBProgramVerifier vfr = new DfsBProgramVerifier();
     vfr.setMaxTraceLength(2000);
     vfr.setProgressListener(new PrintDfsVerifierListener());
+    vfr.setIterationCountGap(100);
 //    vfr.setDebugMode(true);
     try {
       var res = vfr.verify(bprog);

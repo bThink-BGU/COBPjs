@@ -146,8 +146,8 @@ function sync(stmt, syncData) {
   while (true) {
     stmt.waitFor.push(ContextChanged)
     let ret = syncData ? bp.sync(stmt, syncData) : bp.sync(stmt);
-    const key1 = String('CTX.Effect: ' + ret.name)
-    if (ctx_proxy.effectFunctions.containsKey(key1)) {
+    stmt.waitFor.pop()
+    if (ctx_proxy.effectFunctions.containsKey(String('CTX.Effect: ' + ret.name))) {
       let changes = bp.store.get('CTX.Changes')
       let query = bp.thread.data.query
       let id = bp.thread.data.seed
@@ -159,7 +159,6 @@ function sync(stmt, syncData) {
         // bp.log.info("bp keys: {0}", bp.store.keys())
         ctx_proxy.throwEndOfContext()
       }
-      stmt.waitFor.pop()
       if(ctx_proxy.shouldWake(stmt, ret)) {
         return ret
       }
