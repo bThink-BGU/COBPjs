@@ -76,13 +76,6 @@ public final class CtxEventSelectionStrategy extends AbstractEventSelectionStrat
 
     @Override
     public Optional<EventSelectionResult> select(BProgramSyncSnapshot bpss, Set<BEvent> selectableEvents) {
-        var event = strategy.select(bpss, selectableEvents);
-        if(event.isPresent()) {
-            BEvent e = event.get().getEvent();
-            if(proxy.effectFunctions.containsKey("CTX.Effect: " +e.name)) {
-                ccc.calculateChanges(bpss.getDataStore(), proxy, e);
-            }
-        }
-        return event;
+        return strategy.select(bpss, selectableEvents);
     }
 }

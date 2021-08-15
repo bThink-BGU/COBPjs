@@ -13,6 +13,8 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toList;
@@ -24,8 +26,8 @@ public class ContextProxy implements Serializable {
       List.of("CTX.Changed", "_____CTX_LOCK_____", "_____CTX_RELEASE_____", "Context population completed");
   public final Map<String, BaseFunction> queries = new HashMap<>();
   public final Map<String, BaseFunction> effectFunctions = new HashMap<>();
-  private static final ContextChangesCalculator ccc = new ContextChangesCalculator();
   private static final ScriptableObjectCloner cloner = new ScriptableObjectCloner();
+  private final AtomicBoolean effectFinished = new AtomicBoolean(false);
 
   @SuppressWarnings("unused")
   public void rethrowException(Throwable t) throws Throwable {
@@ -34,6 +36,24 @@ public class ContextProxy implements Serializable {
 
   public boolean isEndOfContextException(Throwable t) {
     return t instanceof EndOfContextException;
+  }
+
+  public synchronized void waitForEffect() throws InterruptedException {
+    while(!effectFinished.get()) {
+      System.out.println("hereeeeee");
+      this.wait();
+    }
+  }
+
+  public synchronized void effectFinished() {
+    System.out.println("freeeee");
+    effectFinished.set(true);
+    this.notifyAll();
+  }
+
+  public synchronized void resetEffect() {
+    effectFinished.set(false);
+    this.notifyAll();
   }
 
   public boolean shouldWake(NativeObject jsRWB, BEvent event) {
