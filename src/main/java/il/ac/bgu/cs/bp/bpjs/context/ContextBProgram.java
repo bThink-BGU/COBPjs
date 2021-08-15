@@ -25,6 +25,7 @@ public class ContextBProgram extends ResourceBProgram {
     var ess = new CtxEventSelectionStrategy(proxy);
     super.setEventSelectionStrategy(ess);
     putInGlobalScope("ctx_proxy", proxy);
+    super.initialStore.put("CTX.Changes", new HashSet<ContextChangesCalculator.ContextChange>());
   }
 
   private static Collection<String> append(Collection<String> resourceNames) {
