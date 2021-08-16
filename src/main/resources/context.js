@@ -42,9 +42,6 @@ const ctx = {
       }
       return target
     },
-    CtxEntityChanged: function (changes) {
-      return bp.Event('CTX.Changed', changes)
-    },
     insertEntityUnsafe: function (entity) {
       const key = String("CTX.Entity: " + entity.id)
       if (bp.store.has(key)) {
@@ -55,6 +52,12 @@ const ctx = {
       // Object.freeze(clone)
       bp.store.put(key, clone)
       return clone
+    },
+    testIsEffect(caller, expected) {
+      if (expected && !bp.thread.data.effect)
+        throw new Error(String("The function " + caller + " must be called by an effect function"))
+      if (!expected && bp.thread.data.effect)
+        throw new Error(String("The function " + caller + " must no be called by an effect function"))
     }
   },
   Entity: function (id, type, data) {
@@ -66,12 +69,12 @@ const ctx = {
     return entity
   },
   insertEntity: function (entity) {
-    testInBThread('insertEntity', false)
+    this.__internal_fields.testIsEffect('insertEntity', true)
 
     return this.__internal_fields.insertEntityUnsafe(entity)
   },
   updateEntity: function (entity) {
-    testInBThread('updateEntity', false)
+    this.__internal_fields.testIsEffect('updateEntity', true)
 
     const key = String("CTX.Entity: " + entity.id)
     if (!bp.store.has(key)) {
@@ -83,7 +86,7 @@ const ctx = {
     return clone
   },
   removeEntity: function (entity_or_id) {
-    testInBThread('removeEntity', false)
+    this.__internal_fields.testIsEffect('removeEntity', true)
 
     const key = String("CTX.Entity: " + (entity_or_id.id ? entity_or_id.id : entity_or_id))
     if (!bp.store.has(key)) {
@@ -133,6 +136,11 @@ const ctx = {
     const key2 = String('CTX.EndOfActionEffect: ' + eventName)
     if (ctx_proxy.effectFunctions.containsKey(key1) || ctx_proxy.effectFunctions.containsKey(key2))
       throw new Error('Effect already exists for event ' + eventName)
+    function f(data){
+      bp.thread.data.effect = true
+      effect(data)
+      bp.thread.data.effect = false
+    }
     ctx_proxy.effectFunctions.put(key1, effect)
   },
   bthread: function (name, context, bt) {
