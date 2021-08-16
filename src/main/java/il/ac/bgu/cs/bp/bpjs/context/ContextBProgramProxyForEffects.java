@@ -1,85 +1,122 @@
 package il.ac.bgu.cs.bp.bpjs.context;
 
-import il.ac.bgu.cs.bp.bpjs.execution.jsproxy.BThreadDataProxy;
-import il.ac.bgu.cs.bp.bpjs.execution.jsproxy.MapProxy;
-import il.ac.bgu.cs.bp.bpjs.execution.jsproxy.SyncStatementBuilder;
+import il.ac.bgu.cs.bp.bpjs.execution.jsproxy.*;
+import il.ac.bgu.cs.bp.bpjs.execution.tasks.FailedAssertionException;
+import il.ac.bgu.cs.bp.bpjs.model.BEvent;
 import il.ac.bgu.cs.bp.bpjs.model.BProgramSyncSnapshot;
 import il.ac.bgu.cs.bp.bpjs.model.BThreadSyncSnapshot;
+import il.ac.bgu.cs.bp.bpjs.model.eventsets.EventSet;
+import il.ac.bgu.cs.bp.bpjs.model.eventsets.EventSets;
+import il.ac.bgu.cs.bp.bpjs.model.eventsets.JsEventSet;
 import org.mozilla.javascript.ContinuationPending;
 import org.mozilla.javascript.Function;
 import org.mozilla.javascript.NativeObject;
 
-import java.io.Serializable;
 import java.util.Objects;
 
-public class ContextBProgramProxyForEffects implements Serializable {
+public class ContextBProgramProxyForEffects {
+  private static final IllegalAccessError error = new IllegalAccessError("Cannot call this function within an effect or query function");
   public final MapProxy mapProxy;
+  private final BProgramJsProxy bpjsProxy;
+  public final BpLog log;
+  public final EventSetsJsProxy eventSets;
+  public final RandomProxy random;
 
-  public ContextBProgramProxyForEffects(MapProxy mapProxy) {
+  public ContextBProgramProxyForEffects(MapProxy mapProxy, BProgramJsProxy bpjsProxy) {
     this.mapProxy = mapProxy;
+    this.bpjsProxy = bpjsProxy;
+    this.log = bpjsProxy.log;
+    this.eventSets = bpjsProxy.eventSets;
+    this.random = bpjsProxy.random;
   }
 
+  public BEvent Event(String name) {
+    return bpjsProxy.Event(name);
+  }
+
+  public BEvent Event(String name, Object jsData) {
+    return bpjsProxy.Event(name, jsData);
+  }
+
+  public JsEventSet EventSet(String name, Object predicateObj) {
+    return bpjsProxy.EventSet(name, predicateObj);
+  }
+
+  public EventSet allExcept(EventSet es) {
+    return EventSets.not(es);
+  }
+
+  public void registerBThread(String name, Object data, Function func) {
+    throw error;
+  }
+
+  public void registerBThread(String name, Function func) {
+    throw error;
+  }
+
+  public void registerBThread(Function func) {
+    throw error;
+  }
+
+  public void ASSERT(boolean value, String message) throws FailedAssertionException {
+    bpjsProxy.ASSERT(value, message);
+  }
+
+  public void fork() throws ContinuationPending {
+    throw error;
+  }
+
+  public void setInterruptHandler(Object aPossibleHandler) {
+    throw error;
+  }
 
   public MapProxy getStore() {
     return mapProxy;
   }
 
   public void sync(NativeObject jsRWB) {
-    throw new IllegalAccessError("Cannot call this function within an effect function");
+    throw error;
   }
 
-  public void sync(NativeObject nativeObject, Object o) {
-    throw new IllegalAccessError("Cannot call this function within an effect function");
+  public void sync(NativeObject jsRWB, Object data) {
+    throw error;
   }
 
-  public static void setCurrentBThread(BProgramSyncSnapshot bpss, BThreadSyncSnapshot btss) {
-    throw new IllegalAccessError("Cannot call this function within an effect function");
-  }
-
-  public static void clearCurrentBThread() {
-    throw new IllegalAccessError("Cannot call this function within an effect function");
-  }
-
-  public void synchronizationPoint(NativeObject var1, Boolean var2, Object var3) {
-    throw new IllegalAccessError("Cannot call this function within an effect function");
-  }
-
-  public void registerBThread(String name, Object data, Function func) {
-    throw new IllegalAccessError("Cannot call this function within an effect function");
-  }
-
-  public void registerBThread(String name, Function func) {
-    throw new IllegalAccessError("Cannot call this function within an effect function");
-  }
-
-  public void registerBThread(Function func) {
-    throw new IllegalAccessError("Cannot call this function within an effect function");
+  void synchronizationPoint(NativeObject jsRWB, Boolean hot, Object data) {
+    throw error;
   }
 
   public SyncStatementBuilder hot(boolean isHot) {
-    throw new IllegalAccessError("Cannot call this function within an effect function");
+    throw error;
   }
 
-  public void fork() throws ContinuationPending {
-    throw new IllegalAccessError("Cannot call this function within an effect function");
+  public BEvent enqueueExternalEvent(BEvent evt) {
+    throw error;
   }
 
-  public void setInterruptHandler(Object aPossibleHandler) {
-    throw new IllegalAccessError("Cannot call this function within an effect function");
+  public void setWaitForExternalEvents(boolean newDaemonMode) {
+    throw error;
+  }
+
+  public boolean isWaitForExternalEvents() {
+    throw error;
+  }
+
+  public long getTime() {
+    return bpjsProxy.getTime();
   }
 
   public BThreadDataProxy getThread() {
-    return null;
+    throw null;
   }
+
   public String getJavaThreadName() {
-    throw new IllegalAccessError("Cannot call this function within an effect function");
+    throw error;
   }
 
   @Override
   public int hashCode() {
-    int hash = 7;
-    hash = 59 * hash + Objects.hashCode(this.mapProxy);
-    return hash;
+    return 42;
   }
 
   @Override
@@ -89,11 +126,8 @@ public class ContextBProgramProxyForEffects implements Serializable {
     }
     if (obj == null) {
       return false;
+    } else {
+      return this.getClass() == obj.getClass();
     }
-    if (getClass() != obj.getClass()) {
-      return false;
-    }
-    final ContextBProgramProxyForEffects other = (ContextBProgramProxyForEffects) obj;
-    return Objects.equals(this.mapProxy, other.mapProxy);
   }
 }

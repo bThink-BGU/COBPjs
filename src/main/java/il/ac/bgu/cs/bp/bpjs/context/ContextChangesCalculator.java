@@ -1,6 +1,7 @@
 package il.ac.bgu.cs.bp.bpjs.context;
 
 import il.ac.bgu.cs.bp.bpjs.BPjs;
+import il.ac.bgu.cs.bp.bpjs.execution.jsproxy.BProgramJsProxy;
 import il.ac.bgu.cs.bp.bpjs.execution.jsproxy.ContextDirectMapProxy;
 import il.ac.bgu.cs.bp.bpjs.execution.jsproxy.MapProxy;
 import il.ac.bgu.cs.bp.bpjs.internal.ScriptableUtils;
@@ -15,9 +16,9 @@ import java.util.stream.Collectors;
 
 public class ContextChangesCalculator {
   public void executeEffect(MapProxy<String, Object> nextStore, BaseFunction func, Object data) {
-    ContextBProgramProxyForEffects proxy = new ContextBProgramProxyForEffects(nextStore);
     var funcScope = func.getParentScope();
-    var bp = funcScope.get("bp", funcScope);
+    var bp = (BProgramJsProxy)funcScope.get("bp", funcScope);
+    ContextBProgramProxyForEffects proxy = new ContextBProgramProxyForEffects(nextStore, bp);
     Context cx = BPjs.enterRhinoContext();
     try {
       funcScope.put("bp", funcScope, Context.javaToJS(proxy, funcScope));
@@ -85,9 +86,9 @@ public class ContextChangesCalculator {
   }
 
   private static boolean runQuery(Object value, BaseFunction func, MapProxy<String, Object> store) {
-    ContextBProgramProxyForEffects proxy = new ContextBProgramProxyForEffects(store);
     var funcScope = func.getParentScope();
-    var bp = funcScope.get("bp", funcScope);
+    var bp = (BProgramJsProxy)funcScope.get("bp", funcScope);
+    ContextBProgramProxyForEffects proxy = new ContextBProgramProxyForEffects(store, bp);
     Context cx = BPjs.enterRhinoContext();
     try {
       funcScope.put("bp", funcScope, Context.javaToJS(proxy, funcScope));

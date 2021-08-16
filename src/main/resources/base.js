@@ -1,6 +1,23 @@
 /* global bp, Packages, EventSets */ // <-- Turn off warnings
 importPackage(Packages.il.ac.bgu.cs.bp.bpjs.model.eventsets);
 
+function deepFreeze(object) {
+  // Retrieve the property names defined on object
+  const propNames = Object.getOwnPropertyNames(object);
+
+  // Freeze properties before freezing self
+
+  for (let name of propNames) {
+    const value = object[name];
+
+    if (value && typeof value === "object") {
+      deepFreeze(value);
+    }
+  }
+
+  return Object.freeze(object);
+}
+
 /**
  * Tests if `o` is a javascript Set
  * @param o
@@ -144,10 +161,8 @@ function sync(stmt, syncData) {
   appendToPart(stmt, 'request');
 
   while (true) {
-    stmt.waitFor.push(ContextChanged)
     let ret = syncData ? bp.sync(stmt, syncData) : bp.sync(stmt);
-    stmt.waitFor.pop()
-    if (ctx_proxy.effectFunctions.containsKey(String('CTX.Effect: ' + ret.name))) {
+    if (ContextChanged.contains(ret)) {
       ctx_proxy.waitForEffect(bp.store, ret)
       let changes = bp.store.get('CTX.Changes')
       let query = bp.thread.data.query

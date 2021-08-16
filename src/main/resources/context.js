@@ -26,8 +26,6 @@ const ContextChanged = bp.EventSet("CTX.ContextChanged", function (e) {
   return ctx_proxy.effectFunctions.containsKey(String("CTX.Effect: " + e.name))
 })
 
-const NonCtxInternalEvents = CtxInternalEvents.negate()
-
 const ctx = {
   __internal_fields: {
     assign: function (target, source) {
