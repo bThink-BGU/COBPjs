@@ -14,9 +14,8 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 public class ContextChangesCalculator {
-  public MapProxy<String, Object> executeEffect(ContextDirectMapProxy<String, Object> store, BaseFunction func, Object data) {
-    MapProxy<String, Object> mapProxy = new MapProxy<>(store);
-    BProgramProxyForEffects proxy = new BProgramProxyForEffects(mapProxy);
+  public void executeEffect(MapProxy<String, Object> nextStore, BaseFunction func, Object data) {
+    BProgramProxyForEffects proxy = new BProgramProxyForEffects(nextStore);
     Context cx = BPjs.enterRhinoContext();
     try {
       var funcScope = func.getParentScope();
@@ -24,18 +23,17 @@ public class ContextChangesCalculator {
       funcScope.put("bp", funcScope, Context.javaToJS(proxy, funcScope));
       func.call(cx, func, func, new Object[]{data});
       funcScope.put("bp", funcScope, bp);
-      return mapProxy;
     } finally {
       Context.exit();
     }
   }
 
-  public void calculateChanges(MapProxy<String, Object> store, ContextProxy proxy, BEvent event) {
-    ContextDirectMapProxy<String, Object> currentStore = new ContextDirectMapProxy<>(store);
-    MapProxy<String, Object> nextStore = executeEffect(currentStore, proxy.effectFunctions.get("CTX.Effect: " + event.name), event.maybeData);
+  public void calculateChanges(MapProxy<String, Object> nextStore, ContextProxy proxy, BEvent event) {
+    ContextDirectMapProxy<String, Object> currentStore = new ContextDirectMapProxy<>(nextStore);
+    executeEffect(nextStore, proxy.effectFunctions.get("CTX.Effect: " + event.name), event.maybeData);
     Map<String, MapProxy.Modification<Object>> updates = nextStore.getModifications();
     HashSet<ContextChange> changes = new HashSet<>();
-    store.put("CTX.Changes", changes);
+    currentStore.put("CTX.Changes", changes);
     if (updates.isEmpty() || updates.keySet().stream().noneMatch(k -> k.startsWith("CTX.Entity: "))) {
       return;
     }
@@ -50,10 +48,10 @@ public class ContextChangesCalculator {
     changes.addAll(newQueriesEntities.entrySet().stream().flatMap(entry -> entry.getValue().stream().map(entity -> new ContextChange(entry.getKey(), "new", (String) entity.get("id")))).collect(Collectors.toList()));
     changes.addAll(removedQueriesEntities.entrySet().stream().flatMap(entry -> entry.getValue().stream().map(entity -> new ContextChange(entry.getKey(), "end", (String) entity.get("id")))).collect(Collectors.toList()));
 
-    consolidate(updates, store);
+    consolidate(updates, currentStore);
   }
 
-  private void consolidate(Map<String, MapProxy.Modification<Object>> updates, Map<String, Object> store) {
+  private void consolidate(Map<String, MapProxy.Modification<Object>> updates, ContextDirectMapProxy<String, Object> store) {
     updates.entrySet().stream()
         .filter(e -> e.getValue() instanceof MapProxy.PutValue)
         .forEach(e -> store.put(e.getKey(), ((MapProxy.PutValue<Object>) e.getValue()).getValue()));
