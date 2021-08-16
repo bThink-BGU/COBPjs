@@ -54,9 +54,9 @@ const ctx = {
       return clone
     },
     testIsEffect(caller, expected) {
-      if (expected && !bp.thread.data.effect)
+      if (expected && isInBThread())
         throw new Error(String("The function " + caller + " must be called by an effect function"))
-      if (!expected && bp.thread.data.effect)
+      if (!expected && !isInBThread())
         throw new Error(String("The function " + caller + " must no be called by an effect function"))
     }
   },
@@ -136,11 +136,6 @@ const ctx = {
     const key2 = String('CTX.EndOfActionEffect: ' + eventName)
     if (ctx_proxy.effectFunctions.containsKey(key1) || ctx_proxy.effectFunctions.containsKey(key2))
       throw new Error('Effect already exists for event ' + eventName)
-    function f(data){
-      bp.thread.data.effect = true
-      effect(data)
-      bp.thread.data.effect = false
-    }
     ctx_proxy.effectFunctions.put(key1, effect)
   },
   bthread: function (name, context, bt) {

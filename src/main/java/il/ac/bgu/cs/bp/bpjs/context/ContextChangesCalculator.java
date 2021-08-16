@@ -15,15 +15,15 @@ import java.util.stream.Collectors;
 
 public class ContextChangesCalculator {
   public void executeEffect(MapProxy<String, Object> nextStore, BaseFunction func, Object data) {
-    BProgramProxyForEffects proxy = new BProgramProxyForEffects(nextStore);
+    ContextBProgramProxyForEffects proxy = new ContextBProgramProxyForEffects(nextStore);
+    var funcScope = func.getParentScope();
+    var bp = funcScope.get("bp", funcScope);
     Context cx = BPjs.enterRhinoContext();
     try {
-      var funcScope = func.getParentScope();
-      var bp = funcScope.get("bp", funcScope);
       funcScope.put("bp", funcScope, Context.javaToJS(proxy, funcScope));
       func.call(cx, func, func, new Object[]{data});
-      funcScope.put("bp", funcScope, bp);
     } finally {
+      funcScope.put("bp", funcScope, bp);
       Context.exit();
     }
   }
@@ -85,16 +85,15 @@ public class ContextChangesCalculator {
   }
 
   private static boolean runQuery(Object value, BaseFunction func, MapProxy<String, Object> store) {
-    BProgramProxyForEffects proxy = new BProgramProxyForEffects(store);
+    ContextBProgramProxyForEffects proxy = new ContextBProgramProxyForEffects(store);
+    var funcScope = func.getParentScope();
+    var bp = funcScope.get("bp", funcScope);
     Context cx = BPjs.enterRhinoContext();
     try {
-      var funcScope = func.getParentScope();
-      var bp = funcScope.get("bp", funcScope);
       funcScope.put("bp", funcScope, Context.javaToJS(proxy, funcScope));
-      var ret = (boolean) func.call(cx, funcScope, funcScope, new Object[]{value});
-      funcScope.put("bp", funcScope, bp);
-      return ret;
+      return (boolean) func.call(cx, funcScope, funcScope, new Object[]{value});
     } finally {
+      funcScope.put("bp", funcScope, bp);
       Context.exit();
     }
   }

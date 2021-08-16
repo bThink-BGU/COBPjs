@@ -12,10 +12,10 @@ import org.mozilla.javascript.NativeObject;
 import java.io.Serializable;
 import java.util.Objects;
 
-public class BProgramProxyForEffects implements Serializable {
+public class ContextBProgramProxyForEffects implements Serializable {
   public final MapProxy mapProxy;
 
-  public BProgramProxyForEffects(MapProxy mapProxy) {
+  public ContextBProgramProxyForEffects(MapProxy mapProxy) {
     this.mapProxy = mapProxy;
   }
 
@@ -93,7 +93,7 @@ public class BProgramProxyForEffects implements Serializable {
     if (getClass() != obj.getClass()) {
       return false;
     }
-    final BProgramProxyForEffects other = (BProgramProxyForEffects) obj;
+    final ContextBProgramProxyForEffects other = (ContextBProgramProxyForEffects) obj;
     return Objects.equals(this.mapProxy, other.mapProxy);
   }
 }
