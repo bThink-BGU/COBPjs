@@ -36,9 +36,9 @@ public class ContextProxy implements Serializable {
     return t instanceof EndOfContextException;
   }
 
-  public synchronized void waitForEffect(MapProxy<String, Object> mapProxy, BEvent event) {
+  public synchronized void waitForEffect(MapProxy<String, Object> mapProxy, BEvent event, Scriptable globalScope) {
     if(!effectFinished) {
-      ccc.calculateChanges(mapProxy,this, event);
+      ccc.calculateChanges(mapProxy,this, event, globalScope);
       effectFinished = true;
     }
   }

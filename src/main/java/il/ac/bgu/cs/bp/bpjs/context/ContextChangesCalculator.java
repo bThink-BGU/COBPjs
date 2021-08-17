@@ -9,39 +9,51 @@ import il.ac.bgu.cs.bp.bpjs.model.BEvent;
 import org.mozilla.javascript.BaseFunction;
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.NativeObject;
+import org.mozilla.javascript.Scriptable;
 
 import java.io.Serializable;
-import java.util.*;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 public class ContextChangesCalculator {
-  public void executeEffect(MapProxy<String, Object> nextStore, BaseFunction func, Object data) {
-    var funcScope = func.getParentScope();
-    var bp = (BProgramJsProxy)funcScope.get("bp", funcScope);
-    ContextBProgramProxyForEffects proxy = new ContextBProgramProxyForEffects(nextStore, bp);
-    Context cx = BPjs.enterRhinoContext();
-    try {
-      funcScope.put("bp", funcScope, Context.javaToJS(proxy, funcScope));
-      func.call(cx, func, func, new Object[]{data});
-    } finally {
-      funcScope.put("bp", funcScope, bp);
-      Context.exit();
-    }
+  public void executeEffect(MapProxy<String, Object> nextStore, BaseFunction func, Object data, Context cx) {
+    func.call(cx, func, func, new Object[]{data});
   }
 
-  public void calculateChanges(MapProxy<String, Object> nextStore, ContextProxy proxy, BEvent event) {
-    ContextDirectMapProxy<String, Object> currentStore = new ContextDirectMapProxy<>(nextStore);
-    executeEffect(nextStore, proxy.effectFunctions.get("CTX.Effect: " + event.name), event.maybeData);
+  public void calculateChanges(MapProxy<String, Object> nextStore, ContextProxy proxy, BEvent event, Scriptable globalScope) {
+    var currentStore = new ContextDirectMapProxy<>(nextStore);
+    var bpJsProxy = globalScope.get("bp", globalScope);
+    var bpJProxy = (BProgramJsProxy) Context.jsToJava(bpJsProxy, BProgramJsProxy.class);
+    ContextBProgramProxyForEffects bpProxy = new ContextBProgramProxyForEffects(nextStore, bpJProxy);
+    Context cx = BPjs.enterRhinoContext();
+    try {
+      globalScope.put("bp", globalScope, Context.javaToJS(bpProxy, globalScope));
+      calculateChanges(nextStore, currentStore, event, proxy, cx, bpProxy);
+    } finally {
+      globalScope.put("bp", globalScope, bpJsProxy);
+      Context.exit();
+    }
+
+
+  }
+
+  public void calculateChanges(MapProxy<String, Object> nextStore, ContextDirectMapProxy<String, Object> currentStore,
+                               BEvent event, ContextProxy proxy, Context cx, ContextBProgramProxyForEffects cbpProxy) {
+    executeEffect(nextStore, proxy.effectFunctions.get("CTX.Effect: " + event.name), event.maybeData, cx);
     Map<String, MapProxy.Modification<Object>> updates = nextStore.getModifications();
     HashSet<ContextChange> changes = new HashSet<>();
     currentStore.put("CTX.Changes", changes);
     if (updates.isEmpty() || updates.keySet().stream().noneMatch(k -> k.startsWith("CTX.Entity: "))) {
       return;
     }
-
     //region Entities
-    Map<String, Set<NativeObject>> currentQueriesEntities = getQueriesEntities(currentStore, proxy);
-    Map<String, Set<NativeObject>> nextQueriesEntities = getQueriesEntities(nextStore, proxy);
+    cbpProxy.setStore(currentStore);
+    Map<String, Set<NativeObject>> currentQueriesEntities = getQueriesEntities(currentStore, proxy, cx);
+    cbpProxy.setStore(nextStore);
+    Map<String, Set<NativeObject>> nextQueriesEntities = getQueriesEntities(nextStore, proxy, cx);
 
     Map<String, Set<NativeObject>> newQueriesEntities = subtractCurrentEntitiesMaps(nextQueriesEntities, currentQueriesEntities);
     Map<String, Set<NativeObject>> removedQueriesEntities = subtractCurrentEntitiesMaps(currentQueriesEntities, nextQueriesEntities);
@@ -58,7 +70,7 @@ public class ContextChangesCalculator {
         .forEach(e -> store.put(e.getKey(), ((MapProxy.PutValue<Object>) e.getValue()).getValue()));
     updates.entrySet().stream()
         .filter(e -> e.getValue() == MapProxy.Modification.DELETE)
-        .forEach(e->store.remove(e.getKey()));
+        .forEach(e -> store.remove(e.getKey()));
   }
 
   private static Map<String, Set<NativeObject>> subtractCurrentEntitiesMaps(Map<String, Set<NativeObject>> queriesEntities1, Map<String, Set<NativeObject>> queriesEntities2) {
@@ -74,29 +86,20 @@ public class ContextChangesCalculator {
     return newQueriesEntities;
   }
 
-  private static Map<String, Set<NativeObject>> getQueriesEntities(MapProxy<String, Object> store, ContextProxy proxy) {
+  private static Map<String, Set<NativeObject>> getQueriesEntities(MapProxy<String, Object> store, ContextProxy proxy, Context cx) {
     Map<String, Set<NativeObject>> queriesEntities = proxy.queries.entrySet().stream()
         .collect(Collectors.toMap(
             Map.Entry::getKey,
             entry -> store.filter(
                 (key, value) -> key.startsWith("CTX.Entity: ") &&
-                    runQuery(value, entry.getValue(), store)
+                    runQuery(value, entry.getValue(), cx)
             ).values().stream().map(v -> (NativeObject) v).collect(Collectors.toSet())));
     return queriesEntities;
   }
 
-  private static boolean runQuery(Object value, BaseFunction func, MapProxy<String, Object> store) {
+  private static boolean runQuery(Object value, BaseFunction func, Context cx) {
     var funcScope = func.getParentScope();
-    var bp = (BProgramJsProxy)funcScope.get("bp", funcScope);
-    ContextBProgramProxyForEffects proxy = new ContextBProgramProxyForEffects(store, bp);
-    Context cx = BPjs.enterRhinoContext();
-    try {
-      funcScope.put("bp", funcScope, Context.javaToJS(proxy, funcScope));
-      return (boolean) func.call(cx, funcScope, funcScope, new Object[]{value});
-    } finally {
-      funcScope.put("bp", funcScope, bp);
-      Context.exit();
-    }
+    return (boolean) func.call(cx, funcScope, funcScope, new Object[]{value});
   }
 
   public static class ContextChange implements Serializable {

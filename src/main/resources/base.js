@@ -163,7 +163,7 @@ function sync(stmt, syncData) {
   while (true) {
     let ret = syncData ? bp.sync(stmt, syncData) : bp.sync(stmt);
     if (ContextChanged.contains(ret)) {
-      ctx_proxy.waitForEffect(bp.store, ret)
+      ctx_proxy.waitForEffect(bp.store, ret, this)
       let changes = bp.store.get('CTX.Changes')
       let query = bp.thread.data.query
       let id = bp.thread.data.seed

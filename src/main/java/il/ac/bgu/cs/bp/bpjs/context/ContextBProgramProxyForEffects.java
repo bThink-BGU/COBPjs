@@ -16,7 +16,7 @@ import java.util.Objects;
 
 public class ContextBProgramProxyForEffects {
   private static final IllegalAccessError error = new IllegalAccessError("Cannot call this function within an effect or query function");
-  public final MapProxy mapProxy;
+  public MapProxy mapProxy;
   private final BProgramJsProxy bpjsProxy;
   public final BpLog log;
   public final EventSetsJsProxy eventSets;
@@ -72,6 +72,10 @@ public class ContextBProgramProxyForEffects {
 
   public MapProxy getStore() {
     return mapProxy;
+  }
+
+  void setStore(MapProxy<String, Object> store) {
+    this.mapProxy = store;
   }
 
   public void sync(NativeObject jsRWB) {
