@@ -40,24 +40,26 @@ function isJSSet(o) {
  * @returns nothing
  */
 function bthread(name, data, fn) {
+  function initField(data, fieldName) {
+    if (!data[fieldName]) {
+      data[fieldName] = [];
+    }else if(!Array.isArray(data[fieldName])) {
+      data[fieldName] = [data[fieldName]]
+    }
+  }
+
   if (!fn) {
     // data is missing, we were invoked with 2 args
     fn = data;
     data = {};
 
   }
-  if (!data.request) {
-    data.request = [];
-  }
-  if (!data.waitFor) {
-    data.waitFor = [];
-  }
-  if (!data.block) {
-    data.block = [];
-  }
-  if (!data.interrupt) {
-    data.interrupt = [];
-  }
+
+  initField(data,'request')
+  initField(data,'waitFor')
+  initField(data,'block')
+  initField(data,'interrupt')
+
   bp.registerBThread(name, data, fn);
 }
 
@@ -161,7 +163,9 @@ function sync(stmt, syncData) {
   appendToPart(stmt, 'request');
 
   while (true) {
+    stmt.waitFor.push(ContextChanged)
     let ret = syncData ? bp.sync(stmt, syncData) : bp.sync(stmt);
+    stmt.waitFor.pop()
     if (ContextChanged.contains(ret)) {
       ctx_proxy.waitForEffect(bp.store, ret, this)
       let changes = bp.store.get('CTX.Changes')
