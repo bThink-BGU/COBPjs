@@ -23,7 +23,7 @@ public class ContextChangesCalculator {
     func.call(cx, func, func, new Object[]{data});
   }
 
-  public void calculateChanges(MapProxy<String, Object> nextStore, ContextProxy proxy, BEvent event, Scriptable globalScope) {
+  public HashSet<ContextChange> calculateChanges(MapProxy<String, Object> nextStore, ContextProxy proxy, BEvent event, Scriptable globalScope) {
     var currentStore = new ContextDirectMapProxy<>(nextStore);
     var bpJsProxy = globalScope.get("bp", globalScope);
     var bpJProxy = (BProgramJsProxy) Context.jsToJava(bpJsProxy, BProgramJsProxy.class);
@@ -31,23 +31,20 @@ public class ContextChangesCalculator {
     Context cx = BPjs.enterRhinoContext();
     try {
       globalScope.put("bp", globalScope, Context.javaToJS(bpProxy, globalScope));
-      calculateChanges(nextStore, currentStore, event, proxy, cx, bpProxy);
+      return calculateChanges(nextStore, currentStore, event, proxy, cx, bpProxy);
     } finally {
       globalScope.put("bp", globalScope, bpJsProxy);
       Context.exit();
     }
-
-
   }
 
-  public void calculateChanges(MapProxy<String, Object> nextStore, ContextDirectMapProxy<String, Object> currentStore,
+  public HashSet<ContextChange> calculateChanges(MapProxy<String, Object> nextStore, ContextDirectMapProxy<String, Object> currentStore,
                                BEvent event, ContextProxy proxy, Context cx, ContextBProgramProxyForEffects cbpProxy) {
     executeEffect(nextStore, proxy.effectFunctions.get("CTX.Effect: " + event.name), event.maybeData, cx);
     Map<String, MapProxy.Modification<Object>> updates = nextStore.getModifications();
     HashSet<ContextChange> changes = new HashSet<>();
-    currentStore.put("CTX.Changes", changes);
     if (updates.isEmpty() || updates.keySet().stream().noneMatch(k -> k.startsWith("CTX.Entity: "))) {
-      return;
+      return changes;
     }
     //region Entities
     cbpProxy.setStore(currentStore);
@@ -62,6 +59,7 @@ public class ContextChangesCalculator {
     changes.addAll(removedQueriesEntities.entrySet().stream().flatMap(entry -> entry.getValue().stream().map(entity -> new ContextChange(entry.getKey(), "end", (String) entity.get("id")))).collect(Collectors.toList()));
 
     consolidate(updates, currentStore);
+    return changes;
   }
 
   private void consolidate(Map<String, MapProxy.Modification<Object>> updates, ContextDirectMapProxy<String, Object> store) {

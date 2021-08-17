@@ -165,7 +165,7 @@ const ctx = {
         while (true) {
           sync({waitFor: ContextChanged})
           // bp.log.info("changesA {0}: {1}", context, bp.store.get("CTX.Changes"))
-          let changes = bp.store.get("CTX.Changes").parallelStream()
+          let changes = ctx_proxy.getChanges().parallelStream()
             .filter(function (change) {
               return change.type.equals("new") && change.query.equals(context)
             }).toArray();

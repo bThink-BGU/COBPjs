@@ -10,6 +10,7 @@ import org.mozilla.javascript.*;
 
 import java.io.Serializable;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
@@ -26,10 +27,16 @@ public class ContextProxy implements Serializable {
   private static final ScriptableObjectCloner cloner = new ScriptableObjectCloner();
   private static final ContextChangesCalculator ccc = new ContextChangesCalculator();
   private boolean effectFinished = false;
+  private transient HashSet<ContextChangesCalculator.ContextChange> changes;
 
   @SuppressWarnings("unused")
   public void rethrowException(Throwable t) throws Throwable {
     throw t;
+  }
+
+  public synchronized HashSet<ContextChangesCalculator.ContextChange> getChanges() {
+    if(changes == null) changes = new HashSet<>();
+    return changes;
   }
 
   public boolean isEndOfContextException(Throwable t) {
@@ -38,7 +45,7 @@ public class ContextProxy implements Serializable {
 
   public synchronized void waitForEffect(MapProxy<String, Object> mapProxy, BEvent event, Scriptable globalScope) {
     if(!effectFinished) {
-      ccc.calculateChanges(mapProxy,this, event, globalScope);
+      this.changes = ccc.calculateChanges(mapProxy,this, event, globalScope);
       effectFinished = true;
     }
   }

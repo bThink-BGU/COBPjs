@@ -58,11 +58,11 @@ bthread('Simulate vacuum', function () {
   }
 })
 
-bthread('assert',function (){
+bthread('assert', function () {
   let myBP = bp
   while (true) {
     myBP.sync({waitFor: myBP.Event('time 21:00')})
     let name = myBP.sync({waitFor: [myBP.Event('time 08:00'), myBP.Event('vacuum')]}).name.equals('time 08:00')
-    myBP.ASSERT(name,"vacuum at night")
+    myBP.ASSERT(name, "vacuum at night")
   }
 })
