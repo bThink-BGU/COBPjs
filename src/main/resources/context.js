@@ -46,10 +46,10 @@ const ctx = {
         throw new Error("Key " + entity.id + " already exists")
       }
       // bp.log.info("e to clone {0}", entity)
-      let clone = ctx_proxy.clone(entity)
+      // let clone = ctx_proxy.clone(entity)
       // Object.freeze(clone)
-      bp.store.put(key, clone)
-      return clone
+      bp.store.put(key, entity)
+      return entity
     },
     testIsEffect(caller, expected) {
       if (expected && isInBThread())
@@ -78,10 +78,10 @@ const ctx = {
     if (!bp.store.has(key)) {
       throw new Error("Key " + entity.id + " does not exist")
     }
-    let clone = ctx_proxy.clone(entity)
+    // let clone = ctx_proxy.clone(entity)
     // Object.freeze(clone)
-    bp.store.put(key, clone)
-    return clone
+    bp.store.put(key, entity)
+    return entity
   },
   removeEntity: function (entity_or_id) {
     this.__internal_fields.testIsEffect('removeEntity', true)
@@ -98,7 +98,13 @@ const ctx = {
     if (!bp.store.has(key)) {
       throw new Error("Key " + key + " does not exist")
     }
-    return ctx_proxy.clone(bp.store.get(key)) //clone (serialization/deserialization) removes freezing
+    if (!isInBThread()) {
+      this.__internal_fields.testIsEffect('getEntityById', true)
+      return ctx_proxy.clone(bp.store.get(key)) //clone (serialization/deserialization) removes freezing
+    } else {
+      this.__internal_fields.testIsEffect('getEntityById', false)
+      return bp.store.get(key)
+    }
     //throw new Error("Entity with id '" + id + "' does not exist")
   },
   runQuery: function (queryName_or_function) {
@@ -115,7 +121,7 @@ const ctx = {
       return key.startsWith(String("CTX.Entity: ")) && func(val)
     }).values().toArray()
     for (let i = 0; i < filtered.length; i++)
-      ans.push(ctx_proxy.clone(filtered[i]))
+      ans.push(filtered[i])
     return ans
   },
   registerQuery: function (name, query) {
