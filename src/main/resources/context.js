@@ -116,13 +116,12 @@ const ctx = {
     } else {
       func = queryName_or_function
     }
-    let ans = []
-    let filtered = bp.store.filter(function (key, val) {
-      return key.startsWith(String("CTX.Entity: ")) && func(val)
-    }).values().toArray()
-    for (let i = 0; i < filtered.length; i++)
-      ans.push(filtered[i])
-    return ans
+    let store = []
+    let storeValues = bp.store.values()
+    for (let i = 0; i < storeValues.length; i++) {
+      store.push(storeValues[i])
+    }
+    return store.filter(val => val.id && val.id.startsWith(String("CTX. Entity:")) && func(val))
   },
   registerQuery: function (name, query) {
     testInBThread('registerQuery', false)
