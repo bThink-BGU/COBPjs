@@ -33,8 +33,8 @@ const ctx = {
         let val = source[property]
         if (source[property] instanceof org.mozilla.javascript.ConsString) {
           val = String(val)
-        } else if (Array.isArray(source[property])) {
-          bp.log.warn("Property {0} is an array. If the order of the array's elements is not important, you should use java.util.HashSet. Entity is {1}.", property, source)
+        } else if (Array.isArray(source[property]) && !bp.store.has("CTX.DisableWarning." + "propertyIsArray")) {
+          bp.log.warn("Property ''{0}'' is an array. If the order of the array's elements is not important, you should use java.util.HashSet. Entity is {1}.", property, source)
         }
         target[property] = val
       }
@@ -57,6 +57,9 @@ const ctx = {
       if (!expected && !isInBThread())
         throw new Error(String("The function " + caller + " must no be called by an effect function"))
     }
+  },
+  disableWarning: function (kind) {
+    bp.store.put("CTX.DisableWarning." + kind, null)
   },
   Entity: function (id, type, data) {
     let entity = {id: String(id), type: String(type)}
