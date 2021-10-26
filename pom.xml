@@ -6,7 +6,7 @@
 
 	<groupId>com.github.bthink-bgu</groupId>
 	<artifactId>BPjs-Context</artifactId>
-	<version>0.4.4</version>
+	<version>0.5.0</version>
 	<packaging>jar</packaging>
 
 	<properties>
@@ -32,7 +32,7 @@
 		<dependency>
 			<groupId>com.github.bthink-bgu</groupId>
 			<artifactId>BPjs</artifactId>
-			<version>0.12.1-modified-quals</version>
+			<version>0.12.1-modified-0.2</version>
 		</dependency>
 	</dependencies>
 

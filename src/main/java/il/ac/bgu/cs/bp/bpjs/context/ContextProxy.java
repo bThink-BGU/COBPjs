@@ -20,8 +20,6 @@ import static java.util.stream.Collectors.toSet;
 
 public class ContextProxy implements Serializable {
   private static final long serialVersionUID = -7832072043618491085L;
-  public static List<String> CtxEvents =
-      List.of("CTX.Changed", "_____CTX_LOCK_____", "_____CTX_RELEASE_____", "Context population completed");
   public final Map<String, BaseFunction> queries = new HashMap<>();
   public final Map<String, BaseFunction> effectFunctions = new HashMap<>();
   private static final ScriptableObjectCloner cloner = new ScriptableObjectCloner();

@@ -30,7 +30,7 @@ Also add COBPjs dependency. Note that the version number changes....
     <dependency>
         <groupId>com.github.bThink-BGU</groupId>
         <artifactId>BPjs-Context</artifactId>
-        <version>0.4.4</version>
+        <version>0.5.0</version>
     </dependency>
 </dependencies>
 ````
@@ -49,12 +49,7 @@ Running a COBP program is similar to the execution of a BP program:
 ```java
 BProgram bprog = new ContextBProgram("dal.js", "bl.js"); //you can change the files names...
 BProgramRunner rnr = new BProgramRunner(bprog);
-rnr.addListener(new PrintCOBProgramRunnerListener(Level.CtxChanged, new PrintBProgramRunnerListener()));
 ```
-In BP, we usually use the ```PrintBProgramRunnerListener``` for printing to the screen the selected events and the log messages. Since COBP has many internal events that are in charge of holding the execution semantics, you will might want to filter these events, at least some of them. The ```PrintCOBProgramRunnerListener``` will help you do that. The [Level](https://github.com/bThink-BGU/BPjs-Context/blob/6137d5d5ccbcf569921c73a283162396c1b1aeb4/src/main/java/il/ac/bgu/cs/bp/bpjs/context/PrintCOBProgramRunnerListener.java#L82) can be:
-* Level.ALL : prints all context events
-* Level.NONE : does not print context events
-* Level.CtxChanged: prints only CTX.Changed events (i.e., filter the transaction lock/release events)
 
 There is a full example for a main file - [here](https://github.com/bThink-BGU/BPjs-Context/blob/master/src/test/java/il/ac/bgu/cs/bp/bpjs/context/Main.java).
 

@@ -18,10 +18,6 @@ function deepFreeze(object) {
   return Object.freeze(object);
 }
 
-const CtxInternalEvents = bp.EventSet("Ctx.InternalEvents", function (e) {
-  return ctx_proxy.CtxEvents.contains(String(e.name))
-})
-
 const ContextChanged = bp.EventSet("CTX.ContextChanged", function (e) {
   return ctx_proxy.effectFunctions.containsKey(String("CTX.Effect: " + e.name))
 })
@@ -116,12 +112,14 @@ const ctx = {
     } else {
       func = queryName_or_function
     }
-    let store = []
-    let storeValues = bp.store.values()
-    for (let i = 0; i < storeValues.length; i++) {
-      store.push(storeValues[i])
+    let ans = []
+    let storeEntries = bp.store.entrySet().toArray()
+    for (let i = 0; i < storeEntries.length; i++) {
+      let entry = storeEntries[i]
+      if(entry.getKey().startsWith(String("CTX.Entity:")) && func(entry.getValue()))
+        ans.push(entry.getValue())
     }
-    return store.filter(val => val.id && val.id.startsWith(String("CTX. Entity:")) && func(val))
+    return ans
   },
   registerQuery: function (name, query) {
     testInBThread('registerQuery', false)
@@ -201,9 +199,9 @@ const ctx = {
   }
 }
 
-bthread('Context population', function () {
+/*bthread('Context population', function () {
   sync({request: bp.Event('Context population completed')})
-})
+})*/
 
 /*bthread("assert no continuation before CTX.Update", function() {
   while (true) {

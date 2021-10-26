@@ -22,8 +22,8 @@ public class ContextBProgram extends ResourceBProgram {
   public ContextBProgram(Collection<String> someResourceNames, String aName) {
     super(append(someResourceNames), aName, null);
     var proxy = new ContextProxy();
-    var ess = new CtxEventSelectionStrategy(proxy);
-    super.setEventSelectionStrategy(ess);
+//    var ess = new CtxEventSelectionStrategy(proxy);
+//    super.setEventSelectionStrategy(ess);
     super.setStorageModificationStrategy(new CtxStorageModificationStrategy(proxy));
     putInGlobalScope("ctx_proxy", proxy);
     super.initialStore.put("CTX.Changes", new HashSet<ContextChangesCalculator.ContextChange>());
@@ -37,11 +37,11 @@ public class ContextBProgram extends ResourceBProgram {
     }};
   }
 
-  @Override
+/*  @Override
   public <T extends EventSelectionStrategy> T setEventSelectionStrategy(T anEventSelectionStrategy) {
     ((CtxEventSelectionStrategy)getEventSelectionStrategy()).setEventSelectionStrategy(anEventSelectionStrategy);
     return anEventSelectionStrategy;
-  }
+  }*/
 
   @Override
   public void setStorageModificationStrategy(StorageModificationStrategy storageModificationStrategy) {

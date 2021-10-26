@@ -1,21 +1,21 @@
 /* global bp, Packages, EventSets */ // <-- Turn off warnings
-importPackage(Packages.il.ac.bgu.cs.bp.bpjs.model.eventsets);
+importPackage(Packages.il.ac.bgu.cs.bp.bpjs.model.eventsets)
 
 function deepFreeze(object) {
   // Retrieve the property names defined on object
-  const propNames = Object.getOwnPropertyNames(object);
+  const propNames = Object.getOwnPropertyNames(object)
 
   // Freeze properties before freezing self
 
   for (let name of propNames) {
-    const value = object[name];
+    const value = object[name]
 
-    if (value && typeof value === "object") {
-      deepFreeze(value);
+    if (value && typeof value === 'object') {
+      deepFreeze(value)
     }
   }
 
-  return Object.freeze(object);
+  return Object.freeze(object)
 }
 
 /**
@@ -25,10 +25,10 @@ function deepFreeze(object) {
  */
 function isJSSet(o) {
   try {
-    Set.prototype.has.call(o); // throws if o is not an object or has no [[SetData]]
-    return true;
+    Set.prototype.has.call(o) // throws if o is not an object or has no [[SetData]]
+    return true
   } catch (e) {
-    return false;
+    return false
   }
 }
 
@@ -42,25 +42,25 @@ function isJSSet(o) {
 function bthread(name, data, fn) {
   function initField(data, fieldName) {
     if (!data[fieldName]) {
-      data[fieldName] = [];
-    }else if(!Array.isArray(data[fieldName])) {
+      data[fieldName] = []
+    } else if (!Array.isArray(data[fieldName])) {
       data[fieldName] = [data[fieldName]]
     }
   }
 
   if (!fn) {
     // data is missing, we were invoked with 2 args
-    fn = data;
-    data = {};
+    fn = data
+    data = {}
 
   }
 
-  initField(data,'request')
-  initField(data,'waitFor')
-  initField(data,'block')
-  initField(data,'interrupt')
+  initField(data, 'request')
+  initField(data, 'waitFor')
+  initField(data, 'block')
+  initField(data, 'interrupt')
 
-  bp.registerBThread(name, data, fn);
+  bp.registerBThread(name, data, fn)
 }
 
 /**
@@ -72,9 +72,9 @@ function bthread(name, data, fn) {
  * @returns nothing
  */
 function request(evt, fn) {
-  bp.thread.data.request.unshift(evt);
-  fn();
-  bp.thread.data.request.shift();
+  bp.thread.data.request.unshift(evt)
+  fn()
+  bp.thread.data.request.shift()
 }
 
 /**
@@ -87,11 +87,11 @@ function request(evt, fn) {
  */
 function waitFor(es, fn) {
   if (Array.isArray(es)) {
-    es = EventSets.anyOf(es);
+    es = EventSets.anyOf(es)
   }
-  bp.thread.data.waitFor.push(es);
-  fn();
-  bp.thread.data.waitFor.pop();
+  bp.thread.data.waitFor.push(es)
+  fn()
+  bp.thread.data.waitFor.pop()
 }
 
 /**
@@ -104,11 +104,11 @@ function waitFor(es, fn) {
  */
 function block(es, fn) {
   if (Array.isArray(es)) {
-    es = EventSets.anyOf(es);
+    es = EventSets.anyOf(es)
   }
-  bp.thread.data.block.push(es);
-  fn();
-  bp.thread.data.block.pop();
+  bp.thread.data.block.push(es)
+  fn()
+  bp.thread.data.block.pop()
 }
 
 /**
@@ -121,11 +121,11 @@ function block(es, fn) {
  */
 function interrupt(es, fn) {
   if (Array.isArray(es)) {
-    es = EventSets.anyOf(es);
+    es = EventSets.anyOf(es)
   }
-  bp.thread.data.interrupt.push(es);
-  fn();
-  bp.thread.data.interrupt.pop();
+  bp.thread.data.interrupt.push(es)
+  fn()
+  bp.thread.data.interrupt.pop()
 }
 
 /**
@@ -143,43 +143,42 @@ function interrupt(es, fn) {
 function sync(stmt, syncData) {
   function appendToPart(stmt, field) {
     if (Array.isArray(stmt[field])) {
-      stmt[field] = stmt[field].concat(bp.thread.data[field]);
+      stmt[field] = stmt[field].concat(bp.thread.data[field])
     } else {
       if (stmt[field]) {
-        stmt[field] = [stmt[field]].concat(bp.thread.data[field]);
+        stmt[field] = [stmt[field]].concat(bp.thread.data[field])
       } else {
-        stmt[field] = bp.thread.data[field];
+        stmt[field] = bp.thread.data[field]
       }
     }
   }
 
   if (!stmt) {
-    stmt = {};
+    stmt = {}
   }
 
-  appendToPart(stmt, 'waitFor');
-  appendToPart(stmt, 'block');
-  appendToPart(stmt, 'interrupt');
-  appendToPart(stmt, 'request');
+  appendToPart(stmt, 'waitFor')
+  appendToPart(stmt, 'block')
+  appendToPart(stmt, 'interrupt')
+  appendToPart(stmt, 'request')
 
   while (true) {
     stmt.waitFor.push(ContextChanged)
-    let ret = syncData ? bp.sync(stmt, syncData) : bp.sync(stmt);
+    let ret = syncData ? bp.sync(stmt, syncData) : bp.sync(stmt)
     stmt.waitFor.pop()
     if (ContextChanged.contains(ret)) {
       ctx_proxy.waitForEffect(bp.store, ret, this)
-      let changes = ctx_proxy.getChanges()
+      let changes = ctx_proxy.getChanges().toArray()
       let query = bp.thread.data.query
       let id = bp.thread.data.seed
-      if (query &&
-        changes.parallelStream().filter(function (change) {
-          // bp.log.info("filtering {0}, name: {1}, id: {2}, query: {3}, result: {4}", change, bp.thread.name, id, query, change.type.equals('end') && change.query.equals(query) && change.entityId.equals(id))
-          return change.type.equals('end') && change.query.equals(query) && change.entityId.equals(id)
-        }).count() > 0) {
-        // bp.log.info("bp keys: {0}", bp.store.keys())
-        ctx_proxy.throwEndOfContext()
+      if (query) {
+        for (let i = 0; i < changes.length; i++) {
+          if(changes[i].type.equals('end') && changes[i].query.equals(query) && changes[i].entityId.equals(id)) {
+            ctx_proxy.throwEndOfContext()
+          }
+        }
       }
-      if(ctx_proxy.shouldWake(stmt, ret)) {
+      if (ctx_proxy.shouldWake(stmt, ret)) {
         return ret
       }
     } else {
@@ -211,13 +210,13 @@ function isInBThread() {
  */
 function testInBThread(caller, expectInBThread) {
   if (expectInBThread && !isInBThread())
-    throw new Error(String("The function " + caller + " must be called by a b-thread"))
+    throw new Error(String('The function ' + caller + ' must be called by a b-thread'))
   if (!expectInBThread && isInBThread())
-    throw new Error(String("The function " + caller + " must be called from the global scope"))
+    throw new Error(String('The function ' + caller + ' must be called from the global scope'))
 }
 
 function Any(type) {
-  return bp.EventSet("Any(" + type + ")", function (e) {
+  return bp.EventSet('Any(' + type + ')', function (e) {
     return String(e.name) == String(type)
   })
 }

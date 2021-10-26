@@ -12,8 +12,6 @@ import java.util.Arrays;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-import static il.ac.bgu.cs.bp.bpjs.context.PrintCOBProgramRunnerListener.Level;
-
 public class Main {
   /**
    * Choose the desired COBP program...
@@ -23,16 +21,6 @@ public class Main {
 //      Example.SampleProgram;
 //      Example.TicTacToe;
 
-  /**
-   * internal context events are: "CTX.Changed", "_____CTX_LOCK_____", "_____CTX_RELEASE_____"
-   * You can filter these event from printing on console using the Level:
-   * Level.ALL : print all
-   * Level.NONE : print none
-   * Level.CtxChanged: print only CTX.Changed events (i.e., filter the transaction lock/release events)
-   */
-  private static final Level logLevel = Level.ALL;
-
-
   public static void main(final String[] args) throws URISyntaxException {
     var files =
         Arrays.stream(Objects.requireNonNull(Path.of(Objects.requireNonNull(Thread.currentThread().getContextClassLoader().getResource(example.name())).toURI()).toFile().listFiles()))
@@ -40,7 +28,7 @@ public class Main {
             .collect(Collectors.toList());
     BProgram bprog = new ContextBProgram(files);
     final BProgramRunner rnr = new BProgramRunner(bprog);
-    rnr.addListener(new PrintCOBProgramRunnerListener(logLevel, new PrintBProgramRunnerListener()));
+    rnr.addListener(new PrintBProgramRunnerListener());
 
     if (example == Example.TicTacToe) {
       boolean useUI = true;
