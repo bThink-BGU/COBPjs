@@ -33,6 +33,7 @@ public class Main {
     if (example == Example.TicTacToe) {
       boolean useUI = true;
       TicTacToeGameMain.main(bprog, rnr, useUI);
+
       return;
     } if (example == Example.HotCold) {
       rnr.addListener(new HotColdActuator());

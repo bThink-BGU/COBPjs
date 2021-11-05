@@ -21,7 +21,7 @@ const forks = [
   },
   {
     name: 'diag',
-    x: [[{ i: 0, j: 2 }, { i: 2, j: 0 }]],
+    x: [[{ i: 0, j: 2 }, { i: 2, j: 0 }],[{ i: 0, j: 0 }, { i: 2, j: 2 }]],
     block: [{ i: 0, j: 1 }, { i: 1, j: 0 }, { i: 2, j: 1 }, { i: 1, j: 2 }]
   }
 ]
@@ -46,6 +46,6 @@ entities.push(ctx.Entity('line_diag_1', 'line', { c1: { i: 2, j: 0 }, c2: { i: 1
 
 forks.forEach(function (f) {
   for (let i = 0; i < f.x.length; i++)
-    entities.push(ctx.Entity(f.name + '_' + i, 'fork', { x: f.x[i], block: f.block[i] }))
+    entities.push(ctx.Entity(f.name + '_' + i, 'fork', { x: f.x[i], block: f.block }))
 })
 ctx.populateContext(entities)
