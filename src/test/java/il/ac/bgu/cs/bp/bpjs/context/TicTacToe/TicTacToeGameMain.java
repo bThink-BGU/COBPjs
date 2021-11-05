@@ -17,13 +17,13 @@ public class TicTacToeGameMain extends JFrame {
   public static TTTDisplayGame TTTdisplayGame;
 
   public static void main(BProgram bprog, BProgramRunner rnr, boolean useUI) {
+    bprog.setEventSelectionStrategy(new PrioritizedBSyncEventSelectionStrategy());
     if (useUI) {
-      bprog.setEventSelectionStrategy(new PrioritizedBSyncEventSelectionStrategy());
       bprog.setWaitForExternalEvents(true);
       JFrame f = new TicTacToeGameMain();
       TTTdisplayGame = new TTTDisplayGame(bprog, rnr);
     } else {
-      bprog.appendSource("bthread(\"simulate x\", \"Cell.All\", function (cell) {\n" +
+      bprog.appendSource("ctx.bthread(\"simulate x\", \"Cell.All\", function (cell) {\n" +
           "  sync({request: Event(\"X\", cell)})\n" +
           "})");
     }

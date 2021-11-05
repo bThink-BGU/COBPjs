@@ -31,7 +31,7 @@ public class Main {
     rnr.addListener(new PrintBProgramRunnerListener());
 
     if (example == Example.TicTacToe) {
-      boolean useUI = true;
+      boolean useUI = false;
       TicTacToeGameMain.main(bprog, rnr, useUI);
 
       return;
@@ -41,7 +41,7 @@ public class Main {
     rnr.run();
   }
 
-  enum Example {
+  public enum Example {
     Chess, TicTacToe, HotCold, SampleProgram
   }
 }
