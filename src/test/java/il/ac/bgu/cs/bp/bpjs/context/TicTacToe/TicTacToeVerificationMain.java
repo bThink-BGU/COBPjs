@@ -1,9 +1,6 @@
 package il.ac.bgu.cs.bp.bpjs.context.TicTacToe;
 
-import il.ac.bgu.cs.bp.bpjs.analysis.BThreadSnapshotVisitedStateStore;
-import il.ac.bgu.cs.bp.bpjs.analysis.DfsBProgramVerifier;
-import il.ac.bgu.cs.bp.bpjs.analysis.ExecutionTraceInspections;
-import il.ac.bgu.cs.bp.bpjs.analysis.VerificationResult;
+import il.ac.bgu.cs.bp.bpjs.analysis.*;
 import il.ac.bgu.cs.bp.bpjs.analysis.listeners.PrintDfsVerifierListener;
 import il.ac.bgu.cs.bp.bpjs.context.ContextBProgram;
 import il.ac.bgu.cs.bp.bpjs.context.Main;
@@ -16,15 +13,7 @@ import java.util.Arrays;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
-/**
- * Verification of the TicTacToe strategy.
- *
- * @author reututy
- */
 public class TicTacToeVerificationMain {
-  /**
-   * Choose the desired COBP program...
-   */
   private static final Main.Example example = Main.Example.TicTacToe;
 
   public static void main(String[] args) throws URISyntaxException {
@@ -43,22 +32,15 @@ public class TicTacToeVerificationMain {
         "  sync({request: Event(\"X\", cell)})\n" +
         "})";
 
-    // This bthread models the requirement that X never wins.
-    String xCantWinRequirementBThread = "bp.registerBThread( \"req:NoXWin\", function(){\n" +
-        "	bp.sync({waitFor:bp.Event('XWin')});\n" +
-        "	bp.ASSERT(false, \"Found a trace where X wins.\");\n" +
-        "});";
 
     bprog.appendSource(simulatedPlayer);
-    bprog.appendSource(xCantWinRequirementBThread);
-//		bprog.appendSource(infiBThread);
     try {
       DfsBProgramVerifier vfr = new DfsBProgramVerifier();
       vfr.addInspection(ExecutionTraceInspections.FAILED_ASSERTIONS);
 
       vfr.setMaxTraceLength(70);
 //            vfr.setDebugMode(true);
-      vfr.setVisitedStateStore(new BThreadSnapshotVisitedStateStore());
+      vfr.setVisitedStateStore(new BProgramSnapshotVisitedStateStore());
       vfr.setProgressListener(new PrintDfsVerifierListener());
 
       final VerificationResult res = vfr.verify(bprog);
