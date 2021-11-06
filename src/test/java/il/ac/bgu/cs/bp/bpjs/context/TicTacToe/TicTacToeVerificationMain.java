@@ -8,7 +8,6 @@ import il.ac.bgu.cs.bp.bpjs.analysis.listeners.PrintDfsVerifierListener;
 import il.ac.bgu.cs.bp.bpjs.context.ContextBProgram;
 import il.ac.bgu.cs.bp.bpjs.context.Main;
 import il.ac.bgu.cs.bp.bpjs.model.BProgram;
-import il.ac.bgu.cs.bp.bpjs.model.ResourceBProgram;
 import il.ac.bgu.cs.bp.bpjs.model.eventselection.PrioritizedBSyncEventSelectionStrategy;
 
 import java.net.URISyntaxException;
@@ -28,7 +27,7 @@ public class TicTacToeVerificationMain {
    */
   private static final Main.Example example = Main.Example.TicTacToe;
 
-  public static void main(String[] args) throws InterruptedException, URISyntaxException {
+  public static void main(String[] args) throws URISyntaxException {
 
     // Create a program
     var files =
