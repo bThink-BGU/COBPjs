@@ -102,15 +102,9 @@ ctx.bthread('PreventThirdX', 'Line.All', function (l) {
 
 //3) Fork: Create an opportunity where the player has two ways to win (two non-blocked lines of 2).
 ctx.bthread('create fork', 'Fork.All', function (f) {
-  let e1 = Event('O', getCell(f.x[0].i, f.x[0].j))
-  let e2 = Event('O', getCell(f.x[1].i, f.x[1].j))
-  let O = []
-  for (let i = 0; i < f.block.length; i++)
-    O.push(Event('O', getCell(f.block[i].i, f.block[i].j)))
-
-  sync({ waitFor: [e1, e2] })
-  sync({ waitFor: [e1, e2] })
-  sync({ request: O }, 40)
+  sync({ waitFor: [Event('O', f.cells[0]), Event('O', f.cells[1])] })
+  sync({ waitFor: [Event('O', f.cells[0]), Event('O', f.cells[1])] })
+  sync({ request: Event('O', f.cells[2]) }, 40)
 })
 
 
@@ -121,15 +115,9 @@ Otherwise, the player should create a two in a row to force the opponent into de
 For example, if "X" has two opposite corners and "O" has the center, "O" must not play a corner move in order to win.
 (Playing a corner move in this scenario creates a fork for "X" to win.)*/
 ctx.bthread('block fork', 'Fork.All', function (f) {
-  let e1 = Event('X', getCell(f.x[0].i, f.x[0].j))
-  let e2 = Event('X', getCell(f.x[1].i, f.x[1].j))
-  let O = []
-  for (let i = 0; i < f.block.length; i++)
-    O.push(Event('O', getCell(f.block[i].i, f.block[i].j)))
-  // bp.log.info('{0}-{1}-{2}', e1, e2, O)
-  sync({ waitFor: [e1, e2] })
-  sync({ waitFor: [e1, e2] })
-  sync({ request: O }, 35)
+  sync({ waitFor: [Event('X', f.cells[0]), Event('X', f.cells[1])] })
+  sync({ waitFor: [Event('X', f.cells[0]), Event('X', f.cells[1])] })
+  sync({ request: Event('O', f.cells[2]) }, 35)
 })
 
 /*5) Center: A player marks the center.
