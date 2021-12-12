@@ -31,7 +31,7 @@ public class Main {
     rnr.addListener(new PrintBProgramRunnerListener());
 
     if (example == Example.TicTacToe) {
-      boolean useUI = false;
+      boolean useUI = true;
       TicTacToeGameMain.main(bprog, rnr, useUI);
 
       return;

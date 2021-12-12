@@ -35,14 +35,14 @@ ctx.registerQuery('Fork.All', entity => entity.type.equals('fork'))
 
 let entities = []
 for (let i = 0; i < 3; i++) {
-  entities.push(ctx.Entity('line_row_' + i, 'line', { c1: { i: i, j: 0 }, c2: { i: i, j: 1 }, c3: { i: i, j: 2 } }))
-  entities.push(ctx.Entity('line_col_' + i, 'line', { c1: { i: 0, j: i }, c2: { i: 1, j: i }, c3: { i: 2, j: i } }))
+  entities.push(ctx.Entity('line_row_' + i, 'line', { cells: [{ i: i, j: 0 }, { i: i, j: 1 }, { i: i, j: 2 }] }))
+  entities.push(ctx.Entity('line_col_' + i, 'line', { cells: [{ i: 0, j: i }, { i: 1, j: i }, { i: 2, j: i }] }))
   for (let j = 0; j < 3; j++) {
-    entities.push(ctx.Entity('cell(' + i + ',' + j + ')', 'cell', { i: i, j: j }))
+    entities.push(ctx.Entity('cell(' + i + ',' + j + ')', 'cell', {location: { i: i, j: j }}))
   }
 }
-entities.push(ctx.Entity('line_diag_0', 'line', { c1: { i: 0, j: 0 }, c2: { i: 1, j: 1 }, c3: { i: 2, j: 2 } }))
-entities.push(ctx.Entity('line_diag_1', 'line', { c1: { i: 2, j: 0 }, c2: { i: 1, j: 1 }, c3: { i: 0, j: 2 } }))
+entities.push(ctx.Entity('line_diag_0', 'line', { cells: [{ i: 0, j: 0 }, { i: 1, j: 1 }, { i: 2, j: 2 }] }))
+entities.push(ctx.Entity('line_diag_1', 'line', { cells: [{ i: 2, j: 0 }, { i: 1, j: 1 }, { i: 0, j: 2 }] }))
 
 forks.forEach(function (f) {
   for (let i = 0; i < f.x.length; i++)

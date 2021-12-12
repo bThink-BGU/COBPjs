@@ -1,10 +1,6 @@
 //#region HELPER FUNCTIONS
 function getCell(i, j) {
-  return ctx.getEntityById('cell(' + i + ',' + j + ')')
-}
-
-function getLineCells(l) {
-  return [getCell(l.c1.i, l.c1.j), getCell(l.c2.i, l.c2.j), getCell(l.c3.i, l.c3.j)]
+  return { i: i, j: j }
 }
 
 function opposite(c) {
@@ -33,14 +29,14 @@ const EndGame = bp.EventSet('EndGame', function (e) {
 
 //block X,O on nonempty cell
 ctx.bthread('Click to X', 'Cell.All', function (c) {
-  sync({ waitFor: Event('Click(' + c.i + ',' + c.j + ')') })
-  sync({ request: Event('X', c) })
+  sync({ waitFor: Event('Click(' + c.location.i + ',' + c.location.j + ')') })
+  sync({ request: Event('X', c.location) })
 })
 
 //block X,O on nonempty cell
 ctx.bthread('block X,O on nonempty cell', 'Cell.All', function (c) {
-  sync({ waitFor: [Event('X', c), Event('O', c)] })
-  sync({ block: [Event('X', c), Event('O', c)] })
+  sync({ waitFor: [Event('X', c.location), Event('O', c.location)] })
+  sync({ block: [Event('X', c.location), Event('O', c.location)] })
 })
 
 bthread('EnforceTurnsXO', function () {
@@ -66,8 +62,7 @@ bthread('DetectDraw', function () {
 
 // Represents when X wins
 ctx.bthread('DetectXWin', 'Line.All', function (l) {
-  let cells = getLineCells(l)
-  const events = cells.map(c => Event('X', c))
+  const events = l.cells.map(c => Event('X', c))
   for (let c = 0; c < 3; c++) {
     sync({ waitFor: events })
   }
@@ -76,8 +71,7 @@ ctx.bthread('DetectXWin', 'Line.All', function (l) {
 
 // Represents when O wins
 ctx.bthread('DetectOWin', 'Line.All', function (l) {
-  let cells = getLineCells(l)
-  const events = cells.map(c => Event('O', c))
+  const events = l.cells.map(c => Event('O', c))
   for (let c = 0; c < 3; c++) {
     sync({ waitFor: events })
   }
@@ -91,8 +85,7 @@ ctx.bthread('DetectOWin', 'Line.All', function (l) {
 
 //1) Win: If the player has two in a row, they can place a third to get three in a row.
 ctx.bthread('AddThirdO', 'Line.All', function (l) {
-  const cells = getLineCells(l)
-  const events = cells.map(c => Event('O', c))
+  const events = l.cells.map(c => Event('O', c))
   sync({ waitFor: events })
   sync({ waitFor: events })
   sync({ request: events }, 50)
@@ -100,9 +93,8 @@ ctx.bthread('AddThirdO', 'Line.All', function (l) {
 
 //2) Block: If the opponent has two in a row, the player must play the third themselves to block the opponent.
 ctx.bthread('PreventThirdX', 'Line.All', function (l) {
-  const cells = getLineCells(l)
-  const OEvents = cells.map(c => Event('O', c))
-  const XEvents = cells.map(c => Event('X', c))
+  const OEvents = l.cells.map(c => Event('O', c))
+  const XEvents = l.cells.map(c => Event('X', c))
   sync({ waitFor: XEvents })
   sync({ waitFor: XEvents })
   sync({ request: OEvents }, 45)
@@ -143,37 +135,37 @@ ctx.bthread('block fork', 'Fork.All', function (f) {
 /*5) Center: A player marks the center.
 (If it is the first move of the game, playing a corner move gives the second player more opportunities to make a mistake and may therefore be the better choice; however, it makes no difference between perfect players.)*/
 ctx.bthread('Center', 'Cell.Center', function (c) {
-  sync({ request: Event('O', c) }, 30)
+  sync({ request: Event('O', c.location) }, 30)
 })
 
 //6) Opposite corner: If the opponent is in the corner, the player plays the opposite corner.
 ctx.bthread('Opposite corner', 'Cell.Corner', function (c) {
-  sync({ waitFor: Event('O', c) })
-  sync({ request: Event('O', opposite(c)) }, 25)
+  sync({ waitFor: Event('O', c.location) })
+  sync({ request: Event('O', opposite(c.location)) }, 25)
 })
 
 //7) Empty corner: The player plays in a corner square.
-ctx.bthread('Corner', 'Cell.Corner', function (c) {
-  sync({ request: Event('O', c) }, 20)
+ctx.bthread('Empty corner', 'Cell.Corner', function (c) {
+  sync({ request: Event('O', c.location) }, 20)
 })
 
 //8) Empty side: The player plays in a middle square on any of the 4 sides.
-ctx.bthread('Corner', 'Cell.Sides', function (c) {
-  sync({ request: Event('O', c) }, 15)
+ctx.bthread('Empty sides', 'Cell.Sides', function (c) {
+  sync({ request: Event('O', c.location) }, 15)
 })
 
 
 ctx.bthread('O doesnt miss win', 'Line.All', function (l) {
-  const cells = getLineCells(l)
-  const cellsIds = cells.map(c => c.id)
-  const oEevents = cells.map(c => Event('O', c))
-  const xEevents = cells.map(c => Event('X', c))
+  // const cells = getLineCells(l)
+  // const cellsIds = cells.map(c => c.id)
+  const oEevents = l.cells.map(c => Event('O', c))
+  const xEevents = l.cells.map(c => Event('X', c))
   let e = ''
   sync({ waitFor: oEevents, interrupt: xEevents })
   sync({ waitFor: oEevents, interrupt: xEevents })
   sync({ waitFor: XEvents, interrupt: xEevents })
-  e = sync({ waitFor: OEvents }).data.id
-  if (cellsIds.includes(e)) return
+  e = sync({ waitFor: OEvents }).data
+  if (l.cells.includes(e)) return
   e = ''
   e = sync({ waitFor: bp.all }).name
   // bp.log.info(e)

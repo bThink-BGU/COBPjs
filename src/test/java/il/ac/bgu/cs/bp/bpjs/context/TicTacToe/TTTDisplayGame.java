@@ -58,8 +58,8 @@ public class TTTDisplayGame implements ActionListener {
       @Override
       public void eventSelected(BProgram bp, BEvent e) {
         if (e.name.equals("X") || e.name.equals("O")) {
-          var cell = (Map<String, Object>) e.maybeData;
-          buttons[((Double) cell.get("i")).intValue()][((Double) cell.get("j")).intValue()].setText(e.name);
+          var cell = (Map<String, Double>) e.maybeData;
+          buttons[cell.get("i").intValue()][cell.get("j").intValue()].setText(e.name);
         } else {
           switch (e.name) {
             case "XWin":
