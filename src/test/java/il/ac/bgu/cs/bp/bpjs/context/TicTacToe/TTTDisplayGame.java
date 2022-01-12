@@ -20,9 +20,11 @@ public class TTTDisplayGame implements ActionListener {
   public JButton[][] buttons = new JButton[3][];
   public JLabel message = new JLabel();
 
-  public TTTDisplayGame(BProgram bp, BProgramRunner rnr) {
-    this.bp = bp;
+  public TTTDisplayGame(BProgram bProgram) {
+    this.bp = bProgram;
+  }
 
+  public void initBProgramRunner(BProgramRunner rnr){
     // Create window
     JFrame window = new JFrame("Tic-Tac-Toe");
     window.setSize(150, 150);

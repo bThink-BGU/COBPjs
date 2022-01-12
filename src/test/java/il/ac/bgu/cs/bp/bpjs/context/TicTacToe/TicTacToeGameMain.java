@@ -14,23 +14,26 @@ import javax.swing.*;
 public class TicTacToeGameMain extends JFrame {
 
   // GUI for interactively playing the game
-  public static TTTDisplayGame TTTdisplayGame;
+  private static TTTDisplayGame TTTdisplayGame;
 
-  public static void main(BProgram bprog, BProgramRunner rnr, boolean useUI) {
-    bprog.setEventSelectionStrategy(new PrioritizedBSyncEventSelectionStrategy());
+  public static void initBProg(BProgram bprog, boolean useUI) {
     if (useUI) {
+      bprog.setEventSelectionStrategy(new PrioritizedBSyncEventSelectionStrategy());
       bprog.setWaitForExternalEvents(true);
       JFrame f = new TicTacToeGameMain();
-      TTTdisplayGame = new TTTDisplayGame(bprog, rnr);
+      TTTdisplayGame = new TTTDisplayGame(bprog);
     } else {
       bprog.appendSource("ctx.bthread(\"simulate x\", \"Cell.All\", function (cell) {\n" +
           "  sync({request: Event(\"X\", cell)})\n" +
           "})");
     }
-    rnr.run();
-    System.out.println("end of run");
   }
 
+  public static void initRNR(BProgramRunner rnr) {
+    if (TTTdisplayGame != null) {
+      TTTdisplayGame.initBProgramRunner(rnr);
+    }
+  }
 }
 
 @SuppressWarnings("serial")
