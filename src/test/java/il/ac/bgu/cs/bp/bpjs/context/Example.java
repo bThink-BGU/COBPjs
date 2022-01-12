@@ -5,7 +5,8 @@ import il.ac.bgu.cs.bp.bpjs.context.TicTacToe.TicTacToeGameMain;
 import il.ac.bgu.cs.bp.bpjs.execution.BProgramRunner;
 import il.ac.bgu.cs.bp.bpjs.model.BProgram;
 
-import java.util.ArrayList;
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.function.Consumer;
 
@@ -31,31 +32,31 @@ public class Example {
     this.bprogConsumer = bprogConsumer;
   }
 
-  public void initializeExecution(BProgram bProgram, BProgramRunner runner) {
+  public void initializeBProg(BProgram bProgram) {
     if (bprogConsumer != null)
       bprogConsumer.accept(bProgram);
     bProgram.setName(this.name);
+  }
 
+  public void initializeRunner(BProgramRunner runner) {
     if (runner != null && rnrConsumer != null)
       rnrConsumer.accept(runner);
   }
 
-  private List<String> getResourcesNames(boolean isVerification) {
-    var resources = new ArrayList<String>();
-    resources.add(String.join("/", this.name, "dal.js"));
-    resources.add(String.join("/", this.name, "bl.js"));
-    var verificationResource = String.join("/", this.name, "verification.js");
-    if (isVerification && Thread.currentThread().getContextClassLoader().getResource(verificationResource) != null) {
-      resources.add(verificationResource);
+  public void initializeExecution(BProgram bProgram, BProgramRunner runner) {
+    initializeBProg(bProgram);
+    initializeRunner(runner);
+  }
+
+  public void addVerificationResources(BProgram bprog) throws IOException {
+    var resource = Thread.currentThread().getContextClassLoader().getResourceAsStream(
+        String.join("/", this.name, "verification.js"));
+    if (resource != null) {
+      bprog.appendSource(new String(resource.readAllBytes(), StandardCharsets.UTF_8));
     }
-    return resources;
   }
 
   public List<String> getResourcesNames() {
-    return getResourcesNames(false);
-  }
-
-  public List<String> getVerificationResourcesNames() {
-    return getResourcesNames(true);
+    return List.of(String.join("/", this.name, "dal.js"), String.join("/", this.name, "bl.js"));
   }
 }
