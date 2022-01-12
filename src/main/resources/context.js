@@ -3,23 +3,23 @@
 
 function deepFreeze(object) {
   // Retrieve the property names defined on object
-  const propNames = Object.getOwnPropertyNames(object);
+  const propNames = Object.getOwnPropertyNames(object)
 
   // Freeze properties before freezing self
 
   for (let name of propNames) {
-    const value = object[name];
+    const value = object[name]
 
-    if (value && typeof value === "object") {
-      deepFreeze(value);
+    if (value && typeof value === 'object') {
+      deepFreeze(value)
     }
   }
 
-  return Object.freeze(object);
+  return Object.freeze(object)
 }
 
-const ContextChanged = bp.EventSet("CTX.ContextChanged", function (e) {
-  return ctx_proxy.effectFunctions.containsKey(String("CTX.Effect: " + e.name))
+const ContextChanged = bp.EventSet('CTX.ContextChanged', function (e) {
+  return ctx_proxy.effectFunctions.containsKey(String('CTX.Effect: ' + e.name))
 })
 
 const ctx = {
@@ -37,9 +37,9 @@ const ctx = {
       return target
     },
     insertEntityUnsafe: function (entity) {
-      const key = String("CTX.Entity: " + entity.id)
+      const key = String('CTX.Entity: ' + entity.id)
       if (bp.store.has(key)) {
-        throw new Error("Key " + entity.id + " already exists")
+        throw new Error('Key ' + entity.id + ' already exists')
       }
       // bp.log.info("e to clone {0}", entity)
       // let clone = ctx_proxy.clone(entity)
@@ -49,14 +49,17 @@ const ctx = {
     },
     testIsEffect(caller, expected) {
       if (expected && isInBThread())
-        throw new Error(String("The function " + caller + " must be called by an effect function"))
+        throw new Error(String('The function ' + caller + ' must be called by an effect function'))
       if (!expected && !isInBThread())
-        throw new Error(String("The function " + caller + " must no be called by an effect function"))
+        throw new Error(String('The function ' + caller + ' must no be called by an effect function'))
     }
   },
   Entity: function (id, type, data) {
-    let entity = {id: String(id), type: String(type)}
-    if (data) {
+    let entity = { id: String(id), type: String(type) }
+    if (isDefinedAndNotNull(data)) {
+      if (typeof data.id !== 'undefined' || typeof data.type !== 'undefined') {
+        throw new Error(String('Entity\'s data must not include "id" or "type" fields.'))
+      }
       this.__internal_fields.assign(entity, data)
     }
     ctx_proxy.removeScope(entity)
@@ -70,9 +73,9 @@ const ctx = {
   updateEntity: function (entity) {
     this.__internal_fields.testIsEffect('updateEntity', true)
 
-    const key = String("CTX.Entity: " + entity.id)
+    const key = String('CTX.Entity: ' + entity.id)
     if (!bp.store.has(key)) {
-      throw new Error("Key " + entity.id + " does not exist")
+      throw new Error('Key ' + entity.id + ' does not exist')
     }
     // let clone = ctx_proxy.clone(entity)
     // Object.freeze(clone)
@@ -82,17 +85,17 @@ const ctx = {
   removeEntity: function (entity_or_id) {
     this.__internal_fields.testIsEffect('removeEntity', true)
 
-    const key = String("CTX.Entity: " + (entity_or_id.id ? entity_or_id.id : entity_or_id))
+    const key = String('CTX.Entity: ' + (entity_or_id.id ? entity_or_id.id : entity_or_id))
     if (!bp.store.has(key)) {
-      throw new Error("Cannot remove entity, key " + key + " does not exist")
+      throw new Error('Cannot remove entity, key ' + key + ' does not exist')
     }
     bp.store.remove(key)
   },
   getEntityById: function (id) {
     // bp.log.info('getEntityById id {0}', id)
-    const key = String("CTX.Entity: " + id)
+    const key = String('CTX.Entity: ' + id)
     if (!bp.store.has(key)) {
-      throw new Error("Key " + key + " does not exist")
+      throw new Error('Key ' + key + ' does not exist')
     }
     if (!isInBThread()) {
       this.__internal_fields.testIsEffect('getEntityById', true)
@@ -104,7 +107,7 @@ const ctx = {
     //throw new Error("Entity with id '" + id + "' does not exist")
   },
   runQuery: function (queryName_or_function) {
-    let func;
+    let func
     if (typeof (queryName_or_function) === 'string') {
       const key = String(queryName_or_function)
       if (!ctx_proxy.queries.containsKey(key)) throw new Error('Query ' + queryName_or_function + ' does not exist')
@@ -116,7 +119,7 @@ const ctx = {
     let storeEntries = bp.store.entrySet().toArray()
     for (let i = 0; i < storeEntries.length; i++) {
       let entry = storeEntries[i]
-      if(entry.getKey().startsWith(String("CTX.Entity:")) && func(entry.getValue()))
+      if (entry.getKey().startsWith(String('CTX.Entity:')) && func(entry.getValue()))
         ans.push(entry.getValue())
     }
     return ans
@@ -142,7 +145,7 @@ const ctx = {
   bthread: function (name, context, bt) {
     const createLiveCopy = function (name, query, entity, bt) {
       bthread(name,
-        {query: query, seed: entity.id},
+        { query: query, seed: entity.id },
         function () {
           try {
             bt(entity)
@@ -158,26 +161,26 @@ const ctx = {
           }
         })
     }
-    bthread("cbt: " + name,
+    bthread('cbt: ' + name,
       function () {
         let res = ctx.runQuery(context)
         for (let i = 0; i < res.length; i++) {
-          createLiveCopy(String("Live copy" + ": " + name + " " + res[i].id), context, res[i], bt)
+          createLiveCopy(String('Live copy' + ': ' + name + ' ' + res[i].id), context, res[i], bt)
         }
         res = undefined
         while (true) {
-          sync({waitFor: ContextChanged})
+          sync({ waitFor: ContextChanged })
           // bp.log.info("changesA {0}: {1}", context, bp.store.get("CTX.Changes"))
           let changes = ctx_proxy.getChanges().parallelStream()
-            .filter(function (change) {
-              return change.type.equals("new") && change.query.equals(context)
-            }).toArray();
+          .filter(function (change) {
+            return change.type.equals('new') && change.query.equals(context)
+          }).toArray()
           // bp.log.info("changesB {0}: {1}", context, changes)
           for (let i = 0; i < changes.length; i++) {
             // bp.log.info("changesC {0}: {1}", context, changes[i])
             // bp.log.info(bp.store.keys())
-            if (changes[i].type.equals("new") && changes[i].query.equals(context)) {
-              createLiveCopy(String("Live copy" + ": " + name + " " + changes[i].entityId), context, ctx.getEntityById(changes[i].entityId), bt)
+            if (changes[i].type.equals('new') && changes[i].query.equals(context)) {
+              createLiveCopy(String('Live copy' + ': ' + name + ' ' + changes[i].entityId), context, ctx.getEntityById(changes[i].entityId), bt)
             }
           }
           changes = undefined
