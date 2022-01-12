@@ -17,8 +17,8 @@ public class TicTacToeGameMain extends JFrame {
   private static TTTDisplayGame TTTdisplayGame;
 
   public static void initBProg(BProgram bprog, boolean useUI) {
+    bprog.setEventSelectionStrategy(new PrioritizedBSyncEventSelectionStrategy());
     if (useUI) {
-      bprog.setEventSelectionStrategy(new PrioritizedBSyncEventSelectionStrategy());
       bprog.setWaitForExternalEvents(true);
       JFrame f = new TicTacToeGameMain();
       TTTdisplayGame = new TTTDisplayGame(bprog);
