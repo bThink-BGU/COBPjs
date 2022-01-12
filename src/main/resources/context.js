@@ -30,7 +30,7 @@ const ctx = {
         if (source[property] instanceof org.mozilla.javascript.ConsString) {
           val = String(val)
         } else if (Array.isArray(source[property])) {
-          bp.log.warn("Property {0} is an array. If the order of the array's elements is not important, you should use java.util.HashSet. Entity is {1}.", property, source)
+          bp.log.warn("Property \'\'{0}\'\' is an array. If the order of the array\'\'s elements is not important, you should use java.util.HashSet. Entity is {1}.", property, source)
         }
         target[property] = val
       }

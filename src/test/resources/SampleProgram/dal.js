@@ -3,7 +3,7 @@
  */
 ctx.populateContext([
   ctx.Entity("id", "type", {}),
-  // more ctx.insertEntity...
+  // more entities...
 ])
 
 /**
