@@ -56,7 +56,7 @@ const ctx = {
   },
   Entity: function (id, type, data) {
     let entity = { id: String(id), type: String(type) }
-    if (isDefinedAndNotNull(data)) {
+    if (typeof data !== 'undefined' && data != null) {
       if (typeof data.id !== 'undefined' || typeof data.type !== 'undefined') {
         throw new Error(String('Entity\'s data must not include "id" or "type" fields.'))
       }

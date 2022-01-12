@@ -221,12 +221,8 @@ function Any(type) {
   })
 }
 
-function isDefinedAndNotNull(variable) {
-  return typeof variable !== 'undefined' && variable != null
-}
-
 function Event(name, data) {
-  if (isDefinedAndNotNull(data))
+  if (typeof data !== 'undefined' && data != null)
     return bp.Event(name, data)
   return bp.Event(name)
 }
