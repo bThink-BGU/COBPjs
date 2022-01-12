@@ -173,7 +173,7 @@ function sync(stmt, syncData) {
       let id = bp.thread.data.seed
       if (query) {
         for (let i = 0; i < changes.length; i++) {
-          if(changes[i].type.equals('end') && changes[i].query.equals(query) && changes[i].entityId.equals(id)) {
+          if (changes[i].type.equals('end') && changes[i].query.equals(query) && changes[i].entityId.equals(id)) {
             ctx_proxy.throwEndOfContext()
           }
         }
@@ -222,7 +222,7 @@ function Any(type) {
 }
 
 function Event(name, data) {
-  if (data)
+  if (typeof data !== 'undefined' && data != null)
     return bp.Event(name, data)
   return bp.Event(name)
 }
