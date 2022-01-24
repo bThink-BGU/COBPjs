@@ -18,6 +18,78 @@ function deepFreeze(object) {
   return Object.freeze(object)
 }
 
+/**
+ * Enters a synchronization point. Honors the RWBI stack.
+ *
+ * Can also be used as `sync()`. This causes the b-thread to sync using only
+ * its RWBI stack.
+ *
+ * @param {type} stmt the statmet to be added
+ * @param {type} syncData optional sync data
+ * @returns {BEvent} The selected event
+ * FIXME currently this changes stmt, we might not want that.
+ *
+ */
+let sync = function(stmt, syncData) {
+  function appendToPart(stmt, field) {
+    if (Array.isArray(stmt[field])) {
+      stmt[field] = stmt[field].concat(bp.thread.data[field])
+    } else {
+      if (stmt[field]) {
+        stmt[field] = [stmt[field]].concat(bp.thread.data[field])
+      } else {
+        stmt[field] = bp.thread.data[field]
+      }
+    }
+  }
+
+  if (!stmt) {
+    stmt = {}
+  }
+
+  appendToPart(stmt, 'waitFor')
+  appendToPart(stmt, 'block')
+  appendToPart(stmt, 'interrupt')
+
+  // Implementation note: we use [].concat.apply(...) to flatten arrays that
+  // may have been passed to `request`. This is not needed in waitFor etc.,
+  // because these arguments accept event sets, while `request` needs explicit events
+  if (bp.thread.data.request.length > 0) {
+    if (stmt.request) {
+      if (!Array.isArray(stmt.request)) {
+        stmt.request = [stmt.request];
+      }
+      stmt.request = stmt.request.concat([].concat.apply([], bp.thread.data.request));
+    } else {
+      stmt.request = [].concat.apply([], bp.thread.data.request);
+    }
+  }
+
+  while (true) {
+    stmt.waitFor.push(ContextChanged)
+    let ret = syncData ? bp.sync(stmt, syncData) : bp.sync(stmt)
+    stmt.waitFor.pop()
+    if (ContextChanged.contains(ret)) {
+      ctx_proxy.waitForEffect(bp.store, ret, this)
+      let changes = ctx_proxy.getChanges().toArray()
+      let query = bp.thread.data.query
+      let id = bp.thread.data.seed
+      if (query) {
+        for (let i = 0; i < changes.length; i++) {
+          if (changes[i].type.equals('end') && changes[i].query.equals(query) && changes[i].entityId.equals(id)) {
+            ctx_proxy.throwEndOfContext()
+          }
+        }
+      }
+      if (ctx_proxy.shouldWake(stmt, ret)) {
+        return ret
+      }
+    } else {
+      return ret
+    }
+  }
+}
+
 const ContextChanged = bp.EventSet('CTX.ContextChanged', function (e) {
   return ctx_proxy.effectFunctions.containsKey(String('CTX.Effect: ' + e.name))
 })
@@ -201,20 +273,5 @@ const ctx = {
       this.__internal_fields.insertEntityUnsafe(entities[i])
   }
 }
-
-/*bthread('Context population', function () {
-  sync({request: bp.Event('Context population completed')})
-})*/
-
-/*bthread("assert no continuation before CTX.Update", function() {
-  while (true) {
-    let e = sync({waitFor:bp.all}).name
-    const key1 = String('CTX.Effect: ' + e)
-    const key2 = String('CTX.EndOfActionEffect: ' + e)
-    if (ctx_proxy.effectFunctions.containsKey(key1) || ctx_proxy.effectFunctions.containsKey(key2)) {
-      bp.log.info("HERE")
-    }
-  }
-})*/
 
 Object.freeze(ctx)
