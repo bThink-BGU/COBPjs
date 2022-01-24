@@ -259,6 +259,8 @@ const ctx = {
   rethrowException: function (e) {
     if (e.javaException) {
       ctx_proxy.rethrowException(e.javaException)
+    }else if (e.rhinoException) {
+      ctx_proxy.rethrowException(e.rhinoException)
     } else {
       throw e
     }
