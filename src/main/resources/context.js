@@ -208,11 +208,10 @@ const ctx = {
     }
     testInBThread('registerEffect', false)
 
-    const key1 = String('CTX.Effect: ' + eventName)
-    const key2 = String('CTX.EndOfActionEffect: ' + eventName)
-    if (ctx_proxy.effectFunctions.containsKey(key1) || ctx_proxy.effectFunctions.containsKey(key2))
+    const key = String('CTX.Effect: ' + eventName)
+    if (ctx_proxy.effectFunctions.containsKey(key))
       throw new Error('Effect already exists for event ' + eventName)
-    ctx_proxy.effectFunctions.put(key1, effect)
+    ctx_proxy.effectFunctions.put(key, effect)
   },
   bthread: function (name, context, bt) {
     const createLiveCopy = function (name, query, entity, bt) {
@@ -222,14 +221,9 @@ const ctx = {
           try {
             bt(entity)
           } catch (e) {
-            if (e.javaException) {
-              if (ctx_proxy.isEndOfContextException(e.javaException)) {
-                return
-              } else {
-                if (e.javaException) ctx_proxy.rethrowException(e.javaException)
-              }
+            if(!ctx.isEndOfContextException(e)){
+              ctx.rethrowException(e)
             }
-            throw e
           }
         })
     }
@@ -259,12 +253,14 @@ const ctx = {
         }
       })
   },
-  duringAfterContext: function (during, after) {
-    try {
-      during()
-    } catch (exception) {
-      if (!isEndOfContext(exception)) throw exception
-      after()
+  isEndOfContextException:function (e) {
+    return typeof e.javaException !== 'undefined' && ctx_proxy.isEndOfContextException(e.javaException)
+  },
+  rethrowException: function (e) {
+    if (e.javaException) {
+      ctx_proxy.rethrowException(e.javaException)
+    } else {
+      throw e
     }
   },
   populateContext: function (entities) {
