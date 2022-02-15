@@ -63,3 +63,34 @@ There is a full example for a main file - [here](https://github.com/bThink-BGU/B
 * [BPjs documentation and tutorials](http://bpjs.readthedocs.io/en/master/) - a great starting point for BP.
 * [Behavioral Programming](http://www.b-prog.org/) - introduces behavioral programming.
 * [BPjs Google group](https://groups.google.com/forum/#!forum/bpjs)
+
+---
+
+## Citation
+To cite the paper on COBP:
+```bibtex
+@article{cobp,
+title = {Context-Oriented Behavioral Programming},
+journal = {Information and Software Technology},
+volume = {133},
+pages = {106504},
+year = {2021},
+issn = {0950-5849},
+doi = {https://doi.org/10.1016/j.infsof.2020.106504},
+url = {https://www.sciencedirect.com/science/article/pii/S095058492030094X},
+author = {Achiya Elyasaf},
+keywords = {Behavioral programming, Scenario-based programming, Programming paradigm, Context awareness, Context-oriented programming, Context-Oriented Behavioral Programming}
+}
+```
+
+To cite this repository in publications:
+```bibtex
+@misc{cobpjs,
+  author = {Achiya Elyasaf},
+  title = {COBPjs: Context-oriented behavioral programming in JavaScript},
+  year = {2021},
+  publisher = {GitHub},
+  journal = {GitHub repository},
+  howpublished = {\url{https://github.com/bThink-BGU/BPjs-Context}},
+}
+```
