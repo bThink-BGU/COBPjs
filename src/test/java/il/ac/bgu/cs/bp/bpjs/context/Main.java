@@ -11,7 +11,7 @@ import java.text.MessageFormat;
 
 public class Main {
   private static BProgram bprog;
-  private static Example example = null;
+  private static Example example = Example.HotCold;
 
   public static void main(final String[] args) throws IOException {
     createBProgam();
@@ -21,7 +21,6 @@ public class Main {
 
   private static void createBProgam() {
     //region Load example program
-    example = Example.TicTacToeWithoutUI;
     bprog = new ContextBProgram(example.getResourcesNames());
     example.initializeBProg(bprog);
     //endregion

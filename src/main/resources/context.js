@@ -1,22 +1,6 @@
 /* global bp, ctx_proxy, Packages, EventSets */ // <-- Turn off warnings
 // importPackage(Packages.il.ac.bgu.cs.bp.bpjs.model.eventsets);
 
-function deepFreeze(object) {
-  // Retrieve the property names defined on object
-  const propNames = Object.getOwnPropertyNames(object)
-
-  // Freeze properties before freezing self
-
-  for (let name of propNames) {
-    const value = object[name]
-
-    if (value && typeof value === 'object') {
-      deepFreeze(value)
-    }
-  }
-
-  return Object.freeze(object)
-}
 
 /**
  * Enters a synchronization point. Honors the RWBI stack.
@@ -30,7 +14,7 @@ function deepFreeze(object) {
  * FIXME currently this changes stmt, we might not want that.
  *
  */
-let sync = function(stmt, syncData) {
+let sync = function (stmt, syncData) {
   function appendToPart(stmt, field) {
     if (Array.isArray(stmt[field])) {
       stmt[field] = stmt[field].concat(bp.thread.data[field])
@@ -57,23 +41,27 @@ let sync = function(stmt, syncData) {
   if (bp.thread.data.request.length > 0) {
     if (stmt.request) {
       if (!Array.isArray(stmt.request)) {
-        stmt.request = [stmt.request];
+        stmt.request = [stmt.request]
       }
-      stmt.request = stmt.request.concat([].concat.apply([], bp.thread.data.request));
+      stmt.request = stmt.request.concat([].concat.apply([], bp.thread.data.request))
     } else {
-      stmt.request = [].concat.apply([], bp.thread.data.request);
+      stmt.request = [].concat.apply([], bp.thread.data.request)
     }
   }
 
+  let ret = null
+  let changes = null
+  let query = null
+  let id = null
   while (true) {
     stmt.waitFor.push(ContextChanged)
-    let ret = syncData ? bp.sync(stmt, syncData) : bp.sync(stmt)
+    ret = syncData ? bp.sync(stmt, syncData) : bp.sync(stmt)
     stmt.waitFor.pop()
     if (ContextChanged.contains(ret)) {
       ctx_proxy.waitForEffect(bp.store, ret, this)
-      let changes = ctx_proxy.getChanges().toArray()
-      let query = bp.thread.data.query
-      let id = bp.thread.data.seed
+      changes = ctx_proxy.getChanges().toArray()
+      query = bp.thread.data.query
+      id = bp.thread.data.seed
       if (query) {
         for (let i = 0; i < changes.length; i++) {
           if (changes[i].type.equals('end') && changes[i].query.equals(query) && changes[i].entityId.equals(id)) {
@@ -88,6 +76,10 @@ let sync = function(stmt, syncData) {
       return ret
     }
   }
+  ret = null
+  changes = null
+  query = null
+  id = null
 }
 
 const ContextChanged = bp.EventSet('CTX.ContextChanged', function (e) {
@@ -96,13 +88,26 @@ const ContextChanged = bp.EventSet('CTX.ContextChanged', function (e) {
 
 const ctx = {
   __internal_fields: {
+    createLiveCopy: function (name, query, entity, bt) {
+      bthread(name,
+        { query: query, seed: entity.id },
+        function () {
+          try {
+            bt(entity)
+          } catch (ex) {
+            if (!ctx.isEndOfContextException(ex)) {
+              ctx.rethrowException(ex)
+            }
+          }
+        })
+    },
     assign: function (target, source) {
       for (let property in source) {
         let val = source[property]
         if (source[property] instanceof org.mozilla.javascript.ConsString) {
           val = String(val)
         } else if (Array.isArray(source[property])) {
-          bp.log.warn("Property \'\'{0}\'\' is an array. If the order of the array\'\'s elements is not important, you should use java.util.HashSet. Entity is {1}.", property, source)
+          bp.log.warn('Property \'\'{0}\'\' is an array. If the order of the array\'\'s elements is not important, you should use java.util.HashSet. Entity is {1}.', property, source)
         }
         target[property] = val
       }
@@ -163,7 +168,7 @@ const ctx = {
     }
     bp.store.remove(key)
   },
-  getEntityById: function (id) {
+  getEntityById: function (id, cloneEntity) {
     // bp.log.info('getEntityById id {0}', id)
     const key = String('CTX.Entity: ' + id)
     if (!bp.store.has(key)) {
@@ -171,7 +176,11 @@ const ctx = {
     }
     if (!isInBThread()) {
       this.__internal_fields.testIsEffect('getEntityById', true)
-      return ctx_proxy.clone(bp.store.get(key)) //clone (serialization/deserialization) removes freezing
+      if (typeof cloneEntity !== 'undefined' && cloneEntity != null && cloneEntity === true) {
+        return ctx_proxy.clone(bp.store.get(key)) //clone (serialization/deserialization) removes freezing
+      } else {
+        return bp.store.get(key)
+      }
     } else {
       this.__internal_fields.testIsEffect('getEntityById', false)
       return bp.store.get(key)
@@ -214,30 +223,18 @@ const ctx = {
     ctx_proxy.effectFunctions.put(key, effect)
   },
   bthread: function (name, context, bt) {
-    const createLiveCopy = function (name, query, entity, bt) {
-      bthread(name,
-        { query: query, seed: entity.id },
-        function () {
-          try {
-            bt(entity)
-          } catch (e) {
-            if(!ctx.isEndOfContextException(e)){
-              ctx.rethrowException(e)
-            }
-          }
-        })
-    }
     bthread('cbt: ' + name,
       function () {
         let res = ctx.runQuery(context)
         for (let i = 0; i < res.length; i++) {
-          createLiveCopy(String('Live copy' + ': ' + name + ' ' + res[i].id), context, res[i], bt)
+          ctx.__internal_fields.createLiveCopy(String('Live copy' + ': ' + name + ' ' + res[i].id), context, res[i], bt)
         }
         res = undefined
+        let changes = null
         while (true) {
           sync({ waitFor: ContextChanged })
           // bp.log.info("changesA {0}: {1}", context, bp.store.get("CTX.Changes"))
-          let changes = ctx_proxy.getChanges().parallelStream()
+          changes = ctx_proxy.getChanges().parallelStream()
           .filter(function (change) {
             return change.type.equals('new') && change.query.equals(context)
           }).toArray()
@@ -246,20 +243,20 @@ const ctx = {
             // bp.log.info("changesC {0}: {1}", context, changes[i])
             // bp.log.info(bp.store.keys())
             if (changes[i].type.equals('new') && changes[i].query.equals(context)) {
-              createLiveCopy(String('Live copy' + ': ' + name + ' ' + changes[i].entityId), context, ctx.getEntityById(changes[i].entityId), bt)
+              ctx.__internal_fields.createLiveCopy(String('Live copy' + ': ' + name + ' ' + changes[i].entityId), context, ctx.getEntityById(changes[i].entityId), bt)
             }
           }
-          changes = undefined
+          changes = null
         }
       })
   },
-  isEndOfContextException:function (e) {
+  isEndOfContextException: function (e) {
     return typeof e.javaException !== 'undefined' && ctx_proxy.isEndOfContextException(e.javaException)
   },
   rethrowException: function (e) {
     if (e.javaException) {
       ctx_proxy.rethrowException(e.javaException)
-    }else if (e.rhinoException) {
+    } else if (e.rhinoException) {
       ctx_proxy.rethrowException(e.rhinoException)
     } else {
       throw e

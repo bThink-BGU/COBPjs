@@ -8,7 +8,7 @@ function deepFreeze(object) {
   // Freeze properties before freezing self
 
   for (let name of propNames) {
-    const value = object[name]
+    let value = object[name]
 
     if (value && typeof value === 'object') {
       deepFreeze(value)
@@ -62,72 +62,6 @@ function bthread(name, data, fn) {
 
   bp.registerBThread(name, data, fn)
 }
-
-/**
- * Execute fn while requesting `evt`. This requires that all synchronizations will be
- * done using sync().
- *
- * @param {type} evt event to request for during fn's execution.
- * @param {type} fn function (b-thread segment) to run.
- * @returns nothing
- */
-function request(evt, fn) {
-  bp.thread.data.request.unshift(evt)
-  fn()
-  bp.thread.data.request.shift()
-}
-
-/**
- * Execute fn while waiting for es. This requires that all synchronizations will be
- * done using sync().
- *
- * @param {type} es event(s) to wait for during fn's execution.
- * @param {type} fn function (b-thread segment) to run.
- * @returns nothing
- */
-function waitFor(es, fn) {
-  if (Array.isArray(es)) {
-    es = EventSets.anyOf(es)
-  }
-  bp.thread.data.waitFor.push(es)
-  fn()
-  bp.thread.data.waitFor.pop()
-}
-
-/**
- * Execute fn while blocking es. This requires that all synchronizations will be
- * done using sync().
- *
- * @param {type} es event(s) to block during fn's execution.
- * @param {type} fn function (b-thread segment) to run.
- * @returns nothing
- */
-function block(es, fn) {
-  if (Array.isArray(es)) {
-    es = EventSets.anyOf(es)
-  }
-  bp.thread.data.block.push(es)
-  fn()
-  bp.thread.data.block.pop()
-}
-
-/**
- * Execute fn while being interrupted by any event from es.
- * This requires that all synchronizations will be done using sync().
- *
- * @param {type} es event(s) to be interrupted from during fn's execution.
- * @param {type} fn function (b-thread segment) to run.
- * @returns nothing
- */
-function interrupt(es, fn) {
-  if (Array.isArray(es)) {
-    es = EventSets.anyOf(es)
-  }
-  bp.thread.data.interrupt.push(es)
-  fn()
-  bp.thread.data.interrupt.pop()
-}
-
 
 /**
  * Returns true iff the function has been called by a b-thread
