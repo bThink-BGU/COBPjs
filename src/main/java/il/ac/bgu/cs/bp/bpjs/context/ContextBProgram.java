@@ -22,11 +22,8 @@ public class ContextBProgram extends ResourceBProgram {
   public ContextBProgram(Collection<String> someResourceNames, String aName) {
     super(append(someResourceNames), aName, null);
     var proxy = new ContextProxy();
-//    var ess = new CtxEventSelectionStrategy(proxy);
-//    super.setEventSelectionStrategy(ess);
     super.setStorageModificationStrategy(new CtxStorageModificationStrategy(proxy));
     putInGlobalScope("ctx_proxy", proxy);
-    super.initialStore.put("CTX.Changes", new HashSet<ContextChangesCalculator.ContextChange>());
   }
 
   private static Collection<String> append(Collection<String> resourceNames) {

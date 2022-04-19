@@ -110,17 +110,4 @@ public class ContextProxy implements Serializable {
   public ScriptableObject clone(ScriptableObject obj) {
     return cloner.clone(obj);
   }
-
-  @SuppressWarnings("unused")
-  public void removeScope(ScriptableObject object) {
-/*
-//    Context cx = BPjs.enterRhinoContext();
-    try {
-//      var scope = BPjs.makeBPjsSubScope();
-      object.setPrototype(BPjs.getBPjsScope());
-      object.setParentScope(BPjs.makeBPjsSubScope());
-    } finally {
-      Context.exit();
-    }*/
-  }
 }

@@ -15,6 +15,8 @@ bthread("test", function () {
  */
 ctx.bthread('do something with b objects', 'B.All', function (entity) {
   bp.log.info('{0}: {1}', bp.thread.name, entity)
+  ctx.runQuery((e)=>null.length)
+  bp.log.info('{0}: {1}', bp.thread.name)
   sync({request: Event("doB")})
 })
 
