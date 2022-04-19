@@ -16,23 +16,11 @@
 <!--		<exec.mainClass>il.ac.bgu.cs.bp.bpjs.context.Verifier</exec.mainClass>-->
 	</properties>
 
-	<repositories>
-		<repository>
-			<id>a. StateMapperRepo</id>
-			<url>https://github.com/bThink-BGU/StateSpaceMapper/raw/repository</url>
-			<releases>
-				<enabled>true</enabled>
-				<updatePolicy>always</updatePolicy>
-				<checksumPolicy>ignore</checksumPolicy>
-			</releases>
-		</repository>
-	</repositories>
-
 	<dependencies>
 		<dependency>
 			<groupId>com.github.bthink-bgu</groupId>
 			<artifactId>BPjs</artifactId>
-			<version>0.12.1-modified-0.2</version>
+			<version>0.12.2</version>
 		</dependency>
 	</dependencies>
 

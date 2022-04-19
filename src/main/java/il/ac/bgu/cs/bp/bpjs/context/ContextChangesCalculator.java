@@ -17,74 +17,69 @@ public class ContextChangesCalculator {
     func.call(cx, func, func, new Object[]{data});
   }
 
-  public HashSet<ContextChange> calculateChanges(MapProxy<String, Object> nextStore, ContextProxy proxy, BEvent event, Scriptable globalScope) {
-    var currentStore = new DirectMapProxy<>(nextStore);
+  public HashSet<ContextChange> calculateChanges(MapProxy<String, Object> store, ContextProxy proxy, BEvent event, Scriptable globalScope) {
     var bpJsProxy = globalScope.get("bp", globalScope);
     var ctx = (Map<String, Object>) Context.jsToJava(globalScope.get("ctx", globalScope), Map.class);
     var jsRunQuery = (Function) ctx.get("runQuery");
     var bpJProxy = (BProgramJsProxy) Context.jsToJava(bpJsProxy, BProgramJsProxy.class);
-    ContextBProgramProxyForEffects bpProxyForEffect = new ContextBProgramProxyForEffects(nextStore, bpJProxy);
+    ContextBProgramProxyForEffects bpProxyForEffect = new ContextBProgramProxyForEffects(store, bpJProxy);
     Context cx = BPjs.enterRhinoContext();
     try {
       globalScope.put("bp", globalScope, Context.javaToJS(bpProxyForEffect, globalScope));
-      return calculateChanges(nextStore, currentStore, event, proxy, cx, bpProxyForEffect, jsRunQuery);
+      bpProxyForEffect.setStore(new DirectMapProxy<>(store));
+      return calculateChanges(event, proxy, cx, jsRunQuery);
     } finally {
       globalScope.put("bp", globalScope, bpJsProxy);
       Context.exit();
     }
   }
 
-  public HashSet<ContextChange> calculateChanges(MapProxy<String, Object> nextStore, DirectMapProxy<String, Object> currentStore,
-                                                 BEvent event, ContextProxy proxy, Context cx, ContextBProgramProxyForEffects cbpProxy, Function jsRunQuery) {
+  public HashSet<ContextChange> calculateChanges(BEvent event, ContextProxy proxy,
+                                                 Context cx, Function jsRunQuery) {
+    Map<String, List<String>> currentQueriesEntities = getQueriesEntities(proxy, cx, jsRunQuery);
     executeEffect(proxy.effectFunctions.get("CTX.Effect: " + event.name), event.maybeData, cx);
-    Map<String, MapProxy.Modification<Object>> updates = nextStore.getModifications();
+    Map<String, List<String>> nextQueriesEntities = getQueriesEntities(proxy, cx, jsRunQuery);
+
+    Map<String, Set<String>> newQueriesEntities = subtractCurrentEntitiesMaps(nextQueriesEntities, currentQueriesEntities);
+    Map<String, Set<String>> removedQueriesEntities = subtractCurrentEntitiesMaps(currentQueriesEntities, nextQueriesEntities);
+
     HashSet<ContextChange> changes = new HashSet<>();
-    if (updates.isEmpty() || updates.keySet().stream().noneMatch(k -> k.startsWith("CTX.Entity: "))) {
-      return changes;
-    }
-    //region Entities
-    cbpProxy.setStore(currentStore);
-    Map<String, List<NativeObject>> currentQueriesEntities = getQueriesEntities(proxy, cx, jsRunQuery);
-    cbpProxy.setStore(nextStore);
-    Map<String, List<NativeObject>> nextQueriesEntities = getQueriesEntities(proxy, cx, jsRunQuery);
 
-    Map<String, Set<NativeObject>> newQueriesEntities = subtractCurrentEntitiesMaps(nextQueriesEntities, currentQueriesEntities);
-    Map<String, Set<NativeObject>> removedQueriesEntities = subtractCurrentEntitiesMaps(currentQueriesEntities, nextQueriesEntities);
+    changes.addAll(newQueriesEntities.entrySet().stream().flatMap(entry -> entry.getValue().stream().map(entity -> new ContextChange(entry.getKey(), "new", entity))).collect(Collectors.toList()));
+    changes.addAll(removedQueriesEntities.entrySet().stream().flatMap(entry -> entry.getValue().stream().map(entity -> new ContextChange(entry.getKey(), "end", entity))).collect(Collectors.toList()));
 
-    changes.addAll(newQueriesEntities.entrySet().stream().flatMap(entry -> entry.getValue().stream().map(entity -> new ContextChange(entry.getKey(), "new", (String) entity.get("id")))).collect(Collectors.toList()));
-    changes.addAll(removedQueriesEntities.entrySet().stream().flatMap(entry -> entry.getValue().stream().map(entity -> new ContextChange(entry.getKey(), "end", (String) entity.get("id")))).collect(Collectors.toList()));
+//    consolidate(store);
 
-    consolidate(updates, currentStore);
     return changes;
   }
 
-  private void consolidate(Map<String, MapProxy.Modification<Object>> updates, DirectMapProxy<String, Object> store) {
+  /*private void consolidate(MapProxy<String, Object> store) {
     updates.entrySet().stream()
         .filter(e -> e.getValue() instanceof MapProxy.PutValue)
         .forEach(e -> store.put(e.getKey(), ((MapProxy.PutValue<Object>) e.getValue()).getValue()));
     updates.entrySet().stream()
         .filter(e -> e.getValue() == MapProxy.Modification.DELETE)
         .forEach(e -> store.remove(e.getKey()));
-  }
+  }*/
 
-  private static Map<String, Set<NativeObject>> subtractCurrentEntitiesMaps(Map<String, List<NativeObject>> queriesEntities1, Map<String, List<NativeObject>> queriesEntities2) {
-    Map<String, Set<NativeObject>> newQueriesEntities = queriesEntities1.entrySet().stream()
+  private static Map<String, Set<String>> subtractCurrentEntitiesMaps(Map<String, List<String>> queriesEntities1, Map<String, List<String>> queriesEntities2) {
+    Map<String, Set<String>> newQueriesEntities = queriesEntities1.entrySet().stream()
         .collect(Collectors.toMap(
             Map.Entry::getKey,
             entry -> entry.getValue().stream().filter(
                     v1 -> !queriesEntities2.containsKey(entry.getKey()) || queriesEntities2.get(entry.getKey()).stream()
-                        .noneMatch(v2 -> v2.get("id").equals(v1.get("id"))))
+                        .noneMatch(v2 -> v2.equals(v1)))
                 .collect(Collectors.toSet())))
         .entrySet().stream().filter(entry -> entry.getValue().size() > 0)
         .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
     return newQueriesEntities;
   }
 
-  private static Map<String, List<NativeObject>> getQueriesEntities(ContextProxy proxy, Context cx, Function jsRunQuery) {
-    Map<String, List<NativeObject>> queriesEntities = proxy.queries.keySet().stream()
+  private static Map<String, List<String>> getQueriesEntities(ContextProxy proxy, Context cx, Function jsRunQuery) {
+    Map<String, List<String>> queriesEntities = proxy.queries.keySet().stream()
             .collect(Collectors.toMap(
                     java.util.function.Function.identity(),
-                    key -> Arrays.stream(runQuery( key, cx, jsRunQuery)).map(o->((NativeObject)o)).collect(Collectors.toList())
+                    key -> Arrays.stream(runQuery( key, cx, jsRunQuery)).map(o->(String)((NativeObject)o).get("id")).collect(Collectors.toList())
             ));
     return queriesEntities;
   }
