@@ -1,65 +1,22 @@
 /* global bp, ctx_proxy, Packages, EventSets */ // <-- Turn off warnings
 // importPackage(Packages.il.ac.bgu.cs.bp.bpjs.model.eventsets);
 
+const ContextChanged = bp.EventSet('CTX.ContextChanged', function (e) {
+  return ctx_proxy.effectFunctions.containsKey(String('CTX.Effect: ' + e.name))
+})
 
-/**
- * Enters a synchronization point. Honors the RWBI stack.
- *
- * Can also be used as `sync()`. This causes the b-thread to sync using only
- * its RWBI stack.
- *
- * @param {type} stmt the statmet to be added
- * @param {type} syncData optional sync data
- * @returns {BEvent} The selected event
- * FIXME currently this changes stmt, we might not want that.
- *
- */
-let sync = function (stmt, syncData) {
-  function appendToPart(stmt, field) {
-    if (Array.isArray(stmt[field])) {
-      stmt[field] = stmt[field].concat(bp.thread.data[field])
-    } else {
-      if (stmt[field]) {
-        stmt[field] = [stmt[field]].concat(bp.thread.data[field])
-      } else {
-        stmt[field] = bp.thread.data[field]
-      }
-    }
-  }
-
-  if (!stmt) {
-    stmt = {}
-  }
-
-  appendToPart(stmt, 'waitFor')
-  appendToPart(stmt, 'block')
-  appendToPart(stmt, 'interrupt')
-
-  // Implementation note: we use [].concat.apply(...) to flatten arrays that
-  // may have been passed to `request`. This is not needed in waitFor etc.,
-  // because these arguments accept event sets, while `request` needs explicit events
-  if (bp.thread.data.request.length > 0) {
-    if (stmt.request) {
-      if (!Array.isArray(stmt.request)) {
-        stmt.request = [stmt.request]
-      }
-      stmt.request = stmt.request.concat([].concat.apply([], bp.thread.data.request))
-    } else {
-      stmt.request = [].concat.apply([], bp.thread.data.request)
-    }
-  }
-
+__default_sync_decorations__.unshift(function (stmt, syncData, isHot, decorations) {
   let ret = null
   let changes = null
   let query = null
   let id = null
   while (true) {
-    stmt.waitFor.push(ContextChanged)
-    ret = syncData ? bp.sync(stmt, syncData) : bp.sync(stmt)
-    stmt.waitFor.pop()
+    stmt.waitFor.unshift(ContextChanged)
+    ret = decorations[0](stmt, syncData, isHot, decorations.slice(1))
+    stmt.waitFor.shift()
     if (ContextChanged.contains(ret)) {
-      ctx_proxy.waitForEffect(bp.store, ret, this)
-      changes = ctx_proxy.getChanges().toArray()
+      changes = ctx_proxy.getChanges(bp.store, ret, this)
+      changes = changes.toArray()
       query = bp.thread.data.query
       id = bp.thread.data.seed
       if (query) {
@@ -75,19 +32,15 @@ let sync = function (stmt, syncData) {
     } else {
       return ret
     }
+    ret = null
+    changes = null
+    query = null
+    id = null
   }
-  ret = null
-  changes = null
-  query = null
-  id = null
-}
-
-const ContextChanged = bp.EventSet('CTX.ContextChanged', function (e) {
-  return ctx_proxy.effectFunctions.containsKey(String('CTX.Effect: ' + e.name))
-})
+});
 
 const ctx = {
-  __internal_fields: {
+  __internal_fields__: {
     createLiveCopy: function (name, query, entity, bt) {
       bthread(name,
         { query: query, seed: entity.id },
@@ -134,17 +87,17 @@ const ctx = {
       if (typeof data.id !== 'undefined' || typeof data.type !== 'undefined') {
         throw new Error(String('Entity\'s data must not include "id" or "type" fields.'))
       }
-      this.__internal_fields.assign(entity, data)
+      this.__internal_fields__.assign(entity, data)
     }
     return entity
   },
   insertEntity: function (entity) {
-    this.__internal_fields.testIsEffect('insertEntity', true)
+    this.__internal_fields__.testIsEffect('insertEntity', true)
 
-    return this.__internal_fields.insertEntityUnsafe(entity)
+    return this.__internal_fields__.insertEntityUnsafe(entity)
   },
   removeEntity: function (entity_or_id) {
-    this.__internal_fields.testIsEffect('removeEntity', true)
+    this.__internal_fields__.testIsEffect('removeEntity', true)
 
     const key = String('CTX.Entity: ' + (entity_or_id.id ? entity_or_id.id : entity_or_id))
     if (!bp.store.has(key)) {
@@ -201,7 +154,7 @@ const ctx = {
       function () {
         let res = ctx.runQuery(context)
         for (let i = 0; i < res.length; i++) {
-          ctx.__internal_fields.createLiveCopy(String('Live copy' + ': ' + name + ' ' + res[i].id), context, res[i], bt)
+          ctx.__internal_fields__.createLiveCopy(String('Live copy' + ': ' + name + ' ' + res[i].id), context, res[i], bt)
         }
         res = undefined
         let changes = null
@@ -217,7 +170,7 @@ const ctx = {
             // bp.log.info("changesC {0}: {1}", context, changes[i])
             // bp.log.info(bp.store.keys())
             if (changes[i].type.equals('new') && changes[i].query.equals(context)) {
-              ctx.__internal_fields.createLiveCopy(String('Live copy' + ': ' + name + ' ' + changes[i].entityId), context, ctx.getEntityById(changes[i].entityId), bt)
+              ctx.__internal_fields__.createLiveCopy(String('Live copy' + ': ' + name + ' ' + changes[i].entityId), context, ctx.getEntityById(changes[i].entityId), bt)
             }
           }
           changes = null
@@ -239,7 +192,7 @@ const ctx = {
   populateContext: function (entities) {
     testInBThread('populateContext', false)
     for (let i = 0; i < entities.length; i++)
-      this.__internal_fields.insertEntityUnsafe(entities[i])
+      this.__internal_fields__.insertEntityUnsafe(entities[i])
   }
 }
 

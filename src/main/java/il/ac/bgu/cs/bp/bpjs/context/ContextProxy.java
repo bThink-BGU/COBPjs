@@ -32,20 +32,21 @@ public class ContextProxy implements Serializable {
     throw t;
   }
 
-  public synchronized HashSet<ContextChangesCalculator.ContextChange> getChanges() {
-    if(changes == null) changes = new HashSet<>();
-    return changes;
-  }
-
   public boolean isEndOfContextException(Throwable t) {
     return t instanceof EndOfContextException;
   }
 
-  public synchronized void waitForEffect(MapProxy<String, Object> mapProxy, BEvent event, Scriptable globalScope) {
+  public synchronized HashSet<ContextChangesCalculator.ContextChange> getChanges(MapProxy<String, Object> mapProxy, BEvent event, Scriptable globalScope) {
     if(!effectFinished) {
-      this.changes = ccc.calculateChanges(mapProxy,this, event, globalScope);
+      this.changes = ccc.calculateChanges(mapProxy,this, event, globalScope.getParentScope());
       effectFinished = true;
     }
+    return changes;
+  }
+
+  public synchronized HashSet<ContextChangesCalculator.ContextChange> getChanges() {
+    if(changes == null) changes = new HashSet<>();
+    return changes;
   }
 
   public synchronized void resetEffect() {
