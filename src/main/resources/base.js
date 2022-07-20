@@ -106,8 +106,8 @@ function sync(stmt, syncData, isHot) {
   __appendToStmtPart__(stmt, 'block', bp.thread.data.block);
   __appendToStmtPart__(stmt, 'interrupt', bp.thread.data.interrupt);
 
-  bp.thread.data.syncDecorators[0](stmt, syncData, isHot, bp.thread.data.syncDecorators.slice(1))
-};
+  return bp.thread.data.syncDecorators[0](stmt, syncData, isHot, bp.thread.data.syncDecorators.slice(1))
+}
 
 /**
  * Returns true iff the function has been called by a b-thread
