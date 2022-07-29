@@ -14,11 +14,42 @@ function isJSSet(o) {
   }
 }
 
-let __default_sync_decorations__ = [
-  function (stmt, syncData, isHot, decorations) {
-    return syncData ? bp.hot(isHot).sync(stmt, syncData) : bp.hot(isHot).sync(stmt);
+let __sync_decoration__ = {
+  defaults: [
+    function (stmt, syncData, isHot) {
+      bp.log.info("here-base {0};{1};{2};{3}", bp.thread.name, stmt,syncData,isHot)
+      return syncData ? bp.hot(isHot).sync(stmt, syncData) : bp.hot(isHot).sync(stmt);
+    },
+  ],
+  decorators: function () { return bp.thread.data.syncDecorators },
+  level: function () { return bp.thread.data.syncDecoratorsLevel },
+  add: function(value,i) {
+    let loc = i;
+    if(typeof i==='undefined' || i === null){
+      loc = this.level()
+    }
+    this.decorators().splice(loc, 0,value)
   },
-];
+  remove: function(i) {
+    let loc = i;
+    if (typeof i === 'undefined' || i === null) {
+      loc = this.level()
+    }
+    this.decorators().splice(loc, 1)
+  },
+  incLevel: function () { bp.thread.data.syncDecoratorsLevel++ },
+  decLevel: function () { bp.thread.data.syncDecoratorsLevel-- },
+  decorator: function () { return this.decorators()[this.level()] },
+  applyCurrent: function (stmt, syncData, isHot) { return this.decorator()(stmt, syncData, isHot) },
+  applyNext: function (stmt, syncData, isHot) {
+    this.incLevel()
+    try {
+      return this.applyCurrent(stmt, syncData, isHot)
+    }finally {
+      this.decLevel()
+    }
+  }
+}
 
 /**
  * Adds a new b-thread, with initialized data field, to the b-program.
@@ -46,11 +77,15 @@ function bthread(name, data, fn) {
   if (!data.interrupt) {
     data.interrupt = [];
   }
+  if (!data.syncDecoratorsLevel) {
+    data.syncDecoratorsLevel = 0;
+  }
 
   bp.registerBThread(name, data, function () {
     if (!data.syncDecorators) {
-      data.syncDecorators = __default_sync_decorations__;
+      data.syncDecorators = __sync_decoration__.defaults;
     }
+
     fn();
   });
 }
@@ -106,7 +141,7 @@ function sync(stmt, syncData, isHot) {
   __appendToStmtPart__(stmt, 'block', bp.thread.data.block);
   __appendToStmtPart__(stmt, 'interrupt', bp.thread.data.interrupt);
 
-  return bp.thread.data.syncDecorators[0](stmt, syncData, isHot, bp.thread.data.syncDecorators.slice(1))
+  return __sync_decoration__.applyCurrent(stmt, syncData, isHot)
 }
 
 /**

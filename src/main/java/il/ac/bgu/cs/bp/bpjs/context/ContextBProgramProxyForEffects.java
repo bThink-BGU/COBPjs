@@ -111,7 +111,7 @@ public class ContextBProgramProxyForEffects {
   }
 
   public BThreadDataProxy getThread() {
-    throw null;
+    throw error;
   }
 
   public String getJavaThreadName() {

@@ -1,8 +1,8 @@
 // Requirement $\ref{r_vacuum}$
-ctx.bthread('no vacuuming at night', 'Night',
+/*ctx.bthread('no vacuuming at night', 'Night',
   function (entity) {
     sync({block: Event('vacuum')})
-  })
+  })*/
 
 // Requirement $\ref{r_cold}$
 ctx.bthread('Add Cold Three Times', 'Room.WithTaps',
@@ -52,8 +52,8 @@ bthread('Simulate day/night', function () {
   }
 })
 
-bthread('Simulate vacuum', function () {
+/*bthread('Simulate vacuum', function () {
   while (true) {
     sync({request: Event('vacuum')})
   }
-})
+})*/

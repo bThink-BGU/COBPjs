@@ -5,18 +5,22 @@ const ContextChanged = bp.EventSet('CTX.ContextChanged', function (e) {
   return ctx_proxy.effectFunctions.containsKey(String('CTX.Effect: ' + e.name))
 })
 
-__default_sync_decorations__.unshift(function (stmt, syncData, isHot, decorations) {
+__sync_decoration__.defaults.unshift(function (stmt, syncData, isHot) {
+  bp.log.info("here-ctx {0};{1};{2};{3}", bp.thread.name, stmt,syncData,isHot)
   let ret = null
   let changes = null
   let query = null
   let id = null
   while (true) {
     stmt.waitFor.unshift(ContextChanged)
-    ret = decorations[0](stmt, syncData, isHot, decorations.slice(1))
+    ret = __sync_decoration__.applyNext(stmt,syncData,isHot)
     stmt.waitFor.shift()
     if (ContextChanged.contains(ret)) {
-      changes = ctx_proxy.getChanges(bp.store, ret, this)
-      changes = changes.toArray()
+      // changes = ctx_proxy.getChanges(bp.store, ret, ctx)
+      bp.log.info("b- getclass({0}): {1}", bp.getClass(), bp.thread.name)
+      ctx_proxy.waitForEffect(bp.store, ret, ctx)
+      bp.log.info("a- getclass({0}): {1}", bp.getClass())
+      changes = ctx_proxy.getChanges().toArray()
       query = bp.thread.data.query
       id = bp.thread.data.seed
       if (query) {
