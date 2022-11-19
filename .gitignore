@@ -21,6 +21,9 @@ buildNumber.properties
 *.iml
 *.iws
 
+# Fleet
+.fleet/
+
 # vscode
 .vscode
 
