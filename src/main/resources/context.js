@@ -1,25 +1,24 @@
 /* global bp, ctx_proxy, Packages, EventSets */ // <-- Turn off warnings
 // importPackage(Packages.il.ac.bgu.cs.bp.bpjs.model.eventsets);
 
-const ContextChanged = bp.EventSet('CTX.ContextChanged', function (e) {
+const ContextChanged = EventSet('CTX.ContextChanged', function (e) {
   return ctx_proxy.effectFunctions.containsKey(String('CTX.Effect: ' + e.name))
 })
 
-__sync_decoration__.defaults.unshift(function (stmt, syncData, isHot) {
-  bp.log.info("here-ctx {0};{1};{2};{3}", bp.thread.name, stmt,syncData,isHot)
+__sync__ = function (stmt, syncData, isHot) {
   let ret = null
   let changes = null
   let query = null
   let id = null
   while (true) {
     stmt.waitFor.unshift(ContextChanged)
-    ret = __sync_decoration__.applyNext(stmt,syncData,isHot)
+    ret = syncData ? bp.hot(isHot).sync(stmt, syncData) : bp.hot(isHot).sync(stmt)
     stmt.waitFor.shift()
     if (ContextChanged.contains(ret)) {
       // changes = ctx_proxy.getChanges(bp.store, ret, ctx)
-      bp.log.info("b- getclass({0}): {1}", bp.getClass(), bp.thread.name)
+      // bp.log.info("b- getclass({0}): {1}", bp.getClass(), bp.thread.name)
       ctx_proxy.waitForEffect(bp.store, ret, ctx)
-      bp.log.info("a- getclass({0}): {1}", bp.getClass())
+      // bp.log.info("a- getclass({0}): {1}", bp.getClass())
       changes = ctx_proxy.getChanges().toArray()
       query = bp.thread.data.query
       id = bp.thread.data.seed
@@ -41,7 +40,7 @@ __sync_decoration__.defaults.unshift(function (stmt, syncData, isHot) {
     query = null
     id = null
   }
-});
+}
 
 const ctx = {
   __internal_fields__: {
@@ -199,5 +198,4 @@ const ctx = {
       this.__internal_fields__.insertEntityUnsafe(entities[i])
   }
 }
-
 Object.freeze(ctx)

@@ -7,48 +7,15 @@
  */
 function isJSSet(o) {
   try {
-    Set.prototype.has.call(o); // throws if o is not an object or has no [[SetData]]
-    return true;
+    Set.prototype.has.call(o) // throws if o is not an object or has no [[SetData]]
+    return true
   } catch (e) {
-    return false;
+    return false
   }
 }
 
-let __sync_decoration__ = {
-  defaults: [
-    function (stmt, syncData, isHot) {
-      bp.log.info("here-base {0};{1};{2};{3}", bp.thread.name, stmt,syncData,isHot)
-      return syncData ? bp.hot(isHot).sync(stmt, syncData) : bp.hot(isHot).sync(stmt);
-    },
-  ],
-  decorators: function () { return bp.thread.data.syncDecorators },
-  level: function () { return bp.thread.data.syncDecoratorsLevel },
-  add: function(value,i) {
-    let loc = i;
-    if(typeof i==='undefined' || i === null){
-      loc = this.level()
-    }
-    this.decorators().splice(loc, 0,value)
-  },
-  remove: function(i) {
-    let loc = i;
-    if (typeof i === 'undefined' || i === null) {
-      loc = this.level()
-    }
-    this.decorators().splice(loc, 1)
-  },
-  incLevel: function () { bp.thread.data.syncDecoratorsLevel++ },
-  decLevel: function () { bp.thread.data.syncDecoratorsLevel-- },
-  decorator: function () { return this.decorators()[this.level()] },
-  applyCurrent: function (stmt, syncData, isHot) { return this.decorator()(stmt, syncData, isHot) },
-  applyNext: function (stmt, syncData, isHot) {
-    this.incLevel()
-    try {
-      return this.applyCurrent(stmt, syncData, isHot)
-    }finally {
-      this.decLevel()
-    }
-  }
+let __sync__ = function (stmt, syncData, isHot) {
+  return syncData ? bp.hot(isHot).sync(stmt, syncData) : bp.hot(isHot).sync(stmt)
 }
 
 /**
@@ -61,33 +28,28 @@ let __sync_decoration__ = {
 function bthread(name, data, fn) {
   if (!fn) {
     // data is missing, we were invoked with 2 args
-    fn = data;
-    data = {};
-
+    fn = data
+    data = {}
   }
   if (!data.request) {
-    data.request = [];
+    data.request = []
   }
   if (!data.waitFor) {
-    data.waitFor = [];
+    data.waitFor = []
   }
   if (!data.block) {
-    data.block = [];
+    data.block = []
   }
   if (!data.interrupt) {
-    data.interrupt = [];
-  }
-  if (!data.syncDecoratorsLevel) {
-    data.syncDecoratorsLevel = 0;
+    data.interrupt = []
   }
 
   bp.registerBThread(name, data, function () {
-    if (!data.syncDecorators) {
-      data.syncDecorators = __sync_decoration__.defaults;
+    if (!data.syncDecorator) {
+      data.syncDecorator = __sync__
     }
-
-    fn();
-  });
+    fn()
+  })
 }
 
 /**
@@ -99,19 +61,19 @@ function bthread(name, data, fn) {
  */
 function __appendToStmtPart__(stmt, field, value) {
   if (typeof value === 'undefined' || value == null) {
-    return;
+    return
   }
   if (stmt[field] === 'undefined' || stmt[field] == null) {
-    stmt[field] = [];
+    stmt[field] = []
   }
   if (!Array.isArray(stmt[field])) {
-    stmt[field] = [stmt[field]];
+    stmt[field] = [stmt[field]]
   }
   if (!Array.isArray(value)) {
-    value = [value];
+    value = [value]
   }
   //since everything is array, and we can assume non-nested arrays in request, then we always concat.
-  stmt[field] = value.concat(stmt[field]);
+  stmt[field] = value.concat(stmt[field])
 }
 
 /**
@@ -128,20 +90,20 @@ function __appendToStmtPart__(stmt, field, value) {
  *
  */
 // the function must not be const since it is overridden in context
-function sync(stmt, syncData, isHot) {
+const sync = function (stmt, syncData, isHot) {
   if (!stmt) {
-    stmt = {};
+    stmt = {}
   }
-  if(!isHot) {
-    isHot = false;
+  if (!isHot) {
+    isHot = false
   }
 
-  __appendToStmtPart__(stmt, 'request', bp.thread.data.request);
-  __appendToStmtPart__(stmt, 'waitFor', bp.thread.data.waitFor);
-  __appendToStmtPart__(stmt, 'block', bp.thread.data.block);
-  __appendToStmtPart__(stmt, 'interrupt', bp.thread.data.interrupt);
+  __appendToStmtPart__(stmt, 'request', bp.thread.data.request)
+  __appendToStmtPart__(stmt, 'waitFor', bp.thread.data.waitFor)
+  __appendToStmtPart__(stmt, 'block', bp.thread.data.block)
+  __appendToStmtPart__(stmt, 'interrupt', bp.thread.data.interrupt)
 
-  return __sync_decoration__.applyCurrent(stmt, syncData, isHot)
+  return bp.thread.data.syncDecorator(stmt, syncData, isHot)
 }
 
 /**
@@ -150,10 +112,10 @@ function sync(stmt, syncData, isHot) {
  */
 function isInBThread() {
   try {
-    let a = bp.thread.name;
-    return true;
+    let a = bp.thread.name
+    return true
   } catch (ex) {
-    return false;
+    return false
   }
 }
 
@@ -166,19 +128,101 @@ function isInBThread() {
  */
 function testInBThread(caller, expectInBThread) {
   if (expectInBThread && !isInBThread())
-    throw new Error(String("The function " + caller + " must be called by a b-thread"));
+    throw new Error(String('The function ' + caller + ' must be called by a b-thread'))
   if (!expectInBThread && isInBThread())
-    throw new Error(String("The function " + caller + " must be called from the global scope"));
+    throw new Error(String('The function ' + caller + ' must be called from the global scope'))
 }
 
-function Any(type) {
-  return bp.EventSet('Any(' + type + ')', function (e) {
-    return String(e.name) == String(type)
-  })
+/**
+ * Generate an event set based on the filter data.
+ * If `filterData` is a String, this is a by-name filter.
+ * If `filterData` is a RegExp, this is a by-name filter, but with a regular expression.
+ * If `filterData` is an object, we filter by the existing fields of the event's data object.
+ *
+ * @param {String|RegExp} filterName
+ * @param {Object} filterData
+ * @returns {bp.EventSet}
+ */
+function any(filterName, filterData) {
+  let filter = null
+
+  if (filterName) {
+    let filterType = (typeof filterName)
+    switch (filterType) {
+      case 'string':
+        filter = EventSet('AnyNamed' + filterName, function (e) {
+          return e.name === filterName
+        })
+        break
+      case 'object':
+        if (filterName instanceof RegExp) {
+          filter = EventSet('AnyNamedRegEx ' + filterData, function (e) {
+            return filterData.test(e.name)
+          })
+        } else {
+          throw 'Any: Unsupported filterName type: ' + filterType + ' (' + filterName + ')'
+        }
+        break
+      default:
+        throw 'Any: Unsupported filterName type: ' + filterType + ' (' + filterName + ')'
+    }
+  }
+  if (filterData) {
+    if (typeof filterData !== 'object') {
+      throw 'Any: Unsupported filterData type: ' + (typeof filterData) + ' (' + filterData + ')'
+    }
+    let keys = Object.keys(filterData)
+    let str = ''
+    for (let idx in keys) {
+      str = str + ' ' + keys[idx] + ':' + filterData[keys[idx]]
+    }
+    let dataFilter = EventSet('AnyWithData' + str, function (e) {
+      if (!e.data) return false
+
+      for (let key of keys) {
+        if (filterData[key] instanceof RegExp) {
+          let match = filterData[key].test(e.data[key])
+          if (!match) {
+            //bp.log.info("({0}).test({1}) = {2}", filterData[key].toString(), e.data[key], match)
+            return false
+          }
+        } else {
+          if (filterData[key] != e.data[key]) {
+            return false
+          }
+        }
+      }
+      return true
+    })
+    if (filter === null) {
+      return dataFilter
+    } else {
+      return bp.EventSets.allOf(filter, dataFilter)
+    }
+  }
+  if (filter === null) {
+    throw 'Any: No filter was provided'
+  }
+  return filter
 }
 
+/**
+ * Function for creating event sets.
+ * @param {String} name
+ * @param {function} callback
+ * @returns {bp.EventSet}
+ * @constructor
+ */
+function EventSet(name, callback) {
+  return bp.EventSet(name, callback)
+}
+
+/**
+ * Function for creating events.
+ * @param {String} name
+ * @param {Object} data
+ * @returns {bp.Event}
+ */
 function Event(name, data) {
-  if (typeof data !== 'undefined' && data != null)
-    return bp.Event(name, data)
-  return bp.Event(name)
+  return (arguments.length === 2) ? bp.Event(name, data) : bp.Event(name)
 }

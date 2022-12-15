@@ -3,16 +3,12 @@ package il.ac.bgu.cs.bp.bpjs.context;
 import il.ac.bgu.cs.bp.bpjs.execution.jsproxy.*;
 import il.ac.bgu.cs.bp.bpjs.execution.tasks.FailedAssertionException;
 import il.ac.bgu.cs.bp.bpjs.model.BEvent;
-import il.ac.bgu.cs.bp.bpjs.model.BProgramSyncSnapshot;
-import il.ac.bgu.cs.bp.bpjs.model.BThreadSyncSnapshot;
 import il.ac.bgu.cs.bp.bpjs.model.eventsets.EventSet;
 import il.ac.bgu.cs.bp.bpjs.model.eventsets.EventSets;
 import il.ac.bgu.cs.bp.bpjs.model.eventsets.JsEventSet;
 import org.mozilla.javascript.ContinuationPending;
 import org.mozilla.javascript.Function;
 import org.mozilla.javascript.NativeObject;
-
-import java.util.Objects;
 
 public class ContextBProgramProxyForEffects {
   private static final IllegalAccessError error = new IllegalAccessError("Cannot call this function within an effect or query function");
