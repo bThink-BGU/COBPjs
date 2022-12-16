@@ -15,10 +15,7 @@ __sync__ = function (stmt, syncData, isHot) {
     ret = syncData ? bp.hot(isHot).sync(stmt, syncData) : bp.hot(isHot).sync(stmt)
     stmt.waitFor.shift()
     if (ContextChanged.contains(ret)) {
-      // changes = ctx_proxy.getChanges(bp.store, ret, ctx)
-      // bp.log.info("b- getclass({0}): {1}", bp.getClass(), bp.thread.name)
       ctx_proxy.waitForEffect(bp.store, ret, ctx)
-      // bp.log.info("a- getclass({0}): {1}", bp.getClass())
       changes = ctx_proxy.getChanges().toArray()
       query = bp.thread.data.query
       id = bp.thread.data.seed

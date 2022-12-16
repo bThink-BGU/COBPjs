@@ -43,14 +43,6 @@ public class ContextProxy implements Serializable {
     }
   }
 
-  public synchronized HashSet<ContextChangesCalculator.ContextChange> getChanges(MapProxy<String, Object> mapProxy, BEvent event, Scriptable ctx) {
-    if(!effectFinished) {
-      this.changes = ccc.calculateChanges(mapProxy,this, event, ctx.getParentScope());
-      effectFinished = true;
-    }
-    return changes;
-  }
-
   public synchronized HashSet<ContextChangesCalculator.ContextChange> getChanges() {
     if(changes == null) changes = new HashSet<>();
     return changes;
