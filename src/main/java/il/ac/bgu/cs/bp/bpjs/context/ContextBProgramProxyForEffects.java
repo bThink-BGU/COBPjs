@@ -11,7 +11,7 @@ import org.mozilla.javascript.Function;
 import org.mozilla.javascript.NativeObject;
 
 public class ContextBProgramProxyForEffects {
-  private static final IllegalAccessError error = new IllegalAccessError("Cannot call this function within an effect or query function");
+  private static final RuntimeException error = new RuntimeException("Cannot call this function within an effect or query function");
   public MapProxy mapProxy;
   private final BProgramJsProxy bpjsProxy;
   public final BpLog log;
