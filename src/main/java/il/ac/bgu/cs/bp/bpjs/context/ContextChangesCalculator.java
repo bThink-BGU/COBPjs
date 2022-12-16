@@ -2,7 +2,7 @@ package il.ac.bgu.cs.bp.bpjs.context;
 
 import il.ac.bgu.cs.bp.bpjs.BPjs;
 import il.ac.bgu.cs.bp.bpjs.execution.jsproxy.BProgramJsProxy;
-import il.ac.bgu.cs.bp.bpjs.execution.jsproxy.DirectMapProxy;
+import il.ac.bgu.cs.bp.bpjs.execution.jsproxy.CtxDirectMapProxy;
 import il.ac.bgu.cs.bp.bpjs.execution.jsproxy.MapProxy;
 import il.ac.bgu.cs.bp.bpjs.internal.ScriptableUtils;
 import il.ac.bgu.cs.bp.bpjs.model.BEvent;
@@ -26,7 +26,7 @@ public class ContextChangesCalculator {
     Context cx = BPjs.enterRhinoContext();
     try {
       globalScope.put("bp", globalScope, Context.javaToJS(bpProxyForEffect, globalScope));
-      bpProxyForEffect.setStore(new DirectMapProxy<>(store));
+      bpProxyForEffect.setStore(new CtxDirectMapProxy<>(store));
       return calculateChanges(event, proxy, cx, jsRunQuery);
     } finally {
       globalScope.put("bp", globalScope, bpJsProxy);

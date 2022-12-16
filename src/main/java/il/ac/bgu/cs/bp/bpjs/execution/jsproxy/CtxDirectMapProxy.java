@@ -35,13 +35,13 @@ import java.util.stream.Collectors;
  *
  * @author michael
  */
-public class DirectMapProxy<K,V> extends MapProxy<K,V> {
+public class CtxDirectMapProxy<K,V> extends MapProxy<K,V> {
 
-  public DirectMapProxy(Map<K, V> aSeed) {
+  public CtxDirectMapProxy(Map<K, V> aSeed) {
     super(aSeed);
   }
 
-  public DirectMapProxy(MapProxy<K, V> aSeed) {
+  public CtxDirectMapProxy(MapProxy<K, V> aSeed) {
     super(aSeed.seed);
   }
 
