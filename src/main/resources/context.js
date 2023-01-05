@@ -134,8 +134,16 @@ const ctx = {
       func = queryName_or_function
     }
     // TODO check if you can apply .map or .filter on the result
-    let entities = bp.store.entrySet().stream().filter(e=>e.getKey().startsWith('CTX.Entity: ')).map(e=>e.getValue()).toArray()
-    return func(entities)
+    //let entities = bp.store.entrySet().stream().filter(e=>e.getKey().startsWith('CTX.Entity: ')).map(e=>e.getValue()).toArray()
+    //return func(entities)
+    let ans = []
+    let storeEntries = bp.store.entrySet().toArray()
+    for (let i = 0; i < storeEntries.length; i++) {
+      let entry = storeEntries[i]
+      if (entry.getKey().startsWith(String('CTX.Entity:')) && func(entry.getValue()))
+        ans.push(entry.getValue())
+    }
+    return ans
   },
   registerQuery: function (name, query) {
     testInBThread('registerQuery', false)
