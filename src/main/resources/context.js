@@ -20,7 +20,9 @@ __sync__ = function (stmt, syncData, isHot) {
       query = bp.thread.data.query
       id = bp.thread.data.seed
       if (query) {
+        // change's structure - {type: 'end/new', query: 'query_name', entityId: 'id'}
         for (let i = 0; i < changes.length; i++) {
+          //TODO in multiple queries, we will change the following if
           if (changes[i].type.equals('end') && changes[i].query.equals(query) && changes[i].entityId.equals(id)) {
             ctx_proxy.throwEndOfContext()
           }
@@ -44,9 +46,12 @@ const ctx = {
     createLiveCopy: function (name, query, entity, bt) {
       bthread(name,
         { query: query, seed: entity.id },
+        //TODO in multiple queries, we will have instead:
+        // {seed: {query[0]: entity[0], query[1]: entity[1],...}},
         function () {
           try {
             bt(entity)
+            //TODO in multiple queries, we will have instead: bt(entity[0], entity[1],...)
           } catch (ex) {
             if (!ctx.isEndOfContextException(ex)) {
               ctx.rethrowException(ex)
@@ -114,6 +119,11 @@ const ctx = {
     return bp.store.get(key)
     //throw new Error("Entity with id '" + id + "' does not exist")
   },
+  /**
+   * Returns an array of all entities that are in the given context
+   * @param {string|delegate} queryName_or_function query name or a query function that represents a context in the system
+   * @returns {Entity[]} all entities that are in the given context
+   */
   runQuery: function (queryName_or_function) {
     let func
     if (typeof (queryName_or_function) === 'string') {
@@ -123,14 +133,9 @@ const ctx = {
     } else {
       func = queryName_or_function
     }
-    let ans = []
-    let storeEntries = bp.store.entrySet().toArray()
-    for (let i = 0; i < storeEntries.length; i++) {
-      let entry = storeEntries[i]
-      if (entry.getKey().startsWith(String('CTX.Entity:')) && func(entry.getValue()))
-        ans.push(entry.getValue())
-    }
-    return ans
+    // TODO check if you can apply .map or .filter on the result
+    let entities = bp.store.entrySet().stream().filter(e=>e.getKey().startsWith('CTX.Entity: ')).map(e=>e.getValue()).toArray()
+    return func(entities)
   },
   registerQuery: function (name, query) {
     testInBThread('registerQuery', false)
@@ -149,9 +154,11 @@ const ctx = {
       throw new Error('Effect already exists for event ' + eventName)
     ctx_proxy.effectFunctions.put(key, effect)
   },
+  //TODO the entire function will need an update to support multiple queries
   bthread: function (name, context, bt) {
     bthread('cbt: ' + name,
       function () {
+        // spawn live copies for current answers
         let res = ctx.runQuery(context)
         for (let i = 0; i < res.length; i++) {
           ctx.__internal_fields__.createLiveCopy(String('Live copy' + ': ' + name + ' ' + res[i].id), context, res[i], bt)
@@ -161,6 +168,7 @@ const ctx = {
         while (true) {
           sync({ waitFor: ContextChanged })
           // bp.log.info("changesA {0}: {1}", context, ctx_proxy.getChanges())
+          //Filter all changes that are new and are relevant to the context
           changes = ctx_proxy.getChanges().parallelStream()
           .filter(function (change) {
             return change.type.equals('new') && change.query.equals(context)
