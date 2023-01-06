@@ -15,13 +15,15 @@ public class Main {
 
   public static void main(final String[] args) throws IOException {
     createBProgam();
-    runProgram();
-//    verifyProgram();
+//    runProgram();
+    verifyProgram();
   }
 
   private static void createBProgam() {
     //region Load example program
     bprog = new ContextBProgram(example.getResourcesNames());
+    //print example.getResoucesNames()
+    System.out.println(MessageFormat.format("Loading resources: {0}", example.getResourcesNames()));
     example.initializeBProg(bprog);
     //endregion
 
