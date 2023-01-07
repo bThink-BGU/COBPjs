@@ -11,7 +11,7 @@ import java.text.MessageFormat;
 
 public class Main {
   private static BProgram bprog;
-  private static Example example = Example.HotCold;
+  private static Example example = Example.SampleProgram;
 
   public static void main(final String[] args) throws IOException {
     createBProgam();
@@ -22,8 +22,6 @@ public class Main {
   private static void createBProgam() {
     //region Load example program
     bprog = new ContextBProgram(example.getResourcesNames());
-    //print example.getResoucesNames()
-    System.out.println(MessageFormat.format("Loading resources: {0}", example.getResourcesNames()));
     example.initializeBProg(bprog);
     //endregion
 

@@ -6,6 +6,7 @@ package il.ac.bgu.cs.bp.bpjs.context;
 import il.ac.bgu.cs.bp.bpjs.analysis.DfsBProgramVerifier;
 import il.ac.bgu.cs.bp.bpjs.analysis.ExecutionTraceInspections;
 import il.ac.bgu.cs.bp.bpjs.analysis.VerificationResult;
+import il.ac.bgu.cs.bp.bpjs.analysis.listeners.PrintDfsVerifierListener;
 import il.ac.bgu.cs.bp.bpjs.analysis.violations.Violation;
 import il.ac.bgu.cs.bp.bpjs.model.BEvent;
 import il.ac.bgu.cs.bp.bpjs.model.BProgram;
@@ -49,7 +50,9 @@ public class TestUtils {
         vfr.addInspection( ExecutionTraceInspections.HOT_SYSTEM );
         vfr.addInspection( ExecutionTraceInspections.HOT_TERMINATIONS  );
         vfr.addInspection( ExecutionTraceInspections.HOT_BTHREADS  );
-        
+        vfr.setMaxTraceLength(2000);
+        vfr.setProgressListener(new PrintDfsVerifierListener());
+        vfr.setIterationCountGap(100);
         var res = vfr.verify(bprog);
         
         if ( res.isViolationFound() ) {
