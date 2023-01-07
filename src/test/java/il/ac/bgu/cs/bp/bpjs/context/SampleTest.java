@@ -25,7 +25,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 
 public class SampleTest {
-  boolean afterUpdatingToWholeDBQuery = true;
+  boolean afterUpdatingToWholeDBQuery = true;//this is true when using the whole DB query, and false when using the single query
+  //I.e., when the code in context.js is updated to use the whole DB query, this should be true.
+
 
   /**
    * Sample test that checks if the only live bthread is the one
