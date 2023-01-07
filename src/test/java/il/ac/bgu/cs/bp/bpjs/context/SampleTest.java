@@ -20,20 +20,12 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 
-public class SampleTest {
+/**
+ * The (Hard coded) values we compare our results to are based on the results of the 0.6.6 version of BPjs.
+ */
 
-  /**
-   * Sample test that records the BProgramSyncSnapshots.
-   *
-   * @throws IOException
-   */
-  @Test
-  public void testBProgramSyncSnapshots() throws Exception {
-//    BProgram bprog = TestUtils.prepareBProgram("Testing/HotCold"); // bprogram's source file is in src/test/resources/sample-bprog.js
-//    var res = TestUtils.verify(bprog);
-//    assertEquals(10, res.getScannedStatesCount());
-//    assertEquals(20, res.getScannedEdgesCount());
-  }
+public class SampleTest {
+  boolean afterUpdatingToWholeDBQuery = true;
 
   /**
    * Sample test that checks if the only live bthread is the one
@@ -44,8 +36,11 @@ public class SampleTest {
   @Test
   public void onlyInContextBthreadsRun() throws Exception {
     BProgram bprog = TestUtils.prepareBProgram("TestCases/activeOnlyIfInContext.js");
+    if(afterUpdatingToWholeDBQuery)
+    {
+      bprog= TestUtils.prepareBProgram("TestingWholeDbQuery/activeOnlyIfInContext.js");
+    }
     var res = TestUtils.verify(bprog);
-
     assertEquals(2, res.getScannedStatesCount());
     assertEquals(5, res.getScannedEdgesCount());
   }
@@ -58,38 +53,53 @@ public class SampleTest {
   @Test
   public void onlyInContextBthreadsRun2Contexts() throws Exception {
     BProgram bprog = TestUtils.prepareBProgram("TestCases/activeOnlyIfInContext_2Contexts.js");
+    if(afterUpdatingToWholeDBQuery)
+    {
+      bprog= TestUtils.prepareBProgram("TestingWholeDbQuery/activeOnlyIfInContext_2Contexts.js");
+    }
     var res = TestUtils.verify(bprog);
     assertEquals(8, res.getScannedStatesCount());
     assertEquals(31, res.getScannedEdgesCount());
   }
   /**
-    * Sample test that checks the fact that if a context is always off, its bthreads are never active
+    * Sample test that checks the fact that if a context is always off,
+   * its bthreads are never active
+   *
    * @throws Exception
    */
   @Test
   public void bthreadWithOffContextDoesntWakeUp() throws Exception {
     BProgram bprog = TestUtils.prepareBProgram("TestCases/alwaysOffContext.js");
+    if(afterUpdatingToWholeDBQuery)
+    {
+      bprog= TestUtils.prepareBProgram("TestingWholeDbQuery/alwaysOffContext.js");
+    }
     var res = TestUtils.verify(bprog);
     assertEquals(2, res.getScannedStatesCount());
     assertEquals(5, res.getScannedEdgesCount());
   }
   /**
-   * Sample test that checks the fact that if a context is always off, its bthreads are never active
-   * Even if it is the only context
+   * Sample test that checks the fact that if a context is always off,
+   * its bthreads are never active, even if it is the only context
    * @throws Exception
    */
   @Test
   public void noBthreadInContext() throws Exception {
     BProgram bprog = TestUtils.prepareBProgram("TestCases/noONeInContext.js");
+    if(afterUpdatingToWholeDBQuery)
+    {
+      bprog= TestUtils.prepareBProgram("TestingWholeDbQuery/noONeInContext.js");
+    }
     var res = TestUtils.verify(bprog);
     assertEquals(1, res.getScannedStatesCount());
     assertEquals(0, res.getScannedEdgesCount());
   }
-//  /**
-//   * Sample test that checks the fact that if a context is always off, its bthreads are never active
-//   * Even if it is the only context
-//   * @throws Exception
-//   */
+  /**
+   * Sample test that checks the fact that if a context is always off, its bthreads are never active
+   * Even if it is the only context
+   * @throws Exception
+   * @comment: this test is not working, because the no way to use priority with context
+   */
 //  @Test
 //  public void priorityOfTwoBthreads() throws Exception {
 //    BProgram bprog = TestUtils.prepareBProgram("TestCases/checkingPriority.js");
@@ -98,12 +108,22 @@ public class SampleTest {
 //    assertEquals(0, res.getScannedEdgesCount());
 //  }
 
+  /**
+   * Testing using the HotCold Program
+   * @throws Exception
+   */
   @Test
   public void testHotCold() throws Exception {
-    Example example = Example.HotCold;
-    BProgram bprog = new ContextBProgram(example.getResourcesNames());
-    example.initializeBProg(bprog);
+    BProgram bprog;
+    if(afterUpdatingToWholeDBQuery) {
+      bprog= TestUtils.prepareBProgram("TestingWholeDbQuery/HotCold.js");
+    }
+    else {
+      Example example = Example.HotCold;
+      bprog = new ContextBProgram(example.getResourcesNames());
+      example.initializeBProg(bprog);
 //    BProgram bprog = TestUtils.prepareBProgram("Testing/HotCold");
+    }
     var res = TestUtils.verify(bprog);
     assertEquals(115, res.getScannedStatesCount());
     assertEquals(348, res.getScannedEdgesCount());
@@ -135,10 +155,17 @@ public class SampleTest {
   @Test
   public void testSampleProgram() throws Exception {
     //Fails from original
+    BProgram bprog;
+    if(afterUpdatingToWholeDBQuery) {
+      bprog= TestUtils.prepareBProgram("TestingWholeDbQuery/SampleProgram.js");
+    }
+    else {
+      Example example = Example.SampleProgram;
+      bprog = new ContextBProgram(example.getResourcesNames());
+      example.initializeBProg(bprog);
+    }
 
-    Example example = Example.SampleProgram;
-    BProgram bprog = new ContextBProgram(example.getResourcesNames());
-    example.initializeBProg(bprog);
+
     var res = TestUtils.verify(bprog);
     assertEquals(1, res.getScannedStatesCount());
     assertEquals(0, res.getScannedEdgesCount());

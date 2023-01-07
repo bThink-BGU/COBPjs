@@ -3,13 +3,12 @@
 // In this case, no context is active, so no b-thread should be active.
 
 
-
 let secondEntity = ctx.Entity("Always Off", "type", {inContext: false})
 ctx.populateContext([secondEntity])
 
 ctx.registerQuery('Always Off',
-    function (entity) {
-        return entity.id == 'Always Off' && entity.inContext
+    function (entities) {
+        return entities.filter(entity => entity.id == 'Always Off' && entity.inContext)
     } )
 
 ctx.bthread("a in context Always Off", "Always Off", function (entity) {

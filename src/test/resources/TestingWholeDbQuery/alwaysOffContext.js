@@ -8,12 +8,12 @@ let oneEntity = ctx.Entity("Context1", "type", {inContext: true})
 let secondEntity = ctx.Entity("Always Off", "type", {inContext: false})
 ctx.populateContext([oneEntity, secondEntity])
 ctx.registerQuery('Context1',
-    function (entity) {
-        return entity.id == 'Context1' && entity.inContext
+    function (entities) {
+        return entities.filter(entity => entity.id == 'Context1' && entity.inContext)
     })
 ctx.registerQuery('Always Off',
-    function (entity) {
-        return entity.id == 'Always Off' && entity.inContext
+    function (entities) {
+        return entities.filter(entity => entity.id == 'Always Off' && entity.inContext)
     } )
 
 ctx.registerEffect('ToggleContext1', function (data) //can be divided into two effects one for true and one for false

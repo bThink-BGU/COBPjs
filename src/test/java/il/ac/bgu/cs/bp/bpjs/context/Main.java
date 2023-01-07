@@ -11,12 +11,12 @@ import java.text.MessageFormat;
 
 public class Main {
   private static BProgram bprog;
-  private static Example example = Example.SampleProgram;
+  private static Example example = Example.HotCold;
 
   public static void main(final String[] args) throws IOException {
     createBProgam();
-//    runProgram();
-    verifyProgram();
+    runProgram();
+//    verifyProgram();
   }
 
   private static void createBProgam() {

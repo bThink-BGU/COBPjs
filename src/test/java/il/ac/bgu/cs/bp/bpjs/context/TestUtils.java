@@ -50,9 +50,7 @@ public class TestUtils {
         vfr.addInspection( ExecutionTraceInspections.HOT_SYSTEM );
         vfr.addInspection( ExecutionTraceInspections.HOT_TERMINATIONS  );
         vfr.addInspection( ExecutionTraceInspections.HOT_BTHREADS  );
-        vfr.setMaxTraceLength(2000);
-        vfr.setProgressListener(new PrintDfsVerifierListener());
-        vfr.setIterationCountGap(100);
+
         var res = vfr.verify(bprog);
         
         if ( res.isViolationFound() ) {
