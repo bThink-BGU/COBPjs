@@ -11,7 +11,7 @@ import org.mozilla.javascript.Function;
 import org.mozilla.javascript.NativeObject;
 
 public class ContextBProgramProxyForEffects {
-    private static final RuntimeException error(String name) {
+    private static RuntimeException error(String name) {
         return new RuntimeException("Cannot call function '" + name + "' within an effect or query function");
     }
 
