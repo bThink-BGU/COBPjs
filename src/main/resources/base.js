@@ -20,7 +20,7 @@ let __sync__ = function (stmt, syncData, isHot) {
 
 /**
  * Adds a new b-thread, with initialized data field, to the b-program.
- * @param {string} name name of new b-thread
+ * @param {string} name of new b-thread
  * @param {object} data the initial data for the b-thread. Optional.
  * @param {function} fn entry point of new b-thread
  * @returns nothing
@@ -28,26 +28,25 @@ let __sync__ = function (stmt, syncData, isHot) {
 function bthread(name, data, fn) {
   if (!fn) {
     // data is missing, we were invoked with 2 args
-    fn = data
-    data = {}
+    fn = data;
+    data = {};
   }
   if (!data.request) {
-    data.request = []
+    data.request = [];
   }
   if (!data.waitFor) {
-    data.waitFor = []
+    data.waitFor = [];
   }
   if (!data.block) {
-    data.block = []
+    data.block = [];
   }
   if (!data.interrupt) {
-    data.interrupt = []
+    data.interrupt = [];
   }
-
   bp.registerBThread(name, data, function () {
     if (!data.syncDecorator) {
-      data.syncDecorator = __sync__
-    }
+      data.syncDecorator = __sync__;
+    } //CANNOT BE REMOVED: sync for all bthread must respect the context decoration, even if they don't use it
     fn()
   })
 }
@@ -60,20 +59,18 @@ function bthread(name, data, fn) {
  * @private
  */
 function __appendToStmtPart__(stmt, field, value) {
-  if (typeof value === 'undefined' || value == null) {
-    return
+  if (bp.thread.data[field].length === 0) {
+    return;
   }
-  if (stmt[field] === 'undefined' || stmt[field] == null) {
-    stmt[field] = []
+  if (Array.isArray(stmt[field])) {
+    stmt[field] = stmt[field].concat(bp.thread.data[field]);
+  } else {
+    if (stmt[field]) {
+      stmt[field] = [stmt[field]].concat(bp.thread.data[field]);
+    } else {
+      stmt[field] = bp.thread.data[field];
+    }
   }
-  if (!Array.isArray(stmt[field])) {
-    stmt[field] = [stmt[field]]
-  }
-  if (!Array.isArray(value)) {
-    value = [value]
-  }
-  //since everything is array, and we can assume non-nested arrays in request, then we always concat.
-  stmt[field] = value.concat(stmt[field])
 }
 
 /**
@@ -86,24 +83,38 @@ function __appendToStmtPart__(stmt, field, value) {
  * @param {Object} [syncData] optional sync data
  * @param {Boolean} [isHot=false] whether the sync is hot or not.
  * @returns {BEvent} The selected event
- * FIXME currently this changes stmt, we might not want that.
+ *
+ * NOTE currently this changes stmt, we might not want that.
  *
  */
-// the function must not be const since it is overridden in context
 const sync = function (stmt, syncData, isHot) {
   if (!stmt) {
-    stmt = {}
+    stmt = {};
   }
   if (!isHot) {
-    isHot = false
+    isHot = false;
   }
 
-  __appendToStmtPart__(stmt, 'request', bp.thread.data.request)
-  __appendToStmtPart__(stmt, 'waitFor', bp.thread.data.waitFor)
-  __appendToStmtPart__(stmt, 'block', bp.thread.data.block)
-  __appendToStmtPart__(stmt, 'interrupt', bp.thread.data.interrupt)
+  __appendToStmtPart__(stmt, 'waitFor', bp.thread.data.waitFor);
+  __appendToStmtPart__(stmt, 'block', bp.thread.data.block);
+  __appendToStmtPart__(stmt, 'interrupt', bp.thread.data.interrupt);
 
-  return bp.thread.data.syncDecorator(stmt, syncData, isHot)
+  // Implementation note: we use [].concat.apply(...) to flatten arrays that
+  // may have been passed to `request`. This is not needed in waitFor etc.,
+  // because these arguments accept event sets, while `request` needs explicit events
+
+  if (bp.thread.data.request.length > 0) {
+    if (stmt.request) {
+      if (!Array.isArray(stmt.request)) {
+        stmt.request = [stmt.request];
+      }
+      stmt.request = stmt.request.concat([].concat.apply([], bp.thread.data.request));
+    } else {
+      stmt.request = [].concat.apply([], bp.thread.data.request);
+    }
+  }
+
+  return bp.thread.data.syncDecorator(stmt, syncData, isHot);
 }
 
 /**
