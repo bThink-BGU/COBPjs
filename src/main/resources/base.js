@@ -14,10 +14,6 @@ function isJSSet(o) {
     }
 }
 
-const sync = function (stmt, syncData, isHot) {
-    return bp.thread.data.syncDecorator(stmt, syncData, isHot)
-}
-
 /**
  * Adds a new b-thread, with initialized data field, to the b-program.
  * @param {string} name of new b-thread
@@ -116,6 +112,10 @@ let __sync__ = function (stmt, syncData, isHot) {
     }
 
     return syncData ? bp.hot(isHot).sync(stmt, syncData) : bp.hot(isHot).sync(stmt);
+}
+
+const sync = function (stmt, syncData, isHot) {
+    return bp.thread.data.syncDecorator(stmt, syncData, isHot)
 }
 
 /**
