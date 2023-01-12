@@ -6,16 +6,16 @@
  * @returns true iff `o` is a Set
  */
 function isJSSet(o) {
-  try {
-    Set.prototype.has.call(o) // throws if o is not an object or has no [[SetData]]
-    return true
-  } catch (e) {
-    return false
-  }
+    try {
+        Set.prototype.has.call(o) // throws if o is not an object or has no [[SetData]]
+        return true
+    } catch (e) {
+        return false
+    }
 }
 
-let __sync__ = function (stmt, syncData, isHot) {
-  return syncData ? bp.hot(isHot).sync(stmt, syncData) : bp.hot(isHot).sync(stmt)
+const sync = function (stmt, syncData, isHot) {
+    return bp.thread.data.syncDecorator(stmt, syncData, isHot)
 }
 
 /**
@@ -26,29 +26,30 @@ let __sync__ = function (stmt, syncData, isHot) {
  * @returns nothing
  */
 function bthread(name, data, fn) {
-  if (!fn) {
-    // data is missing, we were invoked with 2 args
-    fn = data;
-    data = {};
-  }
-  if (!data.request) {
-    data.request = [];
-  }
-  if (!data.waitFor) {
-    data.waitFor = [];
-  }
-  if (!data.block) {
-    data.block = [];
-  }
-  if (!data.interrupt) {
-    data.interrupt = [];
-  }
-  bp.registerBThread(name, data, function () {
-    if (!data.syncDecorator) {
-      data.syncDecorator = __sync__;
-    } //CANNOT BE REMOVED: sync for all bthread must respect the context decoration, even if they don't use it
-    fn()
-  })
+    if (!fn) {
+        // data is missing, we were invoked with 2 args
+        fn = data;
+        data = {};
+    }
+    if (!data.request) {
+        data.request = [];
+    }
+    if (!data.waitFor) {
+        data.waitFor = [];
+    }
+    if (!data.block) {
+        data.block = [];
+    }
+    if (!data.interrupt) {
+        data.interrupt = [];
+    }
+    bp.registerBThread(name, data, function () {
+        if (!data.syncDecorator) {
+            data.syncDecorator = __sync__;
+        } //CANNOT BE REMOVED: sync for all bthread must respect the context decoration, even if they don't use it.
+        // therefore it must be initialized here, after b-threads start running.
+        fn()
+    })
 }
 
 /**
@@ -59,18 +60,18 @@ function bthread(name, data, fn) {
  * @private
  */
 function __appendToStmtPart__(stmt, field, value) {
-  if (bp.thread.data[field].length === 0) {
-    return;
-  }
-  if (Array.isArray(stmt[field])) {
-    stmt[field] = stmt[field].concat(bp.thread.data[field]);
-  } else {
-    if (stmt[field]) {
-      stmt[field] = [stmt[field]].concat(bp.thread.data[field]);
-    } else {
-      stmt[field] = bp.thread.data[field];
+    if (bp.thread.data[field].length === 0) {
+        return;
     }
-  }
+    if (Array.isArray(stmt[field])) {
+        stmt[field] = stmt[field].concat(bp.thread.data[field]);
+    } else {
+        if (stmt[field]) {
+            stmt[field] = [stmt[field]].concat(bp.thread.data[field]);
+        } else {
+            stmt[field] = bp.thread.data[field];
+        }
+    }
 }
 
 /**
@@ -87,34 +88,34 @@ function __appendToStmtPart__(stmt, field, value) {
  * NOTE currently this changes stmt, we might not want that.
  *
  */
-const sync = function (stmt, syncData, isHot) {
-  if (!stmt) {
-    stmt = {};
-  }
-  if (!isHot) {
-    isHot = false;
-  }
-
-  __appendToStmtPart__(stmt, 'waitFor', bp.thread.data.waitFor);
-  __appendToStmtPart__(stmt, 'block', bp.thread.data.block);
-  __appendToStmtPart__(stmt, 'interrupt', bp.thread.data.interrupt);
-
-  // Implementation note: we use [].concat.apply(...) to flatten arrays that
-  // may have been passed to `request`. This is not needed in waitFor etc.,
-  // because these arguments accept event sets, while `request` needs explicit events
-
-  if (bp.thread.data.request.length > 0) {
-    if (stmt.request) {
-      if (!Array.isArray(stmt.request)) {
-        stmt.request = [stmt.request];
-      }
-      stmt.request = stmt.request.concat([].concat.apply([], bp.thread.data.request));
-    } else {
-      stmt.request = [].concat.apply([], bp.thread.data.request);
+let __sync__ = function (stmt, syncData, isHot) {
+    if (!stmt) {
+        stmt = {};
     }
-  }
+    if (!isHot) {
+        isHot = false;
+    }
 
-  return bp.thread.data.syncDecorator(stmt, syncData, isHot);
+    __appendToStmtPart__(stmt, 'waitFor', bp.thread.data.waitFor);
+    __appendToStmtPart__(stmt, 'block', bp.thread.data.block);
+    __appendToStmtPart__(stmt, 'interrupt', bp.thread.data.interrupt);
+
+    // Implementation note: we use [].concat.apply(...) to flatten arrays that
+    // may have been passed to `request`. This is not needed in waitFor etc.,
+    // because these arguments accept event sets, while `request` needs explicit events
+
+    if (bp.thread.data.request.length > 0) {
+        if (stmt.request) {
+            if (!Array.isArray(stmt.request)) {
+                stmt.request = [stmt.request];
+            }
+            stmt.request = stmt.request.concat([].concat.apply([], bp.thread.data.request));
+        } else {
+            stmt.request = [].concat.apply([], bp.thread.data.request);
+        }
+    }
+
+    return syncData ? bp.hot(isHot).sync(stmt, syncData) : bp.hot(isHot).sync(stmt);
 }
 
 /**
@@ -122,12 +123,12 @@ const sync = function (stmt, syncData, isHot) {
  * @returns {boolean}
  */
 function isInBThread() {
-  try {
-    let a = bp.thread.name
-    return true
-  } catch (ex) {
-    return false
-  }
+    try {
+        let a = bp.thread.name
+        return true
+    } catch (ex) {
+        return false
+    }
 }
 
 /**
@@ -138,10 +139,10 @@ function isInBThread() {
  * @param expectInBThread Expect the code to be called by a b-thread
  */
 function testInBThread(caller, expectInBThread) {
-  if (expectInBThread && !isInBThread())
-    throw new Error(String('The function ' + caller + ' must be called by a b-thread'))
-  if (!expectInBThread && isInBThread())
-    throw new Error(String('The function ' + caller + ' must be called from the global scope'))
+    if (expectInBThread && !isInBThread())
+        throw new Error(String('The function ' + caller + ' must be called by a b-thread'))
+    if (!expectInBThread && isInBThread())
+        throw new Error(String('The function ' + caller + ' must be called from the global scope'))
 }
 
 /**
@@ -152,7 +153,7 @@ function testInBThread(caller, expectInBThread) {
  * @constructor
  */
 function EventSet(name, callback) {
-  return bp.EventSet(name, callback)
+    return bp.EventSet(name, callback)
 }
 
 /**
@@ -162,5 +163,5 @@ function EventSet(name, callback) {
  * @returns {bp.Event}
  */
 function Event(name, data) {
-  return (arguments.length === 2) ? bp.Event(name, data) : bp.Event(name)
+    return (arguments.length === 2) ? bp.Event(name, data) : bp.Event(name)
 }

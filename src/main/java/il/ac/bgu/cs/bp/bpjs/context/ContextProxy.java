@@ -19,95 +19,95 @@ import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
 
 public class ContextProxy implements Serializable {
-  private static final long serialVersionUID = -7832072043618491085L;
-  public final Map<String, BaseFunction> queries = new HashMap<>();
-  public final Map<String, BaseFunction> effectFunctions = new HashMap<>();
-  private static final ScriptableObjectCloner cloner = new ScriptableObjectCloner();
-  private static final ContextChangesCalculator ccc = new ContextChangesCalculator();
-  private boolean effectFinished = false;
-  private transient HashSet<ContextChangesCalculator.ContextChange> changes;
+    private static final long serialVersionUID = -7832072043618491085L;
+    public final Map<String, BaseFunction> queries = new HashMap<>();
+    public final Map<String, BaseFunction> effectFunctions = new HashMap<>();
+    private static final ScriptableObjectCloner cloner = new ScriptableObjectCloner();
+    private static final ContextChangesCalculator ccc = new ContextChangesCalculator();
+    private boolean effectFinished = false;
+    private transient HashSet<ContextChangesCalculator.ContextChange> changes;
 
-  @SuppressWarnings("unused")
-  public void rethrowException(Throwable t) throws Throwable {
-    throw t;
-  }
-
-  public boolean isEndOfContextException(Throwable t) {
-    return t instanceof EndOfContextException;
-  }
-
-  public synchronized void waitForEffect(MapProxy<String, Object> mapProxy, BEvent event, Scriptable ctx) {
-    if(!effectFinished) {
-      this.changes = ccc.calculateChanges(mapProxy,this, event, ctx.getParentScope());
-      effectFinished = true;
+    @SuppressWarnings("unused")
+    public void rethrowException(Throwable t) throws Throwable {
+        throw t;
     }
-  }
 
-  public synchronized HashSet<ContextChangesCalculator.ContextChange> getChanges() {
-    if(changes == null) changes = new HashSet<>();
-    return changes;
-  }
+    public boolean isEndOfContextException(Throwable t) {
+        return t instanceof EndOfContextException;
+    }
 
-  public synchronized void resetEffect() {
-    effectFinished = false;
-  }
-
-  public boolean shouldWake(NativeObject jsRWB, BEvent event) {
-    Map<String, Object> jRWB = (Map) Context.jsToJava(jsRWB, Map.class);
-
-    SyncStatement stmt = SyncStatement.make();
-
-    Object req = jRWB.get("request");
-    if ( req != null ) {
-        if ( req instanceof NativeArray) {
-          NativeArray arr = (NativeArray) req;
-          stmt = stmt.request(arr.getIndexIds().stream()
-              .map( i -> (BEvent)arr.get(i) )
-              .collect( toList() ));
-        } else {
-          stmt = stmt.request((BEvent)req);
+    public synchronized void waitForEffect(MapProxy<String, Object> mapProxy, BEvent event, Scriptable ctx) {
+        if (!effectFinished) {
+            this.changes = ccc.calculateChanges(mapProxy, this, event, ctx.getParentScope());
+            effectFinished = true;
         }
     }
 
-    EventSet waitForSet   = convertToEventSet(jRWB.get("waitFor"));
-    stmt = stmt.waitFor( waitForSet );
-
-    return stmt.shouldWakeFor(event);
-  }
-
-  private EventSet convertToEventSet( Object jsObject ) {
-    if ( jsObject == null ) return EventSets.none;
-
-    // This covers event sets AND events.
-    if ( jsObject instanceof EventSet ) {
-      return (EventSet)jsObject;
-
-    } else if ( jsObject instanceof NativeArray ) {
-      NativeArray arr = (NativeArray) jsObject;
-      if ( arr.isEmpty() ) return EventSets.none;
-
-      if ( Stream.of(arr.getIds()).anyMatch(id -> arr.get(id)==null) ) {
-        throw new RuntimeException("EventSet Array contains null sets.");
-      }
-
-      if ( arr.getLength() == 1 ) return (EventSet)arr.get(0);
-
-      return EventSets.anyOf(
-          arr.getIndexIds().stream()
-              .map( i ->(EventSet)arr.get(i) )
-              .collect( toSet() ) );
-    } else {
-      final String errorMessage = "Cannot convert " + jsObject + " of class " + jsObject.getClass() + " to an event set";
-      throw new BPjsRuntimeException(errorMessage);
+    public synchronized HashSet<ContextChangesCalculator.ContextChange> getChanges() {
+        if (changes == null) changes = new HashSet<>();
+        return changes;
     }
-  }
 
-  public void throwEndOfContext() {
-    throw new EndOfContextException();
-  }
+    public synchronized void resetEffect() {
+        effectFinished = false;
+    }
 
-  @SuppressWarnings("unused")
-  public ScriptableObject clone(ScriptableObject obj) {
-    return cloner.clone(obj);
-  }
+    public boolean shouldWake(NativeObject jsRWB, BEvent event) {
+        Map<String, Object> jRWB = (Map) Context.jsToJava(jsRWB, Map.class);
+
+        SyncStatement stmt = SyncStatement.make();
+
+        Object req = jRWB.get("request");
+        if (req != null) {
+            if (req instanceof NativeArray) {
+                NativeArray arr = (NativeArray) req;
+                stmt = stmt.request(arr.getIndexIds().stream()
+                        .map(i -> (BEvent) arr.get(i))
+                        .collect(toList()));
+            } else {
+                stmt = stmt.request((BEvent) req);
+            }
+        }
+
+        EventSet waitForSet = convertToEventSet(jRWB.get("waitFor"));
+        stmt = stmt.waitFor(waitForSet);
+
+        return stmt.shouldWakeFor(event);
+    }
+
+    private EventSet convertToEventSet(Object jsObject) {
+        if (jsObject == null) return EventSets.none;
+
+        // This covers event sets AND events.
+        if (jsObject instanceof EventSet) {
+            return (EventSet) jsObject;
+
+        } else if (jsObject instanceof NativeArray) {
+            NativeArray arr = (NativeArray) jsObject;
+            if (arr.isEmpty()) return EventSets.none;
+
+            if (Stream.of(arr.getIds()).anyMatch(id -> arr.get(id) == null)) {
+                throw new RuntimeException("EventSet Array contains null sets.");
+            }
+
+            if (arr.getLength() == 1) return (EventSet) arr.get(0);
+
+            return EventSets.anyOf(
+                    arr.getIndexIds().stream()
+                            .map(i -> (EventSet) arr.get(i))
+                            .collect(toSet()));
+        } else {
+            final String errorMessage = "Cannot convert " + jsObject + " of class " + jsObject.getClass() + " to an event set";
+            throw new BPjsRuntimeException(errorMessage);
+        }
+    }
+
+    public void throwEndOfContext() {
+        throw new EndOfContextException();
+    }
+
+    @SuppressWarnings("unused")
+    public ScriptableObject clone(ScriptableObject obj) {
+        return cloner.clone(obj);
+    }
 }

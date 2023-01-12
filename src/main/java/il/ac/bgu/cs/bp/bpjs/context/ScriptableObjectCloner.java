@@ -18,38 +18,38 @@ import java.io.IOException;
 
 public class ScriptableObjectCloner {
 
-  public ScriptableObject clone(ScriptableObject obj) {
-    var scope = obj.getParentScope();
-    byte[] ser = serialize(obj, scope);
-    return deserialize(ser, scope);
-  }
-
-  private ScriptableObject deserialize(byte[] bytes, Scriptable scope) {
-    try {
-      BPjs.enterRhinoContext();
-      try (var in = new ScriptableInputStream(new ByteArrayInputStream(bytes), scope)) {
-        return (ScriptableObject) in.readObject();
-      } catch (ClassNotFoundException | IOException ex) {
-        throw new RuntimeException("Error reading a serialized b-thread: " + ex.getMessage(), ex);
-      }
-    } finally {
-      Context.exit();
+    public ScriptableObject clone(ScriptableObject obj) {
+        var scope = obj.getParentScope();
+        byte[] ser = serialize(obj, scope);
+        return deserialize(ser, scope);
     }
-  }
 
-  private byte[] serialize(ScriptableObject obj, Scriptable scope) {
-    try {
-      BPjs.enterRhinoContext();
-      try (ByteArrayOutputStream bytes = new ByteArrayOutputStream();
-           ScriptableOutputStream outs = new ScriptableOutputStream(bytes, scope)) {
-        outs.writeObject(obj);
-        outs.flush();
-        return bytes.toByteArray();
-      } catch (IOException ex) {
-        throw new RuntimeException("IO exception serializing a b-thread. Error message: " + ex.getMessage(), ex);
-      }
-    } finally {
-      Context.exit();
+    private ScriptableObject deserialize(byte[] bytes, Scriptable scope) {
+        try {
+            BPjs.enterRhinoContext();
+            try (var in = new ScriptableInputStream(new ByteArrayInputStream(bytes), scope)) {
+                return (ScriptableObject) in.readObject();
+            } catch (ClassNotFoundException | IOException ex) {
+                throw new RuntimeException("Error reading a serialized b-thread: " + ex.getMessage(), ex);
+            }
+        } finally {
+            Context.exit();
+        }
     }
-  }
+
+    private byte[] serialize(ScriptableObject obj, Scriptable scope) {
+        try {
+            BPjs.enterRhinoContext();
+            try (ByteArrayOutputStream bytes = new ByteArrayOutputStream();
+                 ScriptableOutputStream outs = new ScriptableOutputStream(bytes, scope)) {
+                outs.writeObject(obj);
+                outs.flush();
+                return bytes.toByteArray();
+            } catch (IOException ex) {
+                throw new RuntimeException("IO exception serializing a b-thread. Error message: " + ex.getMessage(), ex);
+            }
+        } finally {
+            Context.exit();
+        }
+    }
 }

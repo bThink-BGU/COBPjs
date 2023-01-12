@@ -9,20 +9,20 @@ import java.util.Set;
 
 public class CtxStorageModificationStrategy implements StorageModificationStrategy {
 
-  private final ContextProxy proxy;
+    private final ContextProxy proxy;
 
-  public CtxStorageModificationStrategy(ContextProxy proxy) {
-    this.proxy = proxy;
-  }
+    public CtxStorageModificationStrategy(ContextProxy proxy) {
+        this.proxy = proxy;
+    }
 
-  @Override
-  public StorageConsolidationResult.Success incomingModifications(StorageConsolidationResult.Success modifications, BProgramSyncSnapshot bpss, Set<BThreadSyncSnapshot> nextRoundBThreads) {
-    this.proxy.resetEffect();
-    return modifications;
-  }
+    @Override
+    public StorageConsolidationResult.Success incomingModifications(StorageConsolidationResult.Success modifications, BProgramSyncSnapshot bpss, Set<BThreadSyncSnapshot> nextRoundBThreads) {
+        this.proxy.resetEffect();
+        return modifications;
+    }
 
-  @Override
-  public StorageConsolidationResult resolve(StorageConsolidationResult.Conflict conflict, BProgramSyncSnapshot bpss, Set<BThreadSyncSnapshot> nextRoundBThreads) {
-    return conflict;
-  }
+    @Override
+    public StorageConsolidationResult resolve(StorageConsolidationResult.Conflict conflict, BProgramSyncSnapshot bpss, Set<BThreadSyncSnapshot> nextRoundBThreads) {
+        return conflict;
+    }
 }
