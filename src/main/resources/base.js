@@ -87,6 +87,10 @@ function __appendToStmtPart__(stmt, field, value) {
 let __sync__ = function (stmt, syncData, isHot) {
     if (!stmt) {
         stmt = {};
+    } else {
+        let tmp = {}
+        Object.assign(tmp,stmt)
+        stmt = tmp
     }
     if (!isHot) {
         isHot = false;

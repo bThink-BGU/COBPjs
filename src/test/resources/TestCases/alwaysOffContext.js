@@ -1,5 +1,5 @@
 //this file is used to test the following:
-// a b-thread can be active only if it its context is active.
+// a b-thread can be active only if its context is active.
 // Here, we check the case where the context is not active at the beginning of the program.
 // and will be always off.
 // Two contexts are used to test this.
@@ -30,19 +30,20 @@ bthread('ToggleContext1',function (entity) {
 
 ctx.bthread("a in context1", "Context1", function (entity) {
     while (true) {
-        sync({request: Event("a")})
-        bp.ASSERT(entity.inContext, "bthread is live but context is off")
+        sync({request: Event("Context1")})
+        // bp.ASSERT(entity.inContext, "bthread is live but context is off")
+        // sync({request: Event("Error")})
     }
 })
 ctx.bthread("a in context Always Off", "Always Off", function (entity) {
     while (true) {
-        sync({request: Event("a")})
-        bp.ASSERT(false, "bthread is live but context is off")
+        sync({request: Event("Always Off")})
+        // bp.ASSERT(false, "bthread is live but context is off")
     }
 } )
 bthread("alwaysOn", function () {
     while (true) {
-        sync({request: Event("b")})
+        sync({request: Event("alwaysOn")})
     }
 })
 

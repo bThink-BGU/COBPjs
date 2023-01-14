@@ -36,7 +36,6 @@ public class SampleTest {
             bprogName = "TestingWholeDbQuery/activeOnlyIfInContext.js";
         }
         BProgram bprog = TestUtils.prepareBProgram(bprogName);
-        CreateStateGraph.mapSpace(bprog, "onlyInContextBthreadsRun");
         var res = TestUtils.verify(bprog);
         assertEquals(2, res.getScannedStatesCount());
         assertEquals(5, res.getScannedEdgesCount());
@@ -56,7 +55,6 @@ public class SampleTest {
             bprogName = "TestingWholeDbQuery/activeOnlyIfInContext_2Contexts.js";
         }
         BProgram bprog = TestUtils.prepareBProgram(bprogName);
-        CreateStateGraph.mapSpace(bprog, "onlyInContextBthreadsRun2Contexts");
         var res = TestUtils.verify(bprog);
         assertEquals(8, res.getScannedStatesCount());
         assertEquals(31, res.getScannedEdgesCount());
@@ -75,7 +73,6 @@ public class SampleTest {
             bprogName = "TestingWholeDbQuery/alwaysOffContext.js";
         }
         BProgram bprog = TestUtils.prepareBProgram(bprogName);
-        CreateStateGraph.mapSpace(bprog, "bthreadWithOffContextDoesntWakeUp");
         var res = TestUtils.verify(bprog);
         assertEquals(2, res.getScannedStatesCount());
         assertEquals(5, res.getScannedEdgesCount());
@@ -134,7 +131,6 @@ public class SampleTest {
             example.initializeBProg(bprog);
 //    BProgram bprog = TestUtils.prepareBProgram("Testing/HotCold");
         }
-        CreateStateGraph.mapSpace(bprog, "testHotCold");
         var res = TestUtils.verify(bprog);
         assertEquals(115, res.getScannedStatesCount());
         assertEquals(348, res.getScannedEdgesCount());

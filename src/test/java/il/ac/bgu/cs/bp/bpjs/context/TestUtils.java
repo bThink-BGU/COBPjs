@@ -9,6 +9,7 @@ import il.ac.bgu.cs.bp.bpjs.analysis.VerificationResult;
 import il.ac.bgu.cs.bp.bpjs.analysis.listeners.PrintDfsVerifierListener;
 import il.ac.bgu.cs.bp.bpjs.analysis.violations.Violation;
 import il.ac.bgu.cs.bp.bpjs.execution.BProgramRunner;
+import il.ac.bgu.cs.bp.bpjs.execution.listeners.PrintBProgramRunnerListener;
 import il.ac.bgu.cs.bp.bpjs.model.BEvent;
 import il.ac.bgu.cs.bp.bpjs.model.BProgram;
 import il.ac.bgu.cs.bp.bpjs.model.ResourceBProgram;
@@ -36,6 +37,13 @@ public class TestUtils {
         bprog.setEventSelectionStrategy(priority);
 //        BProgramRunner rnr = new BProgramRunner(bprog);
         return bprog;
+    }
+
+
+    public static void runBProgram(BProgram bprog) {
+        var rnr = new BProgramRunner(bprog);
+        rnr.addListener(new PrintBProgramRunnerListener());
+        rnr.run();
     }
 
 
