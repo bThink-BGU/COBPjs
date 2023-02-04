@@ -4,23 +4,33 @@
 package il.ac.bgu.cs.bp.bpjs.context.Tests;
 
 
+import il.ac.bgu.cs.bp.bpjs.analysis.DfsBProgramVerifier;
+import il.ac.bgu.cs.bp.bpjs.analysis.ExecutionTraceInspections;
+import il.ac.bgu.cs.bp.bpjs.analysis.VerificationResult;
+import il.ac.bgu.cs.bp.bpjs.analysis.violations.Violation;
 import il.ac.bgu.cs.bp.bpjs.context.ContextBProgram;
 import il.ac.bgu.cs.bp.bpjs.context.Example;
-import il.ac.bgu.cs.bp.bpjs.context.TestUtils;
 import il.ac.bgu.cs.bp.bpjs.execution.BProgramRunner;
 import il.ac.bgu.cs.bp.bpjs.execution.listeners.PrintBProgramRunnerListener;
+import il.ac.bgu.cs.bp.bpjs.model.BEvent;
 import il.ac.bgu.cs.bp.bpjs.model.BProgram;
 
 import il.ac.bgu.cs.bp.bpjs.model.eventselection.PrioritizedBSyncEventSelectionStrategy;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
-import org.junit.jupiter.params.provider.ValueSource;
 
 
+import java.nio.file.FileSystems;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Stream;
 
+import static java.util.stream.Collectors.joining;
+import static java.util.stream.Collectors.toList;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.fail;
 
 public class SampleTest {
 //  boolean afterUpdatingToWholeDBQuery = false;//this is true when using the whole DB query, and false when using the single query
@@ -42,9 +52,9 @@ public class SampleTest {
   @ParameterizedTest
   @MethodSource("valueSource")
   public void onlyInContextBThreadsRun(boolean afterUpdatingToWholeDBQuery) throws Exception {
-    String bprogName = "TestCases/activeOnlyIfInContext.js";
+    String bprogName = "TestingResources/TestCases/activeOnlyIfInContext.js";
     if (afterUpdatingToWholeDBQuery) {
-      bprogName = "TestingWholeDbQuery/activeOnlyIfInContext.js";
+      bprogName = "TestingResources/TestingWholeDbQuery/activeOnlyIfInContext.js";
     }
     BProgram bprog = TestUtils.prepareBProgram(bprogName);
     var res = TestUtils.verify(bprog);
@@ -62,10 +72,10 @@ public class SampleTest {
   @ParameterizedTest
   @MethodSource("valueSource")
   public void onlyInContextBThreadsRun2Contexts(boolean afterUpdatingToWholeDBQuery) throws Exception {
-    String bprogName = "TestingWholeDbQuery/activeOnlyIfInContext_2Contexts.js";
-//    if (afterUpdatingToWholeDBQuery) {
-//      bprogName = "TestingWholeDbQuery/activeOnlyIfInContext_2Contexts.js";
-//    }
+    String bprogName = "TestingResources/TestCases/activeOnlyIfInContext_2Contexts.js";
+    if (afterUpdatingToWholeDBQuery) {
+      bprogName = "TestingResources/TestingWholeDbQuery/activeOnlyIfInContext_2Contexts.js";
+    }
     BProgram bprog = TestUtils.prepareBProgram(bprogName);
     bprog.putInGlobalScope("afterUpdatingToWholeDBQuery", afterUpdatingToWholeDBQuery);
 
@@ -83,9 +93,9 @@ public class SampleTest {
   @ParameterizedTest
   @MethodSource("valueSource")
   public void bthreadWithOffContextDoesntWakeUp(boolean afterUpdatingToWholeDBQuery) throws Exception {
-    String bprogName = "TestCases/alwaysOffContext.js";
+    String bprogName = "TestingResources/TestCases/alwaysOffContext.js";
     if (afterUpdatingToWholeDBQuery) {
-      bprogName = "TestingWholeDbQuery/alwaysOffContext.js";
+      bprogName = "TestingResources/TestingWholeDbQuery/alwaysOffContext.js";
     }
     BProgram bprog = TestUtils.prepareBProgram(bprogName);
     var res = TestUtils.verify(bprog);
@@ -102,9 +112,9 @@ public class SampleTest {
   @ParameterizedTest
   @MethodSource("valueSource")
   public void noBThreadInContext(boolean afterUpdatingToWholeDBQuery) throws Exception {
-    String bprogName = "TestCases/noOneInContext.js";
+    String bprogName = "TestingResources/TestCases/noOneInContext.js";
     if (afterUpdatingToWholeDBQuery) {
-      bprogName = "TestingWholeDbQuery/noOneInContext.js";
+      bprogName = "TestingResources/TestingWholeDbQuery/noOneInContext.js";
     }
     BProgram bprog = TestUtils.prepareBProgram(bprogName);
     var res = TestUtils.verify(bprog);
@@ -124,9 +134,9 @@ public class SampleTest {
   @ParameterizedTest
   @MethodSource("valueSource")
   public void priorityOfTwoBThreads(boolean afterUpdatingToWholeDBQuery) throws Exception {
-    String bprogName = "TestCases/checkingPriority.js";
+    String bprogName = "TestingResources/TestCases/checkingPriority.js";
     if (afterUpdatingToWholeDBQuery) {
-      bprogName = "TestingWholeDbQuery/checkingPriority.js";
+      bprogName = "TestingResources/TestingWholeDbQuery/checkingPriority.js";
     }
     BProgram bprog = TestUtils.prepareBProgramWithPriority(bprogName);
 //    bprog.putInGlobalScope("afterUpdatingToWholeDBQuery", afterUpdatingToWholeDBQuery);
@@ -145,7 +155,7 @@ public class SampleTest {
   public void testHotCold(boolean afterUpdatingToWholeDBQuery) throws Exception {
     BProgram bprog;
     if (afterUpdatingToWholeDBQuery) {
-      bprog = TestUtils.prepareBProgram("TestingWholeDbQuery/HotCold.js");
+      bprog = TestUtils.prepareBProgram("TestingResources/TestingWholeDbQuery/HotCold.js");
     } else {
       Example example = Example.HotCold;
       bprog = new ContextBProgram(example.getResourcesNames());
@@ -157,4 +167,90 @@ public class SampleTest {
     assertEquals(348, res.getScannedEdgesCount());
   }
 
+  public static class TestUtils {
+
+      public static ContextBProgram prepareBProgram(String ... resourceName) {
+          return new ContextBProgram(resourceName);
+      }
+      public static ContextBProgram prepareBProgramWithPriority(String resourceName) {
+          ContextBProgram bprog = new ContextBProgram(resourceName);
+          PrioritizedBSyncEventSelectionStrategy priority = new PrioritizedBSyncEventSelectionStrategy();
+          priority.setDefaultPriority(0);
+          bprog.setEventSelectionStrategy(priority);
+  //        BProgramRunner rnr = new BProgramRunner(bprog);
+          return bprog;
+      }
+
+
+      public static void runBProgram(BProgram bprog) {
+          var rnr = new BProgramRunner(bprog);
+          rnr.addListener(new PrintBProgramRunnerListener());
+          rnr.run();
+      }
+
+
+      public static String eventNamesString(List<BEvent> trace, String delimiter) {
+          return trace.stream()
+                  .map(BEvent::getName)
+                  .collect(joining(delimiter));
+      }
+
+      public static String eventNamesString(List<BEvent> trace) {
+          return eventNamesString(trace, "");
+      }
+
+      /**
+       * Verify the bprogram with all standard BPjs-based inspections. Fail on any violation.
+       * @param bprog The b-program to be verified.
+       * @throws Exception
+       */
+      public static VerificationResult verify(BProgram bprog) throws Exception{
+          var vfr = new DfsBProgramVerifier(bprog);
+          vfr.addInspection( ExecutionTraceInspections.FAILED_ASSERTIONS );
+          vfr.addInspection( ExecutionTraceInspections.HOT_SYSTEM );
+          vfr.addInspection( ExecutionTraceInspections.HOT_TERMINATIONS  );
+          vfr.addInspection( ExecutionTraceInspections.HOT_BTHREADS  );
+
+          var res = vfr.verify(bprog);
+
+          if ( res.isViolationFound() ) {
+              final Violation violation = res.getViolation().get();
+              System.out.println("Violation found: " + violation.decsribe() );
+              String trace = violation.getCounterExampleTrace().getNodes().stream()
+                  .map( n -> n.getEvent() ).filter( eo -> eo.isPresent() )
+                  .map( Optional::get ).map(e->e.toString()).collect( joining("\n"));
+              fail("Violation found " + violation.decsribe() + "\n" + trace );
+          }
+          return res;
+      }
+
+
+      /**
+       * Checks whether {@code sought} is equal to {@code list}, after the latter is
+       * filtered to contain only members of former.
+       * <p>
+       * e.g.:
+       * <code>
+       * 1,2,3,4 is embedded in a,1,d,2,g,r,cv,3,g,4
+       * a,b,x is not embedded in x,a,b
+       * a,b,x is not embedded in a,a,b,x
+       * </code>
+       *
+       * @param <T>
+       * @param sought
+       * @param list
+       * @return
+       */
+      public static <T> boolean isEmbeddedSublist(List<T> sought, List<T> list) {
+          Set<T> filter = new HashSet<>(sought);
+          return list.stream()
+                  .filter(filter::contains)
+                  .collect(toList()).equals(sought);
+      }
+
+      public static String getPath(String pathPrefix, String pathSuffix) {
+          String path = pathPrefix + pathSuffix;
+          return FileSystems.getDefault().getPath(path).toAbsolutePath().toString();
+      }
+  }
 }
