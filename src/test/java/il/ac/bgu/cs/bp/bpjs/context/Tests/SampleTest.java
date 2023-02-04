@@ -14,8 +14,11 @@ import il.ac.bgu.cs.bp.bpjs.model.BProgram;
 import il.ac.bgu.cs.bp.bpjs.model.eventselection.PrioritizedBSyncEventSelectionStrategy;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
 
+
+import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -24,6 +27,11 @@ public class SampleTest {
   //I.e., when the code in context.js is updated to use the whole DB query, this should be true.
 
 
+
+
+  static Stream<Boolean> valueSource() {
+    return Stream.of(true, false);
+  }
   /**
    * Sample test that checks if the only live bthread is the one
    * that is supposed to be live.(in context)
@@ -105,15 +113,17 @@ public class SampleTest {
    * @throws Exception -- if the test fails
    * @comment: this test is not working, because the no way to use priority with context
    */
+//  @ParameterizedTest
+//  @ValueSource(booleans = {true, false})
   @ParameterizedTest
-  @ValueSource(booleans = {true, false})
+  @MethodSource("valueSource")
   public void priorityOfTwoBthreads(boolean afterUpdatingToWholeDBQuery) throws Exception {
     String bprogName = "TestCases/checkingPriority.js";
     if (afterUpdatingToWholeDBQuery) {
       bprogName = "TestingWholeDbQuery/checkingPriority.js";
     }
     BProgram bprog = TestUtils.prepareBProgramWithPriority(bprogName);
-    bprog.putInGlobalScope("afterUpdatingToWholeDBQuery", afterUpdatingToWholeDBQuery);
+//    bprog.putInGlobalScope("afterUpdatingToWholeDBQuery", afterUpdatingToWholeDBQuery);
     var res = TestUtils.verify(bprog);
     assertEquals(3, res.getScannedStatesCount());
     assertEquals(2, res.getScannedEdgesCount());
