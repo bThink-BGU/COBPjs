@@ -2,9 +2,10 @@
 // a b-thread can be active only if it its context is active.
 // Two contexts are used to test this.
 
-function query(nane, func) {
+let afterUpdatingToWholeDBQuery = false;
+function query(name, func) {
   if (afterUpdatingToWholeDBQuery) {
-    ctx.registerWholeDbQuery('Context1',
+    ctx.registerWholeDbQuery(name,
       function (entities) {
         return entities.filter(e => func(e))
       })
@@ -19,10 +20,13 @@ ctx.populateContext([oneEntity, secondEntity])
 query('Context1', function (e) {
   return e => e.id == 'Context1' && e.inContext
 })
-ctx.registerWholeDbQuery('Context2',
-  function (entities) {
-    return entities.filter(entity => entity.id == 'Context2' && entity.inContext)
-  })
+query('Context2', function (e) {
+    return e => e.id == 'Context2' && e.inContext
+} )
+// ctx.registerWholeDbQuery('Context2',
+//   function (entities) {
+//     return entities.filter(entity => entity.id == 'Context2' && entity.inContext)
+//   })
 
 ctx.registerEffect('ToggleContext1', function (data) //can be divided into two effects one for true and one for false
 {

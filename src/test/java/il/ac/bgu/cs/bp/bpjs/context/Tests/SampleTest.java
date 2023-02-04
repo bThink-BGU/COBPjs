@@ -23,7 +23,7 @@ import java.util.stream.Stream;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 public class SampleTest {
-  boolean afterUpdatingToWholeDBQuery = false;//this is true when using the whole DB query, and false when using the single query
+//  boolean afterUpdatingToWholeDBQuery = false;//this is true when using the whole DB query, and false when using the single query
   //I.e., when the code in context.js is updated to use the whole DB query, this should be true.
 
 
@@ -39,8 +39,9 @@ public class SampleTest {
    *
    * @throws Exception -- if the test fails
    */
-  @Test
-  public void onlyInContextBthreadsRun() throws Exception {
+  @ParameterizedTest
+  @MethodSource("valueSource")
+  public void onlyInContextBThreadsRun(boolean afterUpdatingToWholeDBQuery) throws Exception {
     String bprogName = "TestCases/activeOnlyIfInContext.js";
     if (afterUpdatingToWholeDBQuery) {
       bprogName = "TestingWholeDbQuery/activeOnlyIfInContext.js";
@@ -58,13 +59,16 @@ public class SampleTest {
    *
    * @throws Exception-- if the test fails
    */
-  @Test
-  public void onlyInContextBthreadsRun2Contexts() throws Exception {
-    String bprogName = "TestCases/activeOnlyIfInContext_2Contexts.js";
-    if (afterUpdatingToWholeDBQuery) {
-      bprogName = "TestingWholeDbQuery/activeOnlyIfInContext_2Contexts.js";
-    }
+  @ParameterizedTest
+  @MethodSource("valueSource")
+  public void onlyInContextBThreadsRun2Contexts(boolean afterUpdatingToWholeDBQuery) throws Exception {
+    String bprogName = "TestingWholeDbQuery/activeOnlyIfInContext_2Contexts.js";
+//    if (afterUpdatingToWholeDBQuery) {
+//      bprogName = "TestingWholeDbQuery/activeOnlyIfInContext_2Contexts.js";
+//    }
     BProgram bprog = TestUtils.prepareBProgram(bprogName);
+    bprog.putInGlobalScope("afterUpdatingToWholeDBQuery", afterUpdatingToWholeDBQuery);
+
     var res = TestUtils.verify(bprog);
     assertEquals(8, res.getScannedStatesCount());
     assertEquals(31, res.getScannedEdgesCount());
@@ -76,8 +80,9 @@ public class SampleTest {
    *
    * @throws Exception-- if the test fails
    */
-  @Test
-  public void bthreadWithOffContextDoesntWakeUp() throws Exception {
+  @ParameterizedTest
+  @MethodSource("valueSource")
+  public void bthreadWithOffContextDoesntWakeUp(boolean afterUpdatingToWholeDBQuery) throws Exception {
     String bprogName = "TestCases/alwaysOffContext.js";
     if (afterUpdatingToWholeDBQuery) {
       bprogName = "TestingWholeDbQuery/alwaysOffContext.js";
@@ -94,8 +99,9 @@ public class SampleTest {
    *
    * @throws Exception-- if the test fails
    */
-  @Test
-  public void noBthreadInContext() throws Exception {
+  @ParameterizedTest
+  @MethodSource("valueSource")
+  public void noBThreadInContext(boolean afterUpdatingToWholeDBQuery) throws Exception {
     String bprogName = "TestCases/noOneInContext.js";
     if (afterUpdatingToWholeDBQuery) {
       bprogName = "TestingWholeDbQuery/noOneInContext.js";
@@ -117,7 +123,7 @@ public class SampleTest {
 //  @ValueSource(booleans = {true, false})
   @ParameterizedTest
   @MethodSource("valueSource")
-  public void priorityOfTwoBthreads(boolean afterUpdatingToWholeDBQuery) throws Exception {
+  public void priorityOfTwoBThreads(boolean afterUpdatingToWholeDBQuery) throws Exception {
     String bprogName = "TestCases/checkingPriority.js";
     if (afterUpdatingToWholeDBQuery) {
       bprogName = "TestingWholeDbQuery/checkingPriority.js";
@@ -134,8 +140,9 @@ public class SampleTest {
    *
    * @throws Exception -- if the test fails
    */
-  @Test
-  public void testHotCold() throws Exception {
+  @ParameterizedTest
+  @MethodSource("valueSource")
+  public void testHotCold(boolean afterUpdatingToWholeDBQuery) throws Exception {
     BProgram bprog;
     if (afterUpdatingToWholeDBQuery) {
       bprog = TestUtils.prepareBProgram("TestingWholeDbQuery/HotCold.js");
