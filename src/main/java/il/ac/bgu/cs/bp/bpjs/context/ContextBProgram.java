@@ -32,7 +32,7 @@ public class ContextBProgram extends ResourceBProgram {
     }
 
     private static Collection<String> append(Collection<String> resourceNames) {
-        return new ArrayList<>(resourceNames.size() + 1) {{
+        return new ArrayList<>(resourceNames.size() + 2) {{
             add("base.js");
             add("context.js");
             addAll(resourceNames);
