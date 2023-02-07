@@ -3,10 +3,10 @@
 
 let oneEntity = ctx.Entity("Context", "type", {inContext: true})
 ctx.populateContext([oneEntity])
-ctx.registerQuery('Context',
-    function (entity) {
-        return entity.id == 'Context' && entity.inContext
-    })
+
+query('Context', function (e) {
+    return e.id == 'Context' && e.inContext
+})
 
 ctx.registerEffect('ToggleContext', function (data) //can be divided into two effects one for true and one for false
 {
@@ -26,7 +26,7 @@ ctx.bthread("a in context", "Context", function (entity) {
     }
 })
 bthread("alwaysOn", function () {
-while (true) {
+    while (true) {
         sync({request: Event("b")})
     }
 })
