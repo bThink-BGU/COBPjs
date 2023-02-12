@@ -71,25 +71,23 @@ function __appendToStmtPart__(stmt, field, value) {
 }
 
 /**
- * Enters a synchronization point. Honors the RWBI stack.
- *
- * Can also be used as `sync()`. This causes the b-thread to sync using only
- * its RWBI stack.
+ * Basic sync function. This function is decorated by the context library.
  *
  * @param {SyncStatement} stmt the statement to be added
  * @param {Object} [syncData] optional sync data
  * @param {Boolean} [isHot=false] whether the sync is hot or not.
  * @returns {BEvent} The selected event
- *
- * NOTE currently this changes stmt, we might not want that.
- *
  */
 let __sync__ = function (stmt, syncData, isHot) {
-    if (!stmt) {
-        stmt = {};
-    }
-    if (!isHot) {
-        isHot = false;
+    isHot = isHot || false;
+    stmt = __prepareStatement__(stmt)
+    return syncData ? bp.hot(isHot).sync(stmt, syncData) : bp.hot(isHot).sync(stmt)
+}
+
+const __prepareStatement__ = function(statement) {
+    let stmt = {};
+    if (typeof statement !== 'undefined' && statement !== null) {
+        Object.assign(stmt,statement)
     }
 
     __appendToStmtPart__(stmt, 'waitFor', bp.thread.data.waitFor);
@@ -110,10 +108,21 @@ let __sync__ = function (stmt, syncData, isHot) {
             stmt.request = [].concat.apply([], bp.thread.data.request);
         }
     }
-
-    return syncData ? bp.hot(isHot).sync(stmt, syncData) : bp.hot(isHot).sync(stmt);
+    return stmt;
 }
 
+/**
+ * Enters a synchronization point. Honors the RWBI stack.
+ *
+ * Can also be used as `sync()`. This causes the b-thread to sync using only
+ * its RWBI stack.
+ *
+ * @param {SyncStatement} stmt the statement to be added
+ * @param {Object} [syncData] optional sync data
+ * @param {Boolean} [isHot=false] whether the sync is hot or not.
+ * @returns {BEvent} The selected event
+ *
+ */
 const sync = function (stmt, syncData, isHot) {
     return bp.thread.data.syncDecorator(stmt, syncData, isHot)
 }

@@ -27,7 +27,7 @@ __sync__ = function (stmt, syncData, isHot) {
                     }
                 }
             }
-            if (ctx_proxy.shouldWake(stmt, ret)) {
+            if (ctx_proxy.shouldWake(__prepareStatement__(stmt), ret)) {
                 return ret
             }
         } else {
