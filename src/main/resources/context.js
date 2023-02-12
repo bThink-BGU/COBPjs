@@ -116,29 +116,64 @@ const ctx = {
         return bp.store.get(key)
         //throw new Error("Entity with id '" + id + "' does not exist")
     },
+    /**
+     * Returns an array of all entities that are in the given context
+     * @param {string|delegate} queryName_or_function query name or a query function that represents a context in the system
+     * @returns {Entity[]} all entities that are in the given context
+     */
     runQuery: function (queryName_or_function) {
         let func
+        let isWholeDBQuery = false
         if (typeof (queryName_or_function) === 'string') {
             const key = String(queryName_or_function)
             if (!ctx_proxy.queries.containsKey(key)) throw new Error('Query ' + queryName_or_function + ' does not exist')
-            func = ctx_proxy.queries.get(key)
+            let valueOfKey = ctx_proxy.queries.get(key)
+            func = valueOfKey[0]
+            isWholeDBQuery = valueOfKey[1]
         } else {
             func = queryName_or_function
         }
-        let ans = []
-        let storeEntries = bp.store.entrySet().toArray()
-        for (let i = 0; i < storeEntries.length; i++) {
-            let entry = storeEntries[i]
-            if (entry.getKey().startsWith(String('CTX.Entity:')) && func(entry.getValue()))
-                ans.push(entry.getValue())
+        if (isWholeDBQuery) {
+            let entities = bp.store.entrySet().stream().filter(e => e.getKey().startsWith('CTX.Entity: ')).map(e => e.getValue()).toArray()//all the entities in the store(our DB)
+            let ansFunc = func(entities)
+            return ansFunc
         }
-        return ans
+        else {
+            //can use entities declared above instead of what is in the if
+            let ans = []
+            let storeEntries = bp.store.entrySet().toArray()
+            for (let i = 0; i < storeEntries.length; i++) {
+                let entry = storeEntries[i]
+                if (entry.getKey().startsWith(String('CTX.Entity:')) && func(entry.getValue()))
+                    ans.push(entry.getValue())
+            }
+            return ans
+        }
     },
-    registerQuery: function (name, query) {
+    /**
+     * Adds a new query to the system, The query is a function that gets all entities and returns all the entities is in the context
+     * @param name query name
+     * @param query query function
+     */
+    registerWholeDbQuery: function (name, query) {
+        this.registerQuery(name,query, true)
+    },
+    /**
+     * Adds a new query to the system, supporting both types of queries.
+     * - A query that is a function that gets all entities and returns all the entities is in the context
+     * - A query that is a function that gets an entity and returns true if the entity is in the context
+     * @param name query name
+     * @param query query function
+     * @param isWholeDBQuery a boolean that indicates if the query is a whole DB query or not.
+     * If it is a whole DB query, the query function gets all the entities in the DB and returns all the entities that are in the context.
+     * If it is not a whole DB query, the query function gets an entity and returns true if the entity is in the context.
+     */
+    registerQuery: function (name, query, isWholeDBQuery) {
+        if(isWholeDBQuery===undefined) isWholeDBQuery=false
         testInBThread('registerQuery', false)
         const key = String(name)
         if (ctx_proxy.queries.containsKey(key)) throw new Error('Query ' + name + ' already exists')
-        ctx_proxy.queries.put(key, query)
+        ctx_proxy.queries.put(key, [query, isWholeDBQuery])
     },
     registerEffect: function (eventName, effect) {
         if (!(typeof eventName === 'string' || eventName instanceof String)) {
