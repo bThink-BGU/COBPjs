@@ -32,9 +32,7 @@ import static java.util.stream.Collectors.toList;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.fail;
 
-public class Tests {
-
-
+public class BPContextTests {
     private BProgram createBProgramForTest(String resource, boolean usingWholeDBQuery) {
 
         String bprogName = "TestingResources/TestCases/" +resource;

@@ -1,6 +1,10 @@
 /* global bp, ctx_proxy, Packages, EventSets */ // <-- Turn off warnings
 // importPackage(Packages.il.ac.bgu.cs.bp.bpjs.model.eventsets);
 
+/**
+ * An EventSet that represents all events with an effect function.
+ * @type {bp.EventSet}
+ */
 const ContextChanged = EventSet('CTX.ContextChanged', function (e) {
     return ctx_proxy.effectFunctions.containsKey(String('CTX.Effect: ' + e.name))
 })
@@ -83,6 +87,15 @@ const ctx = {
                 throw new Error(String('The function ' + caller + ' must no be called by an effect function'))
         }
     },
+    /**
+     * @class Entity
+     * @param {string} id - the entity's id
+     * @param {string} type - the entity's type
+     * @param {*} data
+     * @returns {Entity}
+     * @constructor
+     * @throws {Error} if data contains "id" or "type" fields
+     */
     Entity: function (id, type, data) {
         let entity = {id: String(id), type: String(type)}
         if (typeof data !== 'undefined' && data != null) {
@@ -93,20 +106,36 @@ const ctx = {
         }
         return entity
     },
+    /**
+     * Inserts an entity to the context.
+     * @param {Entity}entity
+     * @returns {Entity} the inserted entity
+     * @throws {Error} if the entity's id already exists
+     */
     insertEntity: function (entity) {
         this.__internal_fields__.testIsEffect('insertEntity', true)
 
         return this.__internal_fields__.insertEntityUnsafe(entity)
     },
-    removeEntity: function (entity_or_id) {
+    /**
+     * Removes an entity from the context.
+     * @param {Entity|string}entity - the entity to remove or the id of the entity to remove.
+     */
+    removeEntity: function (entity) {
         this.__internal_fields__.testIsEffect('removeEntity', true)
 
-        const key = String('CTX.Entity: ' + (entity_or_id.id ? entity_or_id.id : entity_or_id))
+        const key = String('CTX.Entity: ' + (entity.id ? entity.id : entity))
         if (!bp.store.has(key)) {
             throw new Error('Cannot remove entity, key ' + key + ' does not exist')
         }
         bp.store.remove(key)
     },
+    /**
+     * Retrieves an entity from the context given an id.
+     * @param {string}id - the entity's id
+     * @returns {Entity}
+     * @throws {Error} if the entity does not exist
+     */
     getEntityById: function (id) {
         // bp.log.info('getEntityById id {0}', id)
         const key = String('CTX.Entity: ' + id)
@@ -118,20 +147,20 @@ const ctx = {
     },
     /**
      * Returns an array of all entities that are in the given context
-     * @param {string|delegate} queryName_or_function query name or a query function that represents a context in the system
+     * @param {string|delegate} query query name or a query function that represents a context in the system
      * @returns {Entity[]} all entities that are in the given context
      */
-    runQuery: function (queryName_or_function) {
+    runQuery: function (query) {
         let func
         let isWholeDBQuery = false
-        if (typeof (queryName_or_function) === 'string') {
-            const key = String(queryName_or_function)
-            if (!ctx_proxy.queries.containsKey(key)) throw new Error('Query ' + queryName_or_function + ' does not exist')
+        if (typeof (query) === 'string') {
+            const key = String(query)
+            if (!ctx_proxy.queries.containsKey(key)) throw new Error('Query ' + query + ' does not exist')
             let valueOfKey = ctx_proxy.queries.get(key)
             func = valueOfKey[0]
             isWholeDBQuery = valueOfKey[1]
         } else {
-            func = queryName_or_function
+            func = query
         }
         if (isWholeDBQuery) {
             let entities = bp.store.entrySet().stream().filter(e => e.getKey().startsWith('CTX.Entity: ')).map(e => e.getValue()).toArray()//all the entities in the store(our DB)
@@ -151,30 +180,66 @@ const ctx = {
         }
     },
     /**
-     * Adds a new query to the system, The query is a function that gets all entities and returns all the entities is in the context
-     * @param name query name
-     * @param query query function
+     * @callback mapQueryFunction A function that represents a context in the system, returns a list of all entities that are in the context.
+     * @param {java.util.Map<string,Entity>} entities - a Map of all entities in the system.
+     * @returns {Entity[]} all the entities that are in the context
+     */
+
+    /**
+     * @callback entityQueryFunction A function that represents a context in the system, returns whether an entity is in the context.
+     * @param {Entity} entity - an entity
+     * @returns {boolean} whether the entity is in the context or not
+     */
+
+
+    /**
+     * Register a new query to the system.
+     *
+     * A query represents a context of the system and is defined as a function that filters
+     * the context entities.
+     * Specifically, the query is a function that gets a map all entities and returns all the entities is in the context
+     * @param {string}name query name
+     * @param {mapQueryFunction}[query] query function
      */
     registerWholeDbQuery: function (name, query) {
         this.registerQuery(name,query, true)
     },
+
     /**
-     * Adds a new query to the system, supporting both types of queries.
-     * - A query that is a function that gets all entities and returns all the entities is in the context
-     * - A query that is a function that gets an entity and returns true if the entity is in the context
-     * @param name query name
-     * @param query query function
-     * @param isWholeDBQuery a boolean that indicates if the query is a whole DB query or not.
-     * If it is a whole DB query, the query function gets all the entities in the DB and returns all the entities that are in the context.
-     * If it is not a whole DB query, the query function gets an entity and returns true if the entity is in the context.
+     * Register a new query to the system.
+     *
+     * A query represents a context of the system and is defined as a function that filters
+     * the context entities.
+     * The function can support one of the following two types:
+     * - A function that gets an entity and returns true if the entity is in the context
+     * - A function that gets a map of all entities and returns all the entities is in the context
+     *
+     * By default, the query is of the first type. If the query is of the second type, the isWholeDBQuery parameter should be set to true.
+     * @param {string}name query name
+     * @param {mapQueryFunction|entityQueryFunction}[query] query function
+     * @param {boolean}[isWholeDBQuery=false] a boolean that indicates whether the {@link query} param takes a map or not.
+     * @throws {Error} if a query with the same name already exists or if the method is called from a b-thread.
      */
     registerQuery: function (name, query, isWholeDBQuery) {
-        if(isWholeDBQuery===undefined) isWholeDBQuery=false
+        if(isWholeDBQuery===undefined || isWholeDBQuery=== null) isWholeDBQuery=false
         testInBThread('registerQuery', false)
         const key = String(name)
         if (ctx_proxy.queries.containsKey(key)) throw new Error('Query ' + name + ' already exists')
         ctx_proxy.queries.put(key, [query, isWholeDBQuery])
     },
+
+    /**
+     * @callback effectFunction A function that takes an event data and changes the context entities.
+     * @param {*} data - the event's data
+     */
+
+    /**
+     * Register a new effect to the system.
+     * The effect is a function that may change the context entities whenever an event with the name {@link eventName} is selected.
+     * @param {string}eventName - the name of the event that triggers the effect
+     * @param {effectFunction}effect - the effect function to apply on the event's data.
+     * @throws {Error} if an effect already exists for the given event name or if the method is called from a b-thread.
+     */
     registerEffect: function (eventName, effect) {
         if (!(typeof eventName === 'string' || eventName instanceof String)) {
             throw new Error('The first parameter of registerEffect must be an event name')
@@ -186,6 +251,15 @@ const ctx = {
             throw new Error('Effect already exists for event ' + eventName)
         ctx_proxy.effectFunctions.put(key, effect)
     },
+    /**
+     * Register a new CBT. A CBT is a b-thread template that binds a behavior to a specific query (i.e., context).
+     * The CBT does not execute the behavior immediately, but rather creates a new live copy for each entity in the context.
+     * New live copies contain the query name and the id of the entity that created the live copy.
+     *
+     * @param {string}name - the name of the CBT
+     * @param {string}context - the query's name
+     * @param {function(*):void}bt - the behavior to execute for each live copy
+     */
     bthread: function (name, context, bt) {
         bthread('cbt: ' + name,
             function () {
@@ -214,6 +288,11 @@ const ctx = {
                 }
             })
     },
+    /**
+     * Check if the given error is an end of context exception.
+     * @param e
+     * @returns {boolean}
+     */
     isEndOfContextException: function (e) {
         return typeof e.javaException !== 'undefined' && ctx_proxy.isEndOfContextException(e.javaException)
     },
@@ -226,6 +305,11 @@ const ctx = {
             throw e
         }
     },
+    /**
+     * Adds new entities to the context before the start of the program.
+     * @param {Entity[]}entities
+     * @throws {Error} if the method is called from a b-thread.
+     */
     populateContext: function (entities) {
         testInBThread('populateContext', false)
         for (let i = 0; i < entities.length; i++)
