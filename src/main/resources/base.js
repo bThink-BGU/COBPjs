@@ -26,6 +26,7 @@ function bthread(name, data, fn) {
         // data is missing, we were invoked with 2 args
         fn = data;
         data = {};
+
     }
     if (!data.request) {
         data.request = [];
@@ -42,10 +43,9 @@ function bthread(name, data, fn) {
     bp.registerBThread(name, data, function () {
         if (!data.syncDecorator) {
             data.syncDecorator = __sync__;
-        } //CANNOT BE REMOVED: sync for all bthread must respect the context decoration, even if they don't use it.
-        // therefore it must be initialized here, after b-threads start running.
-        fn()
-    })
+        }
+        fn();
+    });
 }
 
 /**
@@ -80,14 +80,14 @@ function __appendToStmtPart__(stmt, field, value) {
  */
 let __sync__ = function (stmt, syncData, isHot) {
     isHot = isHot || false;
-    stmt = __prepareStatement__(stmt)
-    return syncData ? bp.hot(isHot).sync(stmt, syncData) : bp.hot(isHot).sync(stmt)
-}
+    stmt = __prepareStatement__(stmt);
+    return syncData ? bp.hot(isHot).sync(stmt, syncData) : bp.hot(isHot).sync(stmt);
+};
 
 const __prepareStatement__ = function(statement) {
     let stmt = {};
     if (typeof statement !== 'undefined' && statement !== null) {
-        Object.assign(stmt,statement)
+        Object.assign(stmt,statement);
     }
 
     __appendToStmtPart__(stmt, 'waitFor', bp.thread.data.waitFor);
@@ -109,7 +109,7 @@ const __prepareStatement__ = function(statement) {
         }
     }
     return stmt;
-}
+};
 
 /**
  * Enters a synchronization point. Honors the RWBI stack.
@@ -124,8 +124,8 @@ const __prepareStatement__ = function(statement) {
  *
  */
 const sync = function (stmt, syncData, isHot) {
-    return bp.thread.data.syncDecorator(stmt, syncData, isHot)
-}
+    return bp.thread.data.syncDecorator(stmt, syncData, isHot);
+};
 
 /**
  * Returns true iff the function has been called by a b-thread
