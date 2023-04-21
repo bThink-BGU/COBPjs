@@ -12,9 +12,6 @@ on:
         required: false
         default: ""
 
-env:
-  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
   build:
@@ -25,10 +22,9 @@ jobs:
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v3
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           fetch-depth: 0
+          token: ${{ secrets.ACHIYAPAT }}
 
       - name: Extract next version
         run: |
@@ -43,14 +39,9 @@ jobs:
           echo "VER==${{ env.VER }} ===  VER_MAJOR==${{ env.VER_MAJOR }} === VER_MINOR==${{ env.VER_MINOR }}"
           perl -pi -e '$a=1 if(!$a && s|(<version>[0-9]+\.[0-9]+\.)[0-9]*|${1}${{ env.VER_MINOR }}|);' pom.xml
           perl -pi -e '$a=1 if(!$a && s|(<version>[0-9]+\.[0-9]+\.)[0-9]*|${1}${{ env.VER_MINOR }}|);' README.md
-          
-      - uses: EndBug/add-and-commit@v9
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          author_name: Achiya Elyasaf
-          author_email: 10044875+achiyae@users.noreply.github.com
-          message: raise version
+          git add .
+          git commit -m "raise version"
+          git push
           
       - name: Set SHA version
         id: vars
