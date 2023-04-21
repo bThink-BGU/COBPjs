@@ -30,11 +30,11 @@ jobs:
         run: echo "GH_TOKEN=${GITHUB_TOKEN}" >> $GITHUB_ENV
         
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           fetch-depth: 0
           ref: master
-          token: ${{ env.GH_TOKEN }}
+#           token: ${{ env.GH_TOKEN }}
 
       - name: Extract next version
         run: |
