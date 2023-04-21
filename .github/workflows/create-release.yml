@@ -39,6 +39,8 @@ jobs:
           echo "VER==${{ env.VER }} ===  VER_MAJOR==${{ env.VER_MAJOR }} === VER_MINOR==${{ env.VER_MINOR }}"
           perl -pi -e '$a=1 if(!$a && s|(<version>[0-9]+\.[0-9]+\.)[0-9]*|${1}${{ env.VER_MINOR }}|);' pom.xml
           perl -pi -e '$a=1 if(!$a && s|(<version>[0-9]+\.[0-9]+\.)[0-9]*|${1}${{ env.VER_MINOR }}|);' README.md
+          git config user.name github-actions
+          git config user.email github-actions@github.com
           git add .
           git commit -m "raise version"
           git push
