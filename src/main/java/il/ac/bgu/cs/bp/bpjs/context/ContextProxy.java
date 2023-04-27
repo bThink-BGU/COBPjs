@@ -44,6 +44,7 @@ public class ContextProxy implements Serializable {
     }
 
     public synchronized HashSet<ContextChangesCalculator.ContextChange> getChanges() {
+        // TODO: check if we can remove the following line and remove the synchronized
         if (changes == null) changes = new HashSet<>();
         return changes;
     }

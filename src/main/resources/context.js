@@ -22,12 +22,13 @@ __sync__ = function (stmt, syncData, isHot) {
             ctx_proxy.waitForEffect(bp.store, ret, ctx)
             bp.thread.data.waitFor.pop()
             changes = ctx_proxy.getChanges().toArray()
-            query = bp.thread.data.query
-            id = bp.thread.data.seed
+            query = bp.thread.data.query //TODO move before while (and remove null assignment at the end)
+            id = bp.thread.data.seed //TODO move before while (and remove null assignment at the end)
             if (query) {
-                for (let i = 0; i < changes.length; i++) {
+                for (let i = 0; i < changes.length; i++) { //TODO use parallelStream and filter like in cbt.bthread
                     if (changes[i].type.equals('end') && changes[i].query.equals(query) && changes[i].entityId.equals(id)) {
                         ctx_proxy.throwEndOfContext()
+                        //TODO check if we can add break here
                     }
                 }
             }
@@ -98,6 +99,7 @@ const ctx = {
      */
     Entity: function (id, type, data) {
         let entity = {id: String(id), type: String(type)}
+
         if (typeof data !== 'undefined' && data != null) {
             if (typeof data.id !== 'undefined' || typeof data.type !== 'undefined') {
                 throw new Error(String('Entity\'s data must not include "id" or "type" fields.'))

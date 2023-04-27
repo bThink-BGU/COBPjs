@@ -92,8 +92,8 @@ public class ContextChangesCalculator {
 
     public static class ContextChange implements Serializable {
         private static final long serialVersionUID = 4949558465562651801L;
-        public final String query;
         public final String type;
+        public final String query;
         public final String entityId;
 
         private ContextChange(String query, String type) {
