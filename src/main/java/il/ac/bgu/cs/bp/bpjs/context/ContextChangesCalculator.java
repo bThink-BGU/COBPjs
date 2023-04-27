@@ -34,8 +34,28 @@ public class ContextChangesCalculator {
         }
     }
 
+    public void initQueriesEntities(MapProxy<String, Object> store, ContextProxy proxy, Scriptable globalScope) {
+        var bpJsProxy = globalScope.get("bp", globalScope);
+        var ctx = (Map<String, Object>) Context.jsToJava(globalScope.get("ctx", globalScope), Map.class);
+        var jsRunQuery = (Function) ctx.get("runQuery");
+        var bpJProxy = (BProgramJsProxy) Context.jsToJava(bpJsProxy, BProgramJsProxy.class);
+        ContextBProgramProxyForEffects bpProxyForEffect = new ContextBProgramProxyForEffects(store, bpJProxy);
+        Context cx = BPjs.enterRhinoContext();
+        try {
+            globalScope.put("bp", globalScope, Context.javaToJS(bpProxyForEffect, globalScope));
+            bpProxyForEffect.setStore(new CtxDirectMapProxy<>(store));
+            proxy.queriesEntities = Collections.unmodifiableMap(getQueriesEntitiesNative(proxy, cx, jsRunQuery));
+        } finally {
+            globalScope.put("bp", globalScope, Context.javaToJS(bpJsProxy, globalScope));
+            Context.exit();
+        }
+    }
+
     public HashSet<ContextChange> calculateChanges(BEvent event, ContextProxy proxy,
                                                    Context cx, Function jsRunQuery) {
+        if(proxy.queriesEntities == null) {
+            proxy.queriesEntities = Collections.unmodifiableMap(getQueriesEntitiesNative(proxy, cx, jsRunQuery));
+        }
         Map<String, List<String>> currentQueriesEntities =  getQueriesEntities(proxy.queriesEntities);
         executeEffect(proxy.effectFunctions.get("CTX.Effect: " + event.name), event.maybeData, cx);
         proxy.queriesEntities = Collections.unmodifiableMap(getQueriesEntitiesNative(proxy, cx, jsRunQuery));

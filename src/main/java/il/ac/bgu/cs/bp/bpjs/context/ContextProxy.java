@@ -21,7 +21,7 @@ import static java.util.stream.Collectors.toSet;
 public class ContextProxy implements Serializable {
     private static final long serialVersionUID = -7832072043618491085L;
     public final Map<String, BaseFunction> queries = new HashMap<>();
-    Map<String, List<NativeObject>> queriesEntities = new HashMap<>();
+    Map<String, List<NativeObject>> queriesEntities = null;
     public final Map<String, BaseFunction> effectFunctions = new HashMap<>();
     private static final ScriptableObjectCloner cloner = new ScriptableObjectCloner();
     private static final ContextChangesCalculator ccc = new ContextChangesCalculator();
@@ -37,7 +37,10 @@ public class ContextProxy implements Serializable {
         return t instanceof EndOfContextException;
     }
 
-    public List<NativeObject> getQueryEntities(String query) {
+    public synchronized List<NativeObject> getQueryEntities(MapProxy<String, Object> mapProxy, Scriptable ctx, String query) {
+        if(queriesEntities == null){
+            ccc.initQueriesEntities(mapProxy, this, ctx.getParentScope());
+        }
         return queriesEntities.get(query);
     }
 
