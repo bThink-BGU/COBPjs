@@ -262,7 +262,7 @@ const ctx = {
      * @param {string}context - the query's name
      * @param {function(*):void}bt - the behavior to execute for each live copy
      */
-    bthread: function (name, context, bt) {
+    bthread: function (name, contexts, bt) {
         bthread('cbt: ' + name,
             function () {
                 let res = ctx.runQuery(context)
@@ -275,15 +275,18 @@ const ctx = {
                     sync({waitFor: ContextChanged})
                     // bp.log.info("changesA {0}: {1}", context, ctx_proxy.getChanges())
                     changes = ctx_proxy.getChanges().parallelStream()
-                        .filter(function (change) {
+                        .filter(function (change) { //update to get new for any query of mine
                             return change.type.equals('new') && change.query.equals(context)
                         }).toArray()
-                    // bp.log.info("changesB {0}: {1}", context, changes)
-                    for (let i = 0; i < changes.length; i++) {
-                        // bp.log.info("changesC {0}: {1}", context, changes[i])
-                        // bp.log.info(bp.store.keys())
-                        if (changes[i].type.equals('new') && changes[i].query.equals(context)) {
-                            ctx.__internal_fields__.createLiveCopy(String('Live copy' + ': ' + name + ' ' + changes[i].entityId), context, ctx.getEntityById(changes[i].entityId), bt)
+                    if(changes.length>0) {
+                        let queriesEntities = contexts.map(c=>ctx.runQuery(c))
+                        // bp.log.info("changesB {0}: {1}", context, changes)
+                        for (let i = 0; i < changes.length; i++) {
+                            // bp.log.info("changesC {0}: {1}", context, changes[i])
+                            // bp.log.info(bp.store.keys())
+                            if (changes[i].type.equals('new') && changes[i].query.equals(context)) {
+                                ctx.__internal_fields__.createLiveCopy(String('Live copy' + ': ' + name + ' ' + changes[i].entityId), context, ctx.getEntityById(changes[i].entityId), bt)
+                            }
                         }
                     }
                     changes = null

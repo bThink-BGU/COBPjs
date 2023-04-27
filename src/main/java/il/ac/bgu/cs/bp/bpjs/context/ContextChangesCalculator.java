@@ -36,9 +36,10 @@ public class ContextChangesCalculator {
 
     public HashSet<ContextChange> calculateChanges(BEvent event, ContextProxy proxy,
                                                    Context cx, Function jsRunQuery) {
-        Map<String, List<String>> currentQueriesEntities = getQueriesEntities(proxy, cx, jsRunQuery);
+        Map<String, List<String>> currentQueriesEntities =  getQueriesEntities(proxy.queriesEntities);
         executeEffect(proxy.effectFunctions.get("CTX.Effect: " + event.name), event.maybeData, cx);
-        Map<String, List<String>> nextQueriesEntities = getQueriesEntities(proxy, cx, jsRunQuery);
+        proxy.queriesEntities = Collections.unmodifiableMap(getQueriesEntitiesNative(proxy, cx, jsRunQuery));
+        Map<String, List<String>> nextQueriesEntities = getQueriesEntities(proxy.queriesEntities);
 
         Map<String, Set<String>> newQueriesEntities = subtractCurrentEntitiesMaps(nextQueriesEntities, currentQueriesEntities);
         Map<String, Set<String>> removedQueriesEntities = subtractCurrentEntitiesMaps(currentQueriesEntities, nextQueriesEntities);
@@ -76,10 +77,21 @@ public class ContextChangesCalculator {
     }
 
     private static Map<String, List<String>> getQueriesEntities(ContextProxy proxy, Context cx, Function jsRunQuery) {
-        Map<String, List<String>> queriesEntities = proxy.queries.keySet().stream()
+        return getQueriesEntities(getQueriesEntitiesNative(proxy, cx, jsRunQuery));
+    }
+    private static Map<String, List<String>> getQueriesEntities(Map<String, List<NativeObject>> queriesEntities) {
+        return queriesEntities.entrySet().stream()
+                .collect(Collectors.toMap(
+                        Map.Entry::getKey,
+                        entry -> entry.getValue().stream().map(o -> (String) o.get("id")).collect(Collectors.toList())
+                ));
+    }
+
+    private static Map<String, List<NativeObject>> getQueriesEntitiesNative(ContextProxy proxy, Context cx, Function jsRunQuery) {
+        Map<String, List<NativeObject>> queriesEntities = proxy.queries.keySet().stream()
                 .collect(Collectors.toMap(
                         java.util.function.Function.identity(),
-                        key -> Arrays.stream(runQuery(key, cx, jsRunQuery)).map(o -> (String) ((NativeObject) o).get("id")).collect(Collectors.toList())
+                        key -> Arrays.stream(runQuery(key, cx, jsRunQuery)).map(o -> (NativeObject) o).collect(Collectors.toList())
                 ));
         return queriesEntities;
     }
