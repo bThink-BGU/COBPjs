@@ -14,15 +14,19 @@ public class Main {
   private static Example example = Example.HotCold;
 
   public static void main(final String[] args) throws IOException {
-    createBProgam();
+    createBProgam(args);
     runProgram();
 //    verifyProgram();
   }
 
-  private static void createBProgam() {
+  private static void createBProgam(String[] args) {
     //region Load example program
-    bprog = new ContextBProgram(example.getResourcesNames());
-    example.initializeBProg(bprog);
+    if(args.length==0) {
+      bprog = new ContextBProgram(example.getResourcesNames());
+      example.initializeBProg(bprog);
+    } else {
+      bprog = new ContextBProgram(args);
+    }
     //endregion
 
     //region Load non-sample program
