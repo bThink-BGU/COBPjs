@@ -34,10 +34,7 @@ import il.ac.bgu.cs.bp.bpjs.model.eventselection.EventSelectionStrategy;
 import il.ac.bgu.cs.bp.bpjs.model.eventselection.LoggingEventSelectionStrategyDecorator;
 import il.ac.bgu.cs.bp.bpjs.model.eventselection.SimpleEventSelectionStrategy;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -63,7 +60,6 @@ public class CliRunner {
     if (args.length == 0) {
       printUsageAndExit();
     }
-
     BProgram bpp = new BProgram("BPjs") {
       @Override
       protected void setupProgramScope(Scriptable scope) {
@@ -106,12 +102,10 @@ public class CliRunner {
       private void appendResource(String filename) {
         try {
           InputStream resource = Thread.currentThread().getContextClassLoader().getResourceAsStream(filename);
-
           try {
             if (resource == null) {
               throw new RuntimeException("Resource '" + filename + "' not found.");
             }
-
             evaluate(resource, filename, Context.getCurrentContext());
           } catch (Throwable var6) {
             if (resource != null) {
