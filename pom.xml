@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>com.github.bthink-bgu</groupId>
-    <artifactId>BPjs-Context</artifactId>
+    <artifactId>COBPjs</artifactId>
     <version>0.6.11</version>
     <packaging>jar</packaging>
 
