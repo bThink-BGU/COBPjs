@@ -2,7 +2,7 @@
 
 This repository contains a javascript-based [Context-Oriented Behavioral Programming (COBP)](https://www.sciencedirect.com/science/article/pii/S095058492030094X) library.
 
-[![](https://jitpack.io/v/bThink-BGU/BPjs-Context.svg)](https://jitpack.io/#bThink-BGU/BPjs-Context)
+[![](https://jitpack.io/v/bThink-BGU/COBPjs.svg)](https://jitpack.io/#bThink-BGU/COBPjs)
 
 
 #### License
@@ -29,7 +29,7 @@ Also add COBPjs dependency. Note that the version number changes....
 <dependencies>
     <dependency>
         <groupId>com.github.bThink-BGU</groupId>
-        <artifactId>BPjs-Context</artifactId>
+        <artifactId>COBPjs</artifactId>
         <version>0.6.11</version>
     </dependency>
 </dependencies>
@@ -51,7 +51,7 @@ BProgram bprog = new ContextBProgram("dal.js", "bl.js"); //you can change the fi
 BProgramRunner rnr = new BProgramRunner(bprog);
 ```
 
-There is a full example for a main file - [here](https://github.com/bThink-BGU/BPjs-Context/blob/master/src/test/java/il/ac/bgu/cs/bp/bpjs/context/Main.java).
+There is a full example for a main file - [here](https://github.com/bThink-BGU/COBPjs/blob/master/src/test/java/il/ac/bgu/cs/bp/bpjs/context/Main.java).
 
 ## Documentation & Relevant links
 * [COBP Paper](https://www.sciencedirect.com/science/article/pii/S095058492030094X) introducing COBP, COLSC, and COBPjs.
@@ -91,6 +91,6 @@ To cite this repository in publications:
   year = {2021},
   publisher = {GitHub},
   journal = {GitHub repository},
-  howpublished = {\url{https://github.com/bThink-BGU/BPjs-Context}},
+  howpublished = {\url{https://github.com/bThink-BGU/COBPjs}},
 }
 ```
