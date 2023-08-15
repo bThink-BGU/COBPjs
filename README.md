@@ -29,7 +29,7 @@ Also add COBPjs dependency. Note that the version number changes....
 <dependencies>
     <dependency>
         <groupId>com.github.bThink-BGU</groupId>
-        <artifactId>BPjs-Context</artifactId>
+        <artifactId>COBPjs</artifactId>
         <version>0.6.11</version>
     </dependency>
 </dependencies>
@@ -91,6 +91,6 @@ To cite this repository in publications:
   year = {2021},
   publisher = {GitHub},
   journal = {GitHub repository},
-  howpublished = {\url{https://github.com/bThink-BGU/BPjs-Context}},
+  howpublished = {\url{https://github.com/bThink-BGU/COBPjs}},
 }
 ```
