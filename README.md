@@ -14,7 +14,8 @@ This repository contains a javascript-based [Context-Oriented Behavioral Program
 ---
 
 ## Getting COBPjs
-* For Maven projects: Add [JitPack](https://jitpack.io) repository:
+### Creating a new Maven project
+Add [JitPack](https://jitpack.io) repository:
 
 ````xml
 <repositories>
@@ -34,6 +35,12 @@ Also add COBPjs dependency. Note that the version number changes....
     </dependency>
 </dependencies>
 ````
+
+### Start from a template project
+Clone [SampleBPProject](https://github.com/achiyae/SampleBPProject) and change to the COBP branch.
+```bash
+git clone -b COBP https://github.com/achiyae/SampleBPProject.git
+```
 
 ## Writing COBP Programs
 This section assumes that you are already familiar with the COBP paradigm. If this is not the case, you should start by reading the [COBP Paper](https://www.sciencedirect.com/science/article/pii/S095058492030094X).
