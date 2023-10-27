@@ -51,6 +51,11 @@ A COBP program usually includes at least two files:
 
 Examples for such programs are in the [src/test](src/test/resources) directory.
 
+> [!IMPORTANT]  
+> You must not use ```bp.sync``` and ```bp.registerBThread```. Instead, use ```sync``` and ```bthread```.
+>
+> If you wish to bind a bthread to a context, use ```ctx.bthread```.
+
 ## Running a COBP Program
 Running a COBP program is similar to the execution of a BP program:
 ```java
