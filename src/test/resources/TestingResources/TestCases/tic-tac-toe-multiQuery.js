@@ -145,7 +145,7 @@ bthread('5. When all 9 cells have been marked with X and O and no player won, it
     for (let i = 0; i < 9; i++) {
         sync({waitFor: AnyMark})
     }
-    sync({request: tie(), block: tie().negate().minus(AnyWin)})
+    sync({request: tie(), block: bp.EventSet('tie', e=>!e.contains(tie()) && !AnyWin.contains(e))})
     sync({block: bp.all})
 })
 
