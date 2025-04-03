@@ -16,40 +16,11 @@
         <exec.mainClass>il.ac.bgu.cs.bp.bpjs.context.CliRunner</exec.mainClass>
     </properties>
 
-    <repositories>
-        <repository>
-            <id>jitpack.io</id>
-            <url>https://jitpack.io</url>
-        </repository>
-    </repositories>
-
-    <dependencyManagement>
-        <dependencies>
-            <!-- Patch for Atilla's code-->
-            <dependency>
-                <groupId>com.github.bthink-bgu</groupId>
-                <artifactId>BPjs</artifactId>
-                <exclusions>
-                    <exclusion>
-                        <groupId>org.mozilla</groupId>
-                        <artifactId>rhino</artifactId>
-                    </exclusion>
-                </exclusions>
-            </dependency>
-        </dependencies>
-    </dependencyManagement>
-
     <dependencies>
         <dependency>
             <groupId>com.github.bthink-bgu</groupId>
             <artifactId>BPjs</artifactId>
-            <version>0.12.3</version>
-        </dependency>
-
-        <dependency>
-            <groupId>com.github.szegedi.rhino</groupId>
-            <artifactId>rhino</artifactId>
-            <version>equal-graphs-values-Rhino1_7R4_RELEASE-g697fec4-1165</version>
+            <version>0.13.0</version>
         </dependency>
 
         <!-- StateSpaceMapper for debugging	-->

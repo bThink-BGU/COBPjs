@@ -1,28 +1,28 @@
 const forks = [
   {
     name: '22',
-    x: [[{ i: 1, j: 2 }, { i: 2, j: 0 }], [{ i: 2, j: 1 }, { i: 0, j: 2 }], [{ i: 1, j: 2 }, { i: 2, j: 1 }]],
-    block: [{ i: 2, j: 2 }, { i: 0, j: 2 }, { i: 2, j: 0 }]
+    x: [[{ i: Number(1), j: Number(2) }, { i: Number(2), j: Number(0) }], [{ i: Number(2), j: Number(1) }, { i: Number(0), j: Number(2) }], [{ i: Number(1), j: Number(2) }, { i: Number(2), j: Number(1) }]],
+    block: [{ i: Number(2), j: Number(2) }, { i: Number(0), j: Number(2) }, { i: Number(2), j: Number(0) }]
   },
   {
     name: '02',
-    x: [[{ i: 1, j: 2 }, { i: 0, j: 0 }], [{ i: 0, j: 1 }, { i: 2, j: 2 }], [{ i: 1, j: 2 }, { i: 0, j: 1 }]],
-    block: [{ i: 0, j: 2 }, { i: 0, j: 0 }, { i: 2, j: 2 }]
+    x: [[{ i: Number(1), j: Number(2) }, { i: Number(0), j: Number(0) }], [{ i: Number(0), j: Number(1) }, { i: Number(2), j: Number(2) }], [{ i: Number(1), j: Number(2) }, { i: Number(0), j: Number(1) }]],
+    block: [{ i: Number(0), j: Number(2) }, { i: Number(0), j: Number(0) }, { i: Number(2), j: Number(2) }]
   },
   {
     name: '20',
-    x: [[{ i: 1, j: 0 }, { i: 2, j: 2 }], [{ i: 2, j: 1 }, { i: 0, j: 0 }], [{ i: 2, j: 1 }, { i: 1, j: 0 }]],
-    block: [{ i: 2, j: 0 }, { i: 0, j: 0 }, { i: 2, j: 2 }]
+    x: [[{ i: Number(1), j: Number(0) }, { i: Number(2), j: Number(2) }], [{ i: Number(2), j: Number(1) }, { i: Number(0), j: Number(0) }], [{ i: Number(2), j: Number(1) }, { i: Number(1), j: Number(0) }]],
+    block: [{ i: Number(2), j: Number(0) }, { i: Number(0), j: Number(0) }, { i: Number(2), j: Number(2) }]
   },
   {
     name: '00',
-    x: [[{ i: 0, j: 1 }, { i: 2, j: 0 }], [{ i: 1, j: 0 }, { i: 0, j: 2 }], [{ i: 0, j: 1 }, { i: 1, j: 0 }]],
-    block: [{ i: 0, j: 0 }, { i: 0, j: 2 }, { i: 2, j: 0 }]
+    x: [[{ i: Number(0), j: Number(1) }, { i: Number(2), j: Number(0) }], [{ i: Number(1), j: Number(0) }, { i: Number(0), j: Number(2) }], [{ i: Number(0), j: Number(1) }, { i: Number(1), j: Number(0) }]],
+    block: [{ i: Number(0), j: Number(0) }, { i: Number(0), j: Number(2) }, { i: Number(2), j: Number(0) }]
   },
   {
     name: 'diag',
-    x: [[{ i: 0, j: 2 }, { i: 2, j: 0 }], [{ i: 0, j: 0 }, { i: 2, j: 2 }]],
-    block: [{ i: 0, j: 1 }, { i: 1, j: 0 }, { i: 2, j: 1 }, { i: 1, j: 2 }]
+    x: [[{ i: Number(0), j: Number(2) }, { i: Number(2), j: Number(0) }], [{ i: Number(0), j: Number(0) }, { i: Number(2), j: Number(2) }]],
+    block: [{ i: Number(0), j: Number(1) }, { i: Number(1), j: Number(0) }, { i: Number(2), j: Number(1) }, { i: Number(1), j: Number(2) }]
   }
 ]
 
@@ -35,14 +35,14 @@ ctx.registerQuery('Fork.All', entity => entity.type.equals('fork'))
 
 let entities = []
 for (let i = 0; i < 3; i++) {
-  entities.push(ctx.Entity('line_row_' + i, 'line', { cells: [{ i: i, j: 0 }, { i: i, j: 1 }, { i: i, j: 2 }] }))
-  entities.push(ctx.Entity('line_col_' + i, 'line', { cells: [{ i: 0, j: i }, { i: 1, j: i }, { i: 2, j: i }] }))
+  entities.push(ctx.Entity('line_row_' + i, 'line', { cells: [{ i: Number(i), j: Number(0) }, { i: Number(i), j: Number(1) }, { i: Number(i), j: Number(2) }] }))
+  entities.push(ctx.Entity('line_col_' + i, 'line', { cells: [{ i: Number(0), j: Number(i) }, { i: Number(1), j: Number(i) }, { i: Number(2), j: Number(i) }] }))
   for (let j = 0; j < 3; j++) {
-    entities.push(ctx.Entity('cell(' + i + ',' + j + ')', 'cell', { location: { i: i, j: j } }))
+    entities.push(ctx.Entity('cell(' + i + ',' + j + ')', 'cell', { location: { i: Number(i), j: Number(j) } }))
   }
 }
-entities.push(ctx.Entity('line_diag_0', 'line', { cells: [{ i: 0, j: 0 }, { i: 1, j: 1 }, { i: 2, j: 2 }] }))
-entities.push(ctx.Entity('line_diag_1', 'line', { cells: [{ i: 2, j: 0 }, { i: 1, j: 1 }, { i: 0, j: 2 }] }))
+entities.push(ctx.Entity('line_diag_0', 'line', { cells: [{ i: Number(0), j: Number(0) }, { i: Number(1), j: Number(1) }, { i: Number(2), j: Number(2) }] }))
+entities.push(ctx.Entity('line_diag_1', 'line', { cells: [{ i: Number(2), j: Number(0) }, { i: Number(1), j: Number(1) }, { i: Number(0), j: Number(2) }] }))
 
 forks.forEach(function (f) {
   for (let i = 0; i < f.x.length; i++)

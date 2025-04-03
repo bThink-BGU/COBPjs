@@ -72,7 +72,10 @@ ctx.bthread('DetectXWin', 'Line.All', function (l) {
 // Represents when O wins
 ctx.bthread('DetectOWin', 'Line.All', function (l) {
   const events = l.cells.map(c => Event('O', c))
+  bp.log.info(`DetectOWin: ${l.cells}`)
+    bp.log.info(`DetectOWin: ${events}`)
   for (let c = 0; c < 3; c++) {
+    bp.log.info("hey")
     sync({ waitFor: events })
   }
   sync({ request: Event('OWin') }, 100)

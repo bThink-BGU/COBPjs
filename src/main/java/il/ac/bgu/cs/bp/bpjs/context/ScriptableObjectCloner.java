@@ -1,11 +1,6 @@
 package il.ac.bgu.cs.bp.bpjs.context;
 
 import il.ac.bgu.cs.bp.bpjs.BPjs;
-import il.ac.bgu.cs.bp.bpjs.bprogramio.BPJSStubInputStream;
-import il.ac.bgu.cs.bp.bpjs.bprogramio.BPJSStubOutputStream;
-import il.ac.bgu.cs.bp.bpjs.bprogramio.StreamObjectStub;
-import il.ac.bgu.cs.bp.bpjs.bprogramio.StubProvider;
-import il.ac.bgu.cs.bp.bpjs.execution.jsproxy.BProgramJsProxy;
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.Scriptable;
 import org.mozilla.javascript.ScriptableObject;
