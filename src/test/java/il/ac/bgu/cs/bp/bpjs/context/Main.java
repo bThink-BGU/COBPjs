@@ -11,7 +11,7 @@ import java.text.MessageFormat;
 
 public class Main {
   private static BProgram bprog;
-  private static Example example = Example.TicTacToeWithUI;
+  private static Example example = Example.HotCold;
 
   public static void main(final String[] args) throws IOException {
     createBProgam(args);
