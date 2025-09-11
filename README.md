@@ -70,8 +70,9 @@ There is a full example for a main file - [here](https://github.com/bThink-BGU/C
 * [A presentation at MORSE18](https://youtu.be/eqwhFPQfDjk) introduces COLSC and the paper "A Context-Based Behavioral Language for IoT".
 * [COLSC paper](http://ceur-ws.org/Vol-2245/morse_paper_6.pdf) introduces the LCS implementation for COBP.
 * [SampleProgram](src/test/resources/SampleProgram) sample usage of many language idioms.
+* [Checkers](https://github.com/AlmogZhivov/Checkers-COBP) introduces a full COBP implementation of the Checkers game
 * [Tic-Tac-Toe](src/test/resources/TicTacToe) introduces a COBP implementation of the game.
-* [Hot-Cold](src/test/resources/HotCold) introduces a COBP implementation of an extended hot cold example.
+* [Hot-Cold](src/test/resources/HotCold) introduces a COBP implementation of an extended hot-cold example.
 * [BPjs documentation and tutorials](http://bpjs.readthedocs.io/en/master/) - a great starting point for BP.
 * [Behavioral Programming](http://www.b-prog.org/) - introduces behavioral programming.
 * [BPjs Google group](https://groups.google.com/forum/#!forum/bpjs)
