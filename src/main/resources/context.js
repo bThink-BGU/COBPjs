@@ -165,7 +165,16 @@ const ctx = {
             func = query
         }
         if (isWholeDBQuery) {
-            let entities = bp.store.entrySet().stream().filter(e => e.getKey().startsWith('CTX.Entity: ')).map(e => e.getValue()).toArray()//all the entities in the store(our DB)
+            //we are in Rhino JS (i.e., running js using rhino inside java). convert the following code to use pure js to generate the entities array.
+            //let entities = bp.store.entrySet().stream().filter(e => e.getKey().startsWith('CTX.Entity: ')).map(e => e.getValue()).toArray()//all the entities in the store(our DB)
+            let entities = []
+            let storeEntries = bp.store.entrySet().toArray()
+            for (let i = 0; i < storeEntries.length; i++) {
+                let entry = storeEntries[i]
+                if (entry.getKey().startsWith(String('CTX.Entity:')))
+                    entities.push(entry.getValue())
+            }
+
             let ansFunc = func(entities)
             return ansFunc
         }
@@ -271,13 +280,25 @@ const ctx = {
                 }
                 res = undefined
                 let changes = null
+                let allChanges = null
                 while (true) {
                     sync({waitFor: ContextChanged})
                     // bp.log.info("changesA {0}: {1}", context, ctx_proxy.getChanges())
-                    changes = ctx_proxy.getChanges().parallelStream()
+                    //we are in Rhino JS (i.e., running js using rhino inside java). convert the following code to use pure js to generate the changes array.
+                    /*changes = ctx_proxy.getChanges().parallelStream()
                         .filter(function (change) {
                             return change.type.equals('new') && change.query.equals(context)
-                        }).toArray()
+                        }).toArray()*/
+                    changes = []
+                    let allChanges = ctx_proxy.getChanges().toArray()
+                    for (let i = 0; i < allChanges.length; i++) {
+                        let change = allChanges[i]
+                        if (change.type.equals('new') && change.query.equals(context)) {
+                            changes.push(change)
+                        }
+                    }
+                    allChanges = null
+
                     // bp.log.info("changesB {0}: {1}", context, changes)
                     for (let i = 0; i < changes.length; i++) {
                         // bp.log.info("changesC {0}: {1}", context, changes[i])
